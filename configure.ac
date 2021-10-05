@@ -676,7 +676,6 @@ AC_CONFIG_FILES([
 		src/modess/Makefile
 		src/modbb/Makefile
 		src/epade_pe/Makefile
-		src/epade_pe_3d/Makefile
 		src/wmod/Makefile
 ])
 

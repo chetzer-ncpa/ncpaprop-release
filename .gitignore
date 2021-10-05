@@ -1,0 +1,17 @@
+*.o
+Makefile
+*.nm
+*.pe
+*.a
+*.swp
+bin/ModBB
+src/modbb/ModBB
+bin/Modess
+src/modess/Modess
+bin/WMod
+src/wmod/WMod
+bin/ePape
+src/epade_pe/ePape
+config.log
+config.status
+docs/NCPA_prop_manual.pdf

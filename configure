@@ -8850,7 +8850,7 @@ PETSC_ARCH_COMPLEX=$PETSC_ARCH_COMPLEX
 
 
 
-ac_config_files="$ac_config_files Makefile src/common/Makefile src/atmosphere/Makefile src/libmodes/Makefile src/libpe/Makefile src/libbroadband/Makefile src/modess/Makefile src/modbb/Makefile src/epade_pe/Makefile src/epade_pe_3d/Makefile src/wmod/Makefile"
+ac_config_files="$ac_config_files Makefile src/common/Makefile src/atmosphere/Makefile src/libmodes/Makefile src/libpe/Makefile src/libbroadband/Makefile src/modess/Makefile src/modbb/Makefile src/epade_pe/Makefile src/wmod/Makefile"
 
 
 
@@ -9568,7 +9568,6 @@ do
     "src/modess/Makefile") CONFIG_FILES="$CONFIG_FILES src/modess/Makefile" ;;
     "src/modbb/Makefile") CONFIG_FILES="$CONFIG_FILES src/modbb/Makefile" ;;
     "src/epade_pe/Makefile") CONFIG_FILES="$CONFIG_FILES src/epade_pe/Makefile" ;;
-    "src/epade_pe_3d/Makefile") CONFIG_FILES="$CONFIG_FILES src/epade_pe_3d/Makefile" ;;
     "src/wmod/Makefile") CONFIG_FILES="$CONFIG_FILES src/wmod/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

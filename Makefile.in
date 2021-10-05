@@ -12,8 +12,7 @@
 # PETSC_INCLUDE_FILE_GENERIC = @PETSC_INCLUDE_FILE_GENERIC@
 # SLEPC_INCLUDE_FILE_GENERIC = @SLEPC_INCLUDE_FILE_GENERIC@
 
-#package-parts=common atmosphere raytrace modess modbb modess_rd_1wcm pade_pe wmod cmodess cmodbb wnlrt tdpape
-package-parts=common atmosphere libmodes libpe libbroadband modess wmod modbb epade_pe epade_pe_3d
+package-parts=common atmosphere libmodes libpe libbroadband modess wmod modbb epade_pe
 
 
 # Build everything
@@ -39,9 +38,6 @@ libbroadband:
 libpe:
 	$(MAKE) -C src/libpe all PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 
-# ray tracing routines
-#raytrace:
-#	$(MAKE) -C src/raytrace all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 
 # Normal modes, single frequency, effective sound speed approximation
 modess:
@@ -51,38 +47,15 @@ modess:
 modbb:
 	$(MAKE) -C src/modbb all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 
-# # Normal modes, range-dependent, one-way coupled modes
-# modess_rd_1wcm:
-# 	$(MAKE) -C src/modess_rd_1wcm all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 
 # High-angle high-mach parabolic equation
 epade_pe:
 	$(MAKE) -C src/epade_pe all PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 
-# 3-D parabolic equation
-epade_pe_3d:
-	$(MAKE) -C src/epade_pe_3d all PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-
 # Wide-angle high-mach number normal modes, single frequency
 wmod:
 	$(MAKE) -C src/wmod all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	
-# Complex normal modes, single frequency, effective sound speed
-cmodess:
-	$(MAKE) -C src/cmodess all PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-
-# Complex normal modes, broadband
-# cmodbb:
-# 	$(MAKE) -C src/cmodbb all PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-
-# wnlrt:
-# 	$(MAKE) -C src/wnlrt all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-
-# tdpape:
-# 	$(MAKE) -C src/tdpape all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	
-#modess_rd_2wcm:
-#	$(MAKE) -C src/modess_rd_2wcm ModessRD2WCM PETSC_ARCH=@PETSC_ARCH_COMPLEX@
 
 # clean everything up
 clean:
@@ -95,10 +68,8 @@ clean:
 	-$(MAKE) -C src/modess clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/modbb clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/epade_pe clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-$(MAKE) -C src/epade_pe_3d clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/wmod clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-$(MAKE) -C src/cmodess clean  PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-rm bin/CModess  bin/ModBB  bin/Modess  bin/ePape  bin/WMod lib/libatmosphere.a lib/libcommon.a lib/libmodes.a lib/libcmodes.a lib/libbroadband.a lib/libpe.a
+	-rm bin/ModBB  bin/Modess  bin/ePape  bin/WMod lib/libatmosphere.a lib/libcommon.a lib/libmodes.a lib/libcmodes.a lib/libbroadband.a lib/libpe.a
 
 
-.PHONY:  common atmosphere libmodes libcmodes libpe libbroadband modess modbb epape_pe wmod cmodess clean
+.PHONY:  common atmosphere libmodes libcmodes libpe libbroadband modess modbb epape_pe wmod clean
