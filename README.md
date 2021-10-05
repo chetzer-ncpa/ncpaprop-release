@@ -14,7 +14,7 @@ To download and install PETSc and SLEPc locally to the ncpaprop installation:
 
 	./configure --with-localpetsc --enable-autodependencies
 
-See the manual for detailed information on additional parameters.
+See the [manual](./NCPA_prop_manual.pdf) for detailed information on additional parameters.
 
 2. Run 
 
