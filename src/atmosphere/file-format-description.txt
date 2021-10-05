@@ -1,0 +1,86 @@
+NCPAPROP 1-D ATMOSPHERIC PROFILE
+FILE FORMAT DESCRIPTION
+
+
+The NCPA 1-D atmospheric file format described herein was designed to meet several
+criteria combining readability and ease of use.  These criteria include:
+
+* Remaining easy to read into programs in various languages
+* To the extent practical, remaining human-readable
+* Supporting an arbitrary number of vector and scalar properties
+* Self-describing, particularly in terms of units
+* Natively usable in Gnuplot
+
+The file format consists of one or more header comment lines, which may be 
+formatted (i.e. contain descriptive information) or unformatted (true
+comments), followed by a series of columns of data representing the various
+atmospheric properties contained in the profile.  Column 1 is assumed to be 
+the independent altitude property, while all other columns are assumed to 
+be the property value at that altitude.  Altitude of 0 is generally assumed to
+be MSL.
+
+Comment lines always begin with the '#' character.  Unformatted comments may
+contain any characters after that with the exception of the '%' character,
+which if found in the second character position indicates a formatted comment.
+This allows all of the header lines to be easily ignored if desired, while
+formatted, informative comments can also be easily identified and parsed.
+
+Informative comment lines contain information describing vector and scalar
+properties, and start with the characters '#%'.  Following that flag will
+be 3 (for vector properties) or 4 (for scalar properties) comma- and/or 
+space-separated fields.  The fields are:
+
+Field 1: Column number, with the first column designated as column 1.  A
+         column number of 0 indicates a scalar quantity (i.e. one that
+         does not depend on altitude).
+Field 2: The string "tag" that will be used to identify this property in
+         the code.  The NCPA atmospheric library uses a string-mapping
+         system that associates a data vector with a text string for
+         identification.  In NCPAPROP, the following conventions are
+         used:
+         P - Atmospheric pressure
+         RHO - Air density
+         T - Temperature
+         U - Zonal (west-to-east) wind speed
+         V - Meridional (south-to-north) wind speed
+         W - Vertical (ground-to-space) wind speed
+         Z - Altitude above MSL
+         Z0 - Ground altitude (scalar quantity, see below)
+         Almost any other text strings may be specified for other 
+         properties.  In general, ncpaprop calculations will require all 
+         of the properties listed above except W (not used) and Z0 
+         (assumed to be 0 if not present).  Tags beginning and ending with
+         the underscore character '_' are reserved for internal use.
+Field 3: A string representing the units in which the property is given.  The
+		 following is a non-exhaustive list of recognized strings, which are
+		 not case-sensitive:
+		 "K", "DEGK", "DEG K", "DEGREES K"
+		 "C", "DEGC", "DEG C", "DEGREES C"
+		 "F", "DEGF", "DEG F", "DEGREES F"
+		 "M", "METERS"
+		 "KM", "KILOMETERS"
+		 "M/S", "MPS", "MPERS", "M PER S", METERS PER SECOND"
+		 "KM/S", "KMPS", "KMPERS", "KM PER S", "KILOMETERS PER SECOND"
+		 "PA", "PASCAL", "PASCALS"
+		 "MBAR", "MILLIBAR", "MILLIBARS"
+		 "KG/M3", "KGPM3", "KILOGRAMS PER CUBIC METER"
+		 "G/CM3", "GPCM3", "GRAMS PER CUBIC CENTIMETER"
+		 "AZIMUTH", "DEG CW FROM N", "DEGREES CLOCKWISE FROM NORTH"
+		 "DEG CCW FROM E"
+		 "DEG", "DEGREES"
+		 "RAD", "RADIANS"
+Field 4: Property value (scalars only)
+
+So, for example, in the canonical test profile provided in the file
+NCPA_canonical_profile_zuvwtdp.dat, the following descriptive header
+is given:
+
+#% 0, Z0, m, 152.5
+#% 1, Z, km
+#% 2, U, m/s
+#% 3, V, m/s
+#% 4, W, m/s
+#% 5, T, degK
+#% 6, RHO, g/cm3
+#% 7, P, mbar
+

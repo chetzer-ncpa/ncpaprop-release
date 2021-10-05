@@ -1,0 +1,29 @@
+include @PETSC_INCLUDE_FILE_GENERIC@
+include @SLEPC_INCLUDE_FILE_GENERIC@
+
+
+# the following provides CCPPFLAGS, CLINKER, CC_INCLUDES, SLEPC_INCLUDE, SLEPC_LIB
+#include $(SLEPC_DIR)/conf/slepc_common
+
+INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
+#OBJS=WMod_main.o SolveWMod.o wmod_parameters.o
+OBJS=WMod_main.o wmod_parameters.o
+TARGET=WMod
+
+
+all: $(TARGET)
+
+.PHONY: clean
+
+# link	
+$(TARGET): $(OBJS) @STATICLIBS@
+	${CXX_LINKER} -o $@ $^  @LDFLAGS@ @STATICLIBS@ @MODELIBS@ ${CXX_LINKER_FLAGS} ${SLEPC_LIB} ${PETSC_LIB} @LIBS@
+	cp $@ ../../bin
+	
+# compile 
+%.o: %.cpp
+	${CXX} ${INCPATHS} @CXXFLAGS@ ${CXX_FLAGS} @WARNINGFLAGS@ -o $@ $<
+
+clean::
+	-$(RM) -rf $(OBJS) $(TARGET)
+
