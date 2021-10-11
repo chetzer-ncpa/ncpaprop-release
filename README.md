@@ -1,6 +1,6 @@
 # ncpaprop
 
-[![DOI](https://zenodo.org/badge/413896280.svg)](https://zenodo.org/badge/latestdoi/413896280)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5562712.svg)](https://doi.org/10.5281/zenodo.5562712)
 
 # Installation
 
