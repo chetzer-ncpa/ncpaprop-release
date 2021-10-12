@@ -50,6 +50,7 @@ namespace NCPA {
 			units_t *buffer_units );
 		void get_altitude_vector( double range, double *buffer );
 		void get_property_vector( double range, const std::string &key, double *buffer );
+		units_t get_range_units() const;
 		units_t get_altitude_units( double range );
 		units_t get_property_units( double range, const std::string &key );
 		bool contains_scalar( double range, const std::string &key );

@@ -213,6 +213,10 @@ void NCPA::Atmosphere2D::get_property_vector( double range, const std::string &k
 	profiles_.at( ind )->get_property_vector( key, buffer );
 }
 
+NCPA::units_t NCPA::Atmosphere2D::get_range_units() const {
+	return range_units_;
+}
+
 NCPA::units_t NCPA::Atmosphere2D::get_altitude_units( double range ) {
 	size_t ind = get_profile_index( range );
 	return profiles_.at( ind )->get_altitude_units();
@@ -433,6 +437,8 @@ void NCPA::Atmosphere2D::generate_ground_elevation_spline_() {
 
 void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 
+	std::cout << "Reading topography from " << ground_elevation_file_
+			  << std::endl;
 	std::ifstream topofile( ground_elevation_file_ );
 	units_t z_units = get_altitude_units( 0.0 );
 	units_t r_units = range_units_;
@@ -445,47 +451,51 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 	std::getline( topofile, line );
 	while( topofile.good() ) {
 		line = NCPA::deblank( line );
-		if (line[ 0 ] == '#') {
-			if (line.size() > 1 && line[ 1 ] == '%') {
-				size_t delimpos = line.find_last_of( delims );
-				if (delimpos == std::string::npos) {
-					std::cerr << "Topographic file descriptive header line "
-							  << line << " has no delimiter characters ("
-							  << delims << "), ignoring" << std::endl;
-				} else {
-					// chop off first two characters
-					line.erase(0,2);
-					line = NCPA::deblank( line );
-					delimpos = line.find_last_of( delims );
-					std::string ustr = NCPA::deblank(line.substr( delimpos ));
-					units_t tempunits = NCPA::Units::fromString( ustr );
-					if (tempunits == UNITS_NONE) {
-						std::cerr << "Unrecognized units " << ustr << ", ignoring"
-								  << std::endl;
+		if (line.size() > 0) {
+			if (line[ 0 ] == '#') {
+				if (line.size() > 1 && line[ 1 ] == '%') {
+					size_t delimpos = line.find_last_of( delims );
+					if (delimpos == std::string::npos) {
+						std::cerr << "Topographic file descriptive header line "
+								  << line << " has no delimiter characters ("
+								  << delims << "), ignoring" << std::endl;
 					} else {
-						switch (line[0]) {
-							case 'r':
-							case 'R':
-								file_r_units = tempunits;
-								break;
-							case 'z':
-							case 'Z':
-								file_z_units = tempunits;
-								break;
-							default:
-								std::cerr << "Unrecognized parameter tag " << line[0]
-										  << ", must be in [RrZz].  Ignoring" << std::endl;
+						// chop off first two characters
+						line.erase(0,2);
+						line = NCPA::deblank( line );
+						delimpos = line.find_last_of( delims );
+						std::string ustr = NCPA::deblank(line.substr( delimpos ));
+						units_t tempunits = NCPA::Units::fromString( ustr );
+						if (tempunits == UNITS_NONE) {
+							std::cerr << "Unrecognized units " << ustr << ", ignoring"
+									  << std::endl;
+						} else {
+							switch (line[0]) {
+								case 'r':
+								case 'R':
+									file_r_units = tempunits;
+									break;
+								case 'z':
+								case 'Z':
+									file_z_units = tempunits;
+									break;
+								default:
+									std::cerr << "Unrecognized parameter tag " << line[0]
+											  << ", must be in [RrZz].  Ignoring" << std::endl;
+							}
 						}
 					}
 				}
+			} else {
+				std::vector< std::string > parts = NCPA::split( line );
+				double r = std::stod( parts[ 0 ] );
+				double z = std::stod( parts[ 1 ] );
+				rvec.push_back( NCPA::Units::convert( r, file_r_units, r_units ) );
+				zvec.push_back( NCPA::Units::convert( z, file_z_units, z_units ) );
 			}
-		} else {
-			std::vector< std::string > parts = NCPA::split( line );
-			double r = std::stod( parts[ 0 ] );
-			double z = std::stod( parts[ 1 ] );
-			rvec.push_back( NCPA::Units::convert( r, file_r_units, r_units ) );
-			zvec.push_back( NCPA::Units::convert( z, file_z_units, z_units ) );
 		}
+
+		std::getline( topofile, line );
 	}
 	topofile.close();
 
@@ -498,13 +508,18 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 	std::memset( topo_ranges_, 0, (np + 2) * sizeof(double) );
 
 	topo_ground_heights_[ 0 ] = rvec.front();
-	topo_ranges_[ 0 ] = -1000.0;
+	topo_ranges_[ 0 ] = NCPA::Units::convert( -1000.0, UNITS_DISTANCE_METERS, r_units );
 	for (size_t i = 0; i < np; i++) {
 		topo_ground_heights_[ i+1 ] = zvec[ i ];
 		topo_ranges_[ i+1 ] = rvec[ i ];
 	}
 	topo_ground_heights_[ np+1 ] = topo_ground_heights_[ np ];
-	topo_ranges_[ np+1 ] = topo_ranges_[ np ];
+	topo_ranges_[ np+1 ] = NCPA::max<double>(
+		topo_ranges_[ np ]
+			+ NCPA::Units::convert( 1000.0, UNITS_DISTANCE_METERS, r_units ),
+		NCPA::Units::convert( get_maximum_valid_range(),
+			get_range_units(), r_units )
+		);
 
 	gsl_spline_init( topo_spline_, topo_ranges_, topo_ground_heights_, np+2 ); 
 }
