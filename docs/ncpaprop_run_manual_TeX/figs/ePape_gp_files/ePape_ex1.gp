@@ -1,6 +1,7 @@
 set key samplen 2
 
 dir="code_outputs/"
+TL(x)=20*log10(x)
 
 set xlabel "Range [km]"
 set ylabel "TL [dB]"
@@ -10,7 +11,7 @@ set title "1D Transmission Loss Magnitude; 0.1 Hz"
 set term pngcairo enh color font ",14" size 820,500
 
 set out "../ePape_ex1_1d.png"
-plot dir."ex1_tloss_1d.pe" using 2:(TL(mag($3,$4))) lt 6 lw 3 title "" with lines
+plot dir."ex1_tloss_1d.pe" using 1:(TL(mag($3,$4))) lt 6 lw 3 title "" with lines
 
 unset key 
 

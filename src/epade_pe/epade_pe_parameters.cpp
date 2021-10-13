@@ -197,21 +197,21 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->setFooterIndent( 4 );
 	ps->setFooterHangingIndent( 4 );
 	ps->setCommandMode( true );
-	// ps->addFooterText("../bin/ePape --singleprop --starter gaussian --toy --freq 0.1 --azimuth 90 --maxrange_km 1000" );
-	// ps->addFooterText("../bin/ePape --singleprop --atmosfile NCPA_canonical_profile_trimmed.dat --freq 0.1 --azimuth 90 --maxrange_km 1000" );
 	ps->addBlankFooterLine();
-	// ps->addFooterText("../bin/ePape --singleprop --starter self --atmosfile NCPA_canonical_profile_trimmed.dat --freq 0.1 --azimuth 90 --maxrange_km 1000" );
+
+	// example 1
 	ps->addFooterText("../bin/ePape --singleprop --starter self --atmosfile NCPA_canonical_profile_trimmed.dat --freq 0.1 --azimuth 90 --maxrange_km 1000" );
 	ps->addBlankFooterLine();
-	//ps->addFooterText("../bin/ePape --singleprop --starter self --atmosfile2d atmosphere_2d_summary.dat --freq 0.5 --azimuth 90 --maxrange_km 1000 --lossless" );
-	ps->addFooterText("../bin/ePape --singleprop --starter self --atmosfile2d toy_profile_2d_summary.dat --freq 0.5 --azimuth 90 --maxrange_km 1000 --lossless --write_2d_tloss" );
+
+	// example 2
+	ps->addFooterText("../bin/ePape --singleprop --starter self --atmosfile2d toy_profile_2d_summary.dat --freq 0.5 --azimuth 90 --maxrange_km 1800 --write_2d_tloss" );
 	ps->addBlankFooterLine();
-	// ps->addFooterText("../bin/ePape --singleprop --starter self --atmosfile2d atmosphere_2d_summary.dat --freq 1.0 --azimuth 90 --maxrange_km 500 --topo");
-	// ps->addFooterText("../bin/ePape --singleprop --atmosfile2d atmosphere_2d_summary.dat --freq 1.0 --azimuth 90 --maxrange_km 500 --topo");
-	// ps->addBlankFooterLine();
-	// ps->addFooterText("../bin/ePape --multiprop --starter self --atmosfile NCPA_canonical_profile_trimmed.dat --freq 0.5 --azimuth_start 0 --azimuth_end 360 --azimuth_step 2 --maxrange_km 1000");
+
+	// example 3
 	ps->addFooterText("../bin/ePape --multiprop --starter self --atmosfile NCPA_canonical_profile_trimmed.dat --freq 0.5 --azimuth_start 0 --azimuth_end 360 --azimuth_step 2 --maxrange_km 1000");
 	ps->addBlankFooterLine();
+
+	// example 4
 	ps->addFooterText("../bin/ePape --singleprop --topo --starter self --atmosfile2d toy_profile_2d_summary_topo.dat --freq 0.5 --azimuth 90 --maxrange_km 1200 --write_2d_tloss --write_topography");
 	ps->setFooterHangingIndent( 0 );
 	ps->setCommandMode( false );

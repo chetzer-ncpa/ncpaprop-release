@@ -12,7 +12,7 @@ set title "1D Transmission Loss Magnitude; 0.5 Hz"
 set term pngcairo enh color font ",14" size 820,500
 
 set out "../ePape_ex2_1d.png"
-plot [0:1200] [*:*] dir."ex2_tloss_1d.pe" using 2:(20*log10(sqrt($3*$3+$4*$4))) ls 1 title "" with lines
+plot [0:1200] [*:*] dir."ex2_tloss_1d.pe" using 1:(20*log10(sqrt($3*$3+$4*$4))) ls 1 title "" with lines
 
 unset key 
 

@@ -626,8 +626,8 @@ Examples (run from 'samples' directory):
          --maxrange_km 1000
 
     ../bin/ePape --singleprop --starter self --atmosfile2d \
-         toy_profile_2d_summary.dat --freq 0.5 --azimuth 90 --maxrange_km 1000 \
-         --lossless --write_2d_tloss
+         toy_profile_2d_summary.dat --freq 0.5 --azimuth 90 --maxrange_km 1800 \
+         --write_2d_tloss
 
     ../bin/ePape --multiprop --starter self --atmosfile \
          NCPA_canonical_profile_trimmed.dat --freq 0.5 --azimuth_start 0 \
@@ -643,7 +643,7 @@ The basic functionality of ePape is to produce a single frequency transfer funct
 
 \verb+Options Control:+ Parameters and options can be sent to {\bf ePape} either on the command line, or through a parameter file \verb+epade_pe.param+ by setting the option \verb+--paramfile+. The option \verb+--printparams+ causes the current parameter set to be printed to the screen.
 
-\verb+Atmosphere:+ The input of atmospheric profiles is currently through ascii files specified using \verb+--atmosfile+ or \verb+--atmosfile2d+. The \verb+--atmosfile+ flag indicates that a stratified model atmosphere is being used, and a single file is specified. The \verb+--atmosfile2d+ flag indicates that a range dependent model atmosphere is being used and is specified through an atmospheric summary file. The summary file has two columns, range and filename; the files contain the atmsopheric specifications that commence at the indicated range. Binary format input is under development.
+\verb+Atmosphere:+ The input of atmospheric profiles is currently through ascii files specified using \verb+--atmosfile+ or \verb+--atmosfile2d+. The \verb+--atmosfile+ flag indicates that a stratified model atmosphere is being used, and a single file is specified. The \verb+--atmosfile2d+ flag indicates that a range dependent model atmosphere is being used and is specified through an atmospheric summary file. The summary file has two columns, range and filename; the files contain the atmospheric specifications valid at the indicated range. Binary format input is under development.
  
 \verb+Modes of Operation:+ Using the \verb+--singleprop+ option the attenuation along a single azimuth is computed. By default, the attenuation along the ground is saved in \verb+tloss_1d.pe+ and the attenuation in the entire range/altitude plane is saved in \verb+tloss_2d.pe+. With the \verb+--multiprop+ option the attenuation along a specified grid of azimuths is computed and stored in \verb+tloss_multiplot.pe+. In \verb+tloss_multiplot.pe+ data is stored in line seperated blocks of constant range. \verb+--multiprop+ uses the functionality of \verb+--singleprop+ for each azimuth. For convenience, the column format in \verb+tloss_1d.pe+ is the same as \verb+tloss_multiplot.pe+ in that the azimuth is saved in the second column. Currently, only stratified atmospheres are supported for \verb+--multiprop+. Support for range dependent atmospheres is under development. The \verb+--topo+ option causes {\bf ePape} to introduce the high density basement with interface given by a cubic spline of from the \verb+Z0+ values in the atmospheric profile files. Note that \verb+--topo+ is intrinsically range dependent and requires a summary file referencing a directory of profile files. The flag \verb+--write_topography+ causes the interpolated ground elevation to be written to a file. 
 
@@ -657,8 +657,9 @@ The {\bf ePape} help page ends with three examples designed to be run in the \ve
 
 \noindent 1) The first example is propagation a the stratified model atmosphere, the NCPA toy atmosphere, with source on the ground. The command line is 
 \begin{verbatim}
-    ../bin/ePape --singleprop --atmosfile NCPA_canonical_profile_trimmed.dat \
-         --freq 0.1 --azimuth 90 --maxrange_km 1000
+    ../bin/ePape --singleprop --starter self --atmosfile \
+         NCPA_canonical_profile_trimmed.dat --freq 0.1 --azimuth 90 \
+         --maxrange_km 1000
 \end{verbatim}
 and the results are shown in Fig.\,\ref{fig: ePape ex1}. The 1d transmission loss for ground to ground propagation is shown on the left plotted as transmission loss versus range, and the 2d transmission loss in the full range-altitude plane is shown on the right plotted as altitude versus range with transmission loss indicated by color. 
 
@@ -673,8 +674,9 @@ and the results are shown in Fig.\,\ref{fig: ePape ex1}. The 1d transmission los
 
 \noindent 2) The second example shows how to input a range dependent atmosphere. The command line is 
 \begin{verbatim}
-    ../bin/ePape --singleprop --atmosfile2d toy_profile_2d_summary.dat --freq 0.5 \
-      --azimuth 90 --maxrange_km 1800 --write_2d_tloss
+    ../bin/ePape --singleprop --starter self --atmosfile2d \
+         toy_profile_2d_summary.dat --freq 0.5 --azimuth 90 --maxrange_km 1800 \
+         --write_2d_tloss
 \end{verbatim}
 The contents of the summary file \verb+toy_profile_2d_summary.dat+ are shown below. 
 \begin{verbatim}
@@ -706,9 +708,9 @@ Each row contains a range (in km) and a file name. The range indicates where the
 
 \noindent 3) The third example shows how to use the \verb+--multiplot+ option for the NCPA toy atmosphere. The command line is
 \begin{verbatim}
-    ../bin/ePape --multiprop --atmosfile NCPA_canonical_profile_trimmed.dat \
-         --freq 0.5 --azimuth_start 0 --azimuth_end 360 --azimuth_step 2 \
-         --maxrange_km 1000
+    ../bin/ePape --multiprop --starter self --atmosfile \
+         NCPA_canonical_profile_trimmed.dat --freq 0.5 --azimuth_start 0 \
+         --azimuth_end 360 --azimuth_step 2 --maxrange_km 1000
 \end{verbatim}
 The lossless and lossy results are shown in Fig.\,\ref{fig: ePape ex3}. 
          
