@@ -259,33 +259,78 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	// set units
 	atm_profile_2d->convert_altitude_units( Units::fromString( "m" ) );
 	atm_profile_2d->convert_property_units( "Z0", Units::fromString( "m" ) );
-	atm_profile_2d->convert_property_units( "U", Units::fromString( "m/s" ) );
-	atm_profile_2d->convert_property_units( "V", Units::fromString( "m/s" ) );
-	atm_profile_2d->convert_property_units( "T", Units::fromString( "K" ) );
-	atm_profile_2d->convert_property_units( "P", Units::fromString( "Pa" ) );
-	atm_profile_2d->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
+	if (atm_profile_2d->contains_vector(0,"U")) {
+		atm_profile_2d->convert_property_units( "U", Units::fromString( "m/s" ) );
+	}
+	if (atm_profile_2d->contains_vector(0,"V")) {
+		atm_profile_2d->convert_property_units( "V", Units::fromString( "m/s" ) );
+	}
+	if (atm_profile_2d->contains_vector(0,"T")) {
+		atm_profile_2d->convert_property_units( "T", Units::fromString( "K" ) );
+	}
+	if (atm_profile_2d->contains_vector(0,"P")) {
+		atm_profile_2d->convert_property_units( "P", Units::fromString( "Pa" ) );
+	}
+	if (atm_profile_2d->contains_vector(0,"RHO")) {
+		atm_profile_2d->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
+	}
 	z_ground = atm_profile_2d->get( 0.0, "Z0" );
 
 	// calculate derived quantities
+	double c0;
 	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
 		 it != atm_profile_2d->last_profile(); ++it) {
 		if ( (*it)->contains_vector( "C0" ) ) {
 			(*it)->convert_property_units( "C0", Units::fromString( "m/s" ) );
 			(*it)->copy_vector_property( "C0", "_C0_" );
+			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
 		} else {
 			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
 				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
 					Units::fromString( "m/s" ) );
-			} else {
+				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+			} else if ( (*it)->contains_vector("T") ) {
 				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
 					Units::fromString( "m/s" ) );
+				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+			} else if ( (*it)->contains_vector( "CEFF" ) ) {
+				c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
+			} else {
+				throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
 			}
 		}
 	}
-	atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
-	atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
+
+	// wind speed
+	if (atm_profile_2d->contains_vector(0,"WS")) {
+		atm_profile_2d->convert_property_units("WS", Units::fromString("m/s") );
+		atm_profile_2d->copy_vector_property( "WS", "_WS_" );
+	} else if (atm_profile_2d->contains_vector(0,"U")
+		&& atm_profile_2d->contains_vector(0,"V")) {
+		atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
+	}
+
+	// wind direction
+	if (atm_profile_2d->contains_vector(0,"WD")) {
+		atm_profile_2d->convert_property_units("WD",
+			NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
+		atm_profile_2d->copy_vector_property( "WD", "_WD_" );
+	} else if (atm_profile_2d->contains_vector(0,"U")
+		&& atm_profile_2d->contains_vector(0,"V")) {
+		atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
+	}
+
+	// attenuation
 	if ( attnfile.size() > 0 ) {
 		atm_profile_2d->read_attenuation_from_file( "_ALPHA_", param->getString( "attnfile" ) );
+	} else {
+		if (  !(atm_profile_2d->contains_vector(0.0, "T")
+				&& atm_profile_2d->contains_vector(0.0, "P")
+				&& atm_profile_2d->contains_vector(0.0, "RHO") ) ) {
+			std::cout << "At least one of T, P, or RHO is absent, switching to lossless propagation"
+					  << std::endl;
+			lossless = true;
+		}
 	}
 
 	if ( topofile.size() > 0 ) {
@@ -294,7 +339,6 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 	// calculate/check z resolution
 	dz = 				param->getFloat( "dz_m" );
-	double c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
 	double lambda0 = c0 / freq;
   	if (dz <= 0.0) {
   		dz = lambda0 / 20.0;
@@ -304,9 +348,9 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
   		std::cout << "Setting dz to " << dz << " m" << std::endl;
   	}
   	if (dz > (c0 / freq / 10.0) ) {
-  		std::cerr << "Altitude resolution is too coarse.  Must be <= " << lambda0 / 10.0 << " meters." 
-  			<< std::endl;
-  		exit(0);
+  		std::ostringstream oss;
+		oss << "Altitude resolution is too coarse.  Must be <= " << lambda0 / 10.0 << " meters.";
+  		throw std::runtime_error( oss.str() );
   	}
 
   	// calculate ground impedence
@@ -425,14 +469,15 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			<< calc_az << " deg" << std::endl;
 
 		profile_index = -1;
-		atm_profile_2d->calculate_wind_component( "_WC_", "_WS_", "_WD_",
-			calc_az );
-		atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
+		calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
+		// atm_profile_2d->calculate_wind_component( "_WC_", "_WS_", "_WD_",
+		// 	calc_az );
+		// atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
 
 		for (size_t freqind = 0; freqind < NF; freqind++) {
 
 			freq = f[ freqind ];
-			if (attnfile.length() == 0) {
+			if ( (!lossless) && (attnfile.length() == 0)) {
 				atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
 			}
 
@@ -615,7 +660,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 		}
 		
 		atm_profile_2d->remove_property( "_CEFF_" );
-		atm_profile_2d->remove_property( "_WC_" );
+		// atm_profile_2d->remove_property( "_WC_" );
 	}
 
 	ierr = MatDestroy( &B );       CHKERRQ(ierr);
@@ -944,16 +989,18 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			<< calc_az << " deg" << std::endl;
 
 		profile_index = -1;
-		atm_profile_2d->calculate_wind_component( "_WC_", "_WS_", "_WD_",
-			calc_az );
-		atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
+		calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
+
+		// atm_profile_2d->calculate_wind_component( "_WC_", "_WS_", "_WD_",
+		// 	calc_az );
+		// atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
 
 		for (size_t freqind = 0; freqind < NF; freqind++) {
 
 			freq = f[ freqind ];
 
 			// calculate attenuation as a function of frequency if not externally supplied
-			if (attnfile.length() == 0) {
+			if ( (!lossless) && (attnfile.length() == 0)) {
 				atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
 			}
 
@@ -1210,7 +1257,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		}
 		
 		atm_profile_2d->remove_property( "_CEFF_" );
-		atm_profile_2d->remove_property( "_WC_" );
+		// atm_profile_2d->remove_property( "_WC_" );
 	}
 
 	ierr = MatDestroy( &B );       CHKERRQ(ierr);
@@ -2361,4 +2408,31 @@ void NCPA::EPadeSolver::write_topography( std::string filename, double azimuth,
 
 	outfile.close();
 
+}
+
+void NCPA::EPadeSolver::calculate_effective_sound_speed(
+	NCPA::Atmosphere2D *atm, double az, const std::string &new_key ) {
+
+	// first: was it given explicitly using column "CEFF"?
+	if (atm->contains_vector( 0.0, "CEFF" )) {
+		atm->convert_property_units( "CEFF", Units::fromString( "m/s" ) );
+		atm->copy_vector_property( "CEFF", new_key );
+
+	// do we have the wind speed and direction?
+	} else if (atm->contains_vector( 0.0, "_WS_")
+		&& atm->contains_vector( 0.0, "_WD_") ) {
+		atm->calculate_wind_component( "_WC_", "_WS_", "_WD_", az );
+		atm->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
+		atm->remove_property( "_WC_" );
+	} else {
+		std::ostringstream oss;
+		oss << "Cannot calculate effective sound speed, necessary components not found."
+			<< std::endl
+			<< "Input atmosphere must have one of:" << std::endl
+			<< "  CEFF column, or" << std::endl
+			<< "  WS and WD columns for wind speed and direction, or" << std::endl
+			<< "  U and V columns for zonal and meridional wind vectors." << std::endl;
+
+		throw std::runtime_error( oss.str() );
+	}
 }

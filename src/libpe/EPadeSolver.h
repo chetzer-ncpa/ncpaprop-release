@@ -99,6 +99,8 @@ namespace NCPA {
 			double r, double z_g, bool use_lossless, bool use_top_layer, double freq, bool use_absolute_z,
 			double &k0, double &c0, double *c_vec, double *a_vec, std::complex<double> *k_vec, 
 			std::complex<double> *n_vec );
+		void calculate_effective_sound_speed( NCPA::Atmosphere2D *atm,
+			double azimuth, const std::string &new_key );
 
 		double check_ground_height_coincidence_with_grid( double *z, 
 			size_t NZ, double tolerance, double z_ground );
@@ -152,11 +154,6 @@ namespace NCPA {
 	};
 
 }
-
-
-
-
-
 
 
 #endif

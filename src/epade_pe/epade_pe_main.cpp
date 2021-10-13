@@ -7,6 +7,7 @@
 #include <vector>
 #include <cfloat>
 #include <fstream>
+#include <stdexcept>
 
 // timing
 #include <chrono>
@@ -63,12 +64,19 @@ int main( int argc, char **argv ) {
 		return 0;
 	}
 	
-	EPadeSolver *solver = new EPadeSolver( param );
-	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	solver->solve();
-	high_resolution_clock::time_point t2 = high_resolution_clock::now();
-	duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-	cout << "Elapsed time: " << time_span.count() << " seconds." << endl;
+	EPadeSolver *solver;
+	try {
+		solver = new EPadeSolver( param );
+		high_resolution_clock::time_point t1 = high_resolution_clock::now();
+		solver->solve();
+		high_resolution_clock::time_point t2 = high_resolution_clock::now();
+		duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+		cout << "Elapsed time: " << time_span.count() << " seconds." << endl;
+		delete solver;
+	} catch (std::runtime_error& e) {
+		std::cout << "ePape run failed with the following error:"
+				  << endl << e.what() << endl;
+	}
 
 	/*
 	cout << "Writing 1-D output to tloss_1d.pe" << endl;
@@ -77,7 +85,7 @@ int main( int argc, char **argv ) {
 	solver->output2DTL( "tloss_2d.pe" );
 	*/
 
-	delete solver;
+	// delete solver;
 	delete param;
 
 	ierr = PetscFinalize();
