@@ -879,7 +879,7 @@ void NCPA::Atmosphere1D::print_atmosphere( const std::vector< std::string >& col
 
 void NCPA::Atmosphere1D::print_atmosphere( const std::string &altitude_key,
 		std::ostream& os ) {
-	print_atmosphere( get_keys(), altitude_key, os );
+	print_atmosphere( get_vector_keys(), altitude_key, os );
 }
 
 void NCPA::Atmosphere1D::resample( double new_dz ) {
