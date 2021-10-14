@@ -62,14 +62,13 @@ clean:
 	-$(MAKE) -C src/common clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/atmosphere clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/libmodes clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-$(MAKE) -C src/libcmodes clean  PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/libbroadband clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/libpe clean  PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/modess clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/modbb clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/epade_pe clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/wmod clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-rm bin/ModBB  bin/Modess  bin/ePape  bin/WMod lib/libatmosphere.a lib/libcommon.a lib/libmodes.a lib/libcmodes.a lib/libbroadband.a lib/libpe.a
+	-rm bin/ModBB  bin/Modess  bin/ePape  bin/WMod lib/libatmosphere.a lib/libcommon.a lib/libmodes.a lib/libbroadband.a lib/libpe.a
 
 
-.PHONY:  common atmosphere libmodes libcmodes libpe libbroadband modess modbb epape_pe wmod clean
+.PHONY:  common atmosphere libmodes libpe libbroadband modess modbb epape_pe wmod clean
