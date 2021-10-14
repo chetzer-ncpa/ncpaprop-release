@@ -209,7 +209,7 @@ Finally, the option \verb+--nfft+ sets the size of the FFT to be used in the wav
 As an example consider the following (note that this example is different from the ones that are on the {\bf ModBB} help page). Here a dispersion file is written for eastward propagation in the NCPA toy atmosphere. The bandwidth is chosen to be small, $F=0.5$ Hz, so that the file computes fairly rapidly. $\Delta f$ is chosen to be 0.002 corresponding to a time window, $T$, of 500 seconds. Calculations are done using {\bf Modess}. 
 
 \begin{verbatim} 
-    ../bin/ModBB --dispersion --disperson-file myDispersionFile.dat \
+    ../bin/ModBB --dispersion --dispersion-file myDispersionFile.dat \
                  --atmosfile NCPA_canonical_profile_zuvwtdp.dat \
                  --azimuth 90 --method modess \
                  --f_min 0.002 --f_step 0.002 --f_max 0.5
