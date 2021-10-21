@@ -671,6 +671,7 @@ build_vendor
 build_cpu
 build
 local_slepc_version
+local_petsc_version
 local_petsc_arch_complex
 local_petsc_arch_real
 local_slepc_dir
@@ -732,6 +733,7 @@ local_petsc_dir
 local_slepc_dir
 local_petsc_arch_real
 local_petsc_arch_complex
+local_petsc_version
 local_slepc_version
 CXX
 CXXFLAGS
@@ -1403,6 +1405,8 @@ Some influential environment variables:
               Override automatic PETSc real architecture name
   local_petsc_arch_complex
               Override automatic PETSc complex architecture name
+  local_petsc_version
+              Override automatic PETSc version number
   local_slepc_version
               Override automatic (or outdated) SLEPc version number
   CXX         C++ compiler command
@@ -2430,6 +2434,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # set default variables
 default_petsc_build_dir="${abs_builddir}/extern/petsc"
 default_petsc_branch="release"
+default_petsc_version=""
 petsc_url="https://gitlab.com/petsc/petsc.git"
 default_slepc_build_dir="${abs_builddir}/extern/slepc"
 default_slepc_version="3.16.0"
@@ -2488,6 +2493,7 @@ fi
 
 
 # Environmental variables
+
 
 
 
@@ -6778,6 +6784,22 @@ else
   petsc_build_dir="$(pwd)/extern/petsc"
 fi
 
+		# See if default PETSc version is overridden
+		if test "x$local_petsc_version" = "x"; then :
+
+				{ $as_echo "$as_me:${as_lineno-$LINENO}: Using default PETSc" >&5
+$as_echo "$as_me: Using default PETSc" >&6;}
+				petsc_version=""
+
+else
+
+				{ $as_echo "$as_me:${as_lineno-$LINENO}: Using PETSc version ${local_petsc_version}" >&5
+$as_echo "$as_me: Using PETSc version ${local_petsc_version}" >&6;}
+				petsc_version="v${local_petsc_version}"
+
+
+fi
+
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: petsc_build_dir = ${petsc_build_dir}" >&5
 $as_echo "$as_me: petsc_build_dir = ${petsc_build_dir}" >&6;}
 
@@ -8023,6 +8045,16 @@ $as_echo "no, cloning" >&6; }
 
 fi
 
+		# Version
+		if test "x${petsc_version}" != "x"; then :
+
+				{ $as_echo "$as_me:${as_lineno-$LINENO}: Checking out branch ${petsc_version}" >&5
+$as_echo "$as_me: Checking out branch ${petsc_version}" >&6;}
+				git checkout ${petsc_version}
+
+
+fi
+
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for existing ${petsc_local_arch_name_real} architecture" >&5
 $as_echo_n "checking for existing ${petsc_local_arch_name_real} architecture... " >&6; }
 		as_ac_File=`$as_echo "ac_cv_file_${petsc_build_dir}/${petsc_local_arch_name_real}/lib/petsc/conf/petscvariables" | $as_tr_sh`
@@ -8413,6 +8445,8 @@ else
   slepc_build_dir="$(pwd)/extern/slepc"
 
 fi
+
+	# See if default SLEPc version is overridden
 	if test "x$local_slepc_version" = "x"; then :
   slepc_version=$default_slepc_version
 else
