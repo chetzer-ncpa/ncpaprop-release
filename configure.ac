@@ -13,6 +13,7 @@ AC_LANG([C++])
 # set default variables
 default_petsc_build_dir="${abs_builddir}/extern/petsc"
 default_petsc_branch="release"
+default_petsc_version=""
 petsc_url="https://gitlab.com/petsc/petsc.git"
 default_slepc_build_dir="${abs_builddir}/extern/slepc"
 default_slepc_version="3.16.0"
@@ -57,6 +58,7 @@ AC_ARG_VAR(local_petsc_dir,[Override default local PETSc installation directory]
 AC_ARG_VAR(local_slepc_dir,[Override default local SLEPc installation directory])
 AC_ARG_VAR(local_petsc_arch_real,[Override automatic PETSc real architecture name])
 AC_ARG_VAR(local_petsc_arch_complex,[Override automatic PETSc complex architecture name])
+AC_ARG_VAR(local_petsc_version,Override automatic PETSc version number)
 AC_ARG_VAR(local_slepc_version,Override automatic (or outdated) SLEPc version number)
 
 
@@ -274,6 +276,17 @@ AS_IF(
 			[petsc_build_dir=${local_petsc_dir}],
 			[petsc_build_dir="$(pwd)/extern/petsc"])
 
+		# See if default PETSc version is overridden
+		AS_IF([test "x$local_petsc_version" = "x"],
+			[
+				AC_MSG_NOTICE([Using default PETSc])
+				petsc_version=""
+			],[
+				AC_MSG_NOTICE([Using PETSc version ${local_petsc_version}])
+				petsc_version="v${local_petsc_version}"
+			]
+		)
+
 		AC_MSG_NOTICE([petsc_build_dir = ${petsc_build_dir}])
 
 		# check for extra configuration options.
@@ -361,6 +374,14 @@ AS_IF(
 			[
 				AC_MSG_RESULT([no, cloning])
 				git clone -b ${default_petsc_branch} ${petsc_url} .
+			]
+		)
+
+		# Version
+		AS_IF([test "x${petsc_version}" != "x"],
+			[
+				AC_MSG_NOTICE([Checking out branch ${petsc_version}])
+				git checkout ${petsc_version}
 			]
 		)
 
@@ -491,6 +512,8 @@ AS_IF([test "x${with_localslepc}" = "xyes"],[
 		[slepc_build_dir=${local_slepc_dir}],
 		[slepc_build_dir="$(pwd)/extern/slepc"]
 	)
+
+	# See if default SLEPc version is overridden
 	AS_IF([test "x$local_slepc_version" = "x"],
 		[slepc_version=$default_slepc_version],
 		[slepc_version=$local_slepc_version]
