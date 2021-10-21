@@ -49,7 +49,12 @@ The user may then simply issue the command
 \texttt{./configure}
 
 \noindent
-to set up the build environment and make sure all prerequisites are met.  Alternately, the user may request that local instances of PETSc and SLEPc be installed in the \texttt{ncpaprop} directory tree with the \texttt{--with-localpetsc} flag.  Additional flags to control this process include:
+to set up the build environment and make sure all prerequisites are met.  Alternately, the user may request that local instances of PETSc and SLEPc be installed in the \texttt{ncpaprop} directory tree with the \texttt{--with-localpetsc} flag.  This approach is recommended if the user has no previous experience with \textbf{PETSc} and/or doesn't want to bother with a system-wide installation of \textbf{PETSc}.  The recommended command for this circumstance is:
+
+\texttt{./configure --with-localpetsc local\_petsc\_version=3.13.4 local\_slepc\_version=3.13.4}
+
+\noindent
+Currently we specify the versions of \textbf{PETSc} and \textbf{SLEPc} to avoid an issue with more recent versions that cause a crash in the \textbf{Modess} module.  Additional flags to control this process include:
 
 \begin{description}
 \item[\texttt{--enable-autodependencies}]\hfill \\
@@ -70,7 +75,7 @@ Download and build the current \texttt{maint} branch of \textbf{PETSc}.  Use of 
 
 \item[\texttt{--with-localslepc}]\hfill \\
 \noindent
-Download and build the latest version of \textbf{SLEPc}, which at the time of release is \textbf{3.12.2}.
+Download and build the latest version of \textbf{SLEPc}, which at the time of release is \textbf{3.16.0}.  NOTE: versions of \textbf{SLEPc} newer than 3.13.4 currently will cause the \textbf{Modess} module to crash.  See \texttt{local\_petsc\_version} and \texttt{local\_slepc\_version} below.
 
 \item[\texttt{--with-localpetscdebug}]\hfill \\
 \noindent
@@ -95,6 +100,10 @@ Override the default \textbf{PETSc} real architecture name (defaults to \texttt{
 \item[\texttt{local\_petsc\_arch\_complex=VALUE}]\hfill \\
 \noindent
 Override the default \textbf{PETSc} complex architecture name (defaults to \texttt{arch-\$OS-complex} or \texttt{arch-\$OS-complex}).
+
+\item[\texttt{local\_petsc\_version=VALUE}]\hfill \\
+\noindent
+Override the default \textbf{PETSc} version number for determining the release branch.  By default the latest release version will be used.
 
 \item[\texttt{local\_slepc\_version=VALUE}]\hfill \\
 \noindent
