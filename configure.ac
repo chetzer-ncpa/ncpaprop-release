@@ -382,6 +382,9 @@ AS_IF(
 			[
 				AC_MSG_NOTICE([Checking out branch ${petsc_version}])
 				git checkout ${petsc_version}
+				AS_IF([test $? != 0],
+					[AC_MSG_ERROR([Error switching to PETSc version ${petsc_version}])]
+				)
 			]
 		)
 

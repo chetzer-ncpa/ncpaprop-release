@@ -103,18 +103,22 @@ int NCPA::EigenEngine::doESSCalculation( double *diag, int Nz_grid, double dz, d
 	Set solver parameters at runtime
 	*/
 	ierr = EPSSetFromOptions(eps);CHKERRQ(ierr);
-	ierr = EPSSetType(eps,"krylovschur"); CHKERRQ(ierr);
+	ierr = EPSSetType(eps,EPSKRYLOVSCHUR); CHKERRQ(ierr);
 	ierr = EPSSetDimensions(eps,10,PETSC_DECIDE,PETSC_DECIDE); CHKERRQ(ierr); // leaving this line in speeds up the code; better if this is computed in chunks of 10? - consult Slepc manual
 	ierr = EPSSetTolerances(eps,tol,PETSC_DECIDE); CHKERRQ(ierr);
-
-	ierr = EPSGetST(eps,&stx); CHKERRQ(ierr);
-	ierr = STGetKSP(stx,&kspx); CHKERRQ(ierr);
-	ierr = KSPGetPC(kspx,&pcx); CHKERRQ(ierr);
-	ierr = STSetType(stx,"sinvert"); CHKERRQ(ierr);
-	ierr = KSPSetType(kspx,"preonly");
-	ierr = PCSetType(pcx,"cholesky");
 	ierr = EPSSetInterval(eps,pow(*k_min,2),pow(*k_max,2)); CHKERRQ(ierr);
 	ierr = EPSSetWhichEigenpairs(eps,EPS_ALL); CHKERRQ(ierr);
+	ierr = EPSGetST(eps,&stx); CHKERRQ(ierr);
+	ierr = STSetType(stx,STSINVERT); CHKERRQ(ierr);
+#if SLEPC_VERSION_LT(3,15,0)
+	ierr = STGetKSP(stx,&kspx); CHKERRQ(ierr);
+#else
+	ierr = EPSKrylovSchurGetKSP(eps,&kspx); CHKERRQ(ierr);
+#endif
+	ierr = KSPSetType(kspx,KSPPREONLY); CHKERRQ(ierr);
+	ierr = KSPGetPC(kspx,&pcx); CHKERRQ(ierr);
+	ierr = PCSetType(pcx,PCCHOLESKY); CHKERRQ(ierr);
+
 	
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	Solve the eigensystem
@@ -320,13 +324,13 @@ int NCPA::EigenEngine::doWideAngleCalculation( int Nz_grid, double dz, double k_
        Set solver parameters at runtime
     */
     ierr = EPSSetFromOptions(eps);CHKERRQ(ierr);
-    ierr = EPSSetType(eps,"krylovschur"); CHKERRQ(ierr);
+    ierr = EPSSetType(eps,EPSKRYLOVSCHUR); CHKERRQ(ierr);
     ierr = EPSSetDimensions(eps,nev_2,PETSC_DECIDE,PETSC_DECIDE); CHKERRQ(ierr);
     ierr = EPSSetTarget(eps,sigma); CHKERRQ(ierr);
     ierr = EPSSetTolerances(eps,tol,PETSC_DECIDE); CHKERRQ(ierr);
 
     ierr = EPSGetST(eps,&stx); CHKERRQ(ierr);
-    ierr = STSetType(stx,"sinvert"); CHKERRQ(ierr);
+    ierr = STSetType(stx,STSINVERT); CHKERRQ(ierr);
     ierr = EPSSetWhichEigenpairs(eps,EPS_TARGET_MAGNITUDE); CHKERRQ(ierr);
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
                         Solve the eigensystem
