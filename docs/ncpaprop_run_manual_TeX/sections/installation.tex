@@ -51,10 +51,10 @@ The user may then simply issue the command
 \noindent
 to set up the build environment and make sure all prerequisites are met.  Alternately, the user may request that local instances of PETSc and SLEPc be installed in the \texttt{ncpaprop} directory tree with the \texttt{--with-localpetsc} flag.  This approach is recommended if the user has no previous experience with \textbf{PETSc} and/or doesn't want to bother with a system-wide installation of \textbf{PETSc}.  The recommended command for this circumstance is:
 
-\texttt{./configure --with-localpetsc local\_petsc\_version=3.13.4 local\_slepc\_version=3.13.4}
+\texttt{./configure --with-localpetsc}
 
 \noindent
-Currently we specify the versions of \textbf{PETSc} and \textbf{SLEPc} to avoid an issue with more recent versions that cause a crash in the \textbf{Modess} module.  Additional flags to control this process include:
+Additional flags and variables to control this process include:
 
 \begin{description}
 \item[\texttt{--enable-autodependencies}]\hfill \\
@@ -75,7 +75,7 @@ Download and build the current \texttt{maint} branch of \textbf{PETSc}.  Use of 
 
 \item[\texttt{--with-localslepc}]\hfill \\
 \noindent
-Download and build the latest version of \textbf{SLEPc}, which at the time of release is \textbf{3.16.0}.  NOTE: versions of \textbf{SLEPc} newer than 3.13.4 currently will cause the \textbf{Modess} module to crash.  See \texttt{local\_petsc\_version} and \texttt{local\_slepc\_version} below.
+Download and build the latest version of \textbf{SLEPc}, which at the time of release is \textbf{3.16.0}.
 
 \item[\texttt{--with-localpetscdebug}]\hfill \\
 \noindent
@@ -109,6 +109,10 @@ Override the default \textbf{PETSc} version number for determining the release b
 \noindent
 Override the default \textbf{SLEPc} version number for determining the download filename.  This will generally be kept up-to-date by the \textbf{ncpaprop} maintainers, but is provided in the event of maintenance lag.
 \end{description}
+
+\noindent For example, to download and build the \texttt{3.13.4} versions of \textbf{PETSc} and \textbf{SLEPc}, use:
+
+\texttt{./configure --with-localpetsc local\_petsc\_version=3.13.4 local\_slepc\_version=3.13.4}
 
 \noindent The installation process will check the system for the presence of BLAS libraries and MPI executables; whatever is not found will be automatically downloaded and installed locally by the \textbf{PETSc} installer.  This process is independent of the \texttt{--with-autodependencies} flag, which applies only to the direct prerequisites of \textbf{ncpaprop}.  If this is undesirable, \textbf{PETSc} and \textbf{SLEPc} should be installed manually.  In general, \textbf{PETSc} and \textbf{SLEPc} are orders of magnitude more complex than \textbf{ncpaprop}, and only limited support for their installation can be provided by the \textbf{ncpaprop} developers.  Complex questions involving incompatibilies with the user's system are best directed to \textbf{PETSc} support.
 

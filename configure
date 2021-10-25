@@ -8051,6 +8051,10 @@ fi
 				{ $as_echo "$as_me:${as_lineno-$LINENO}: Checking out branch ${petsc_version}" >&5
 $as_echo "$as_me: Checking out branch ${petsc_version}" >&6;}
 				git checkout ${petsc_version}
+				if test $? != 0; then :
+  as_fn_error $? "Error switching to PETSc version ${petsc_version}" "$LINENO" 5
+
+fi
 
 
 fi

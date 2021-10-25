@@ -17,6 +17,8 @@ The output of the code is typically saved in text files that are column based. T
 \subsection{Atmospheric specifications}
 \label{sec: AtmoSpecs}
 Necessary input to all propagation codes in this package is the specification of the state of the atmosphere through which propagation is to be modelled. To provide portability and maximum flexibility to the user the state of the atmosphere is input in column-based text files to be provided by the user. Each such file specifies a stratified atmosphere and contains columns such as pressure, density, temperature and the three wind components u, v and w as a function of altitude. The files are self-describing using a formatted header that associates the column with a tag string and an indication of units.  Scalar quantities may also be specified in the header.  Formatted lines and normal (i.e. ignorable) comments may both be used in the header as needed; normal comments are preceded by the \verb"#" character, while formatted lines are preceded with \verb"#%".  Text tags are used to indicate to the modules which columns represent which types of quantities, and are expected to match the following convention:
+
+\begin{minipage}{\linewidth}
 \begin{verbatim}
     Z   - altitude above MSL
     U   - West-to-East wind speed
@@ -27,8 +29,11 @@ Necessary input to all propagation codes in this package is the specification of
     C0  - static sound speed (optional, will be calculated if not provided)
     Z0  - ground elevation (scalar, optional)
 \end{verbatim}
+\end{minipage}
 
-Any unrecognized tags will be ignored. Tags beginning and ending with underscores (for example \verb"_ALPHA_") should not be used, as this convention is used for internally-calculated quantities and may cause conflicts. Scalar quantities are indicated using column number \verb"0" and are in the format \verb"0, <tag>, <units>, <value>", while vector quantities use the format \verb"<column>, <tag>, <units>" with values provided in the columns.  Altitude, as the independent quantity, must be provided in column number \verb"1".  An example of a formatted header with units and a scalar quantity demonstrates this:
+\noindent Any unrecognized tags will be ignored. Tags beginning and ending with underscores (for example \verb"_ALPHA_") should not be used, as this convention is used for internally-calculated quantities and may cause conflicts. Scalar quantities are indicated using column number \verb"0" and are in the format \verb"0, <tag>, <units>, <value>", while vector quantities use the format \verb"<column>, <tag>, <units>" with values provided in the columns.  Altitude, as the independent quantity, must be provided in column number \verb"1".  An example of a formatted header with units and a scalar quantity demonstrates this:
+
+\begin{minipage}{\linewidth}
 \begin{verbatim}
 #% 0, Z0, m, 45.0
 #% 1, Z, km
@@ -39,9 +44,13 @@ Any unrecognized tags will be ignored. Tags beginning and ending with underscore
 #% 6, RHO, g/cm3
 #% 7, P, mbar
 \end{verbatim}
-In this example, the static sound speed \verb"C0" will be calculated internally from the pressure and density.
+\end{minipage}
+
+\noindent In this example, the static sound speed \verb"C0" will be calculated internally from the pressure and density.
 
 Quantities may be provided in any supported units and will be converted internally as needed.  Additional units may be added by the user as needed by following the directions given in the comment header in \verb"src/common/units.h".  Supported units as of this release may be indicated by any of the following codes, which are case-insensitive:
+
+\begin{minipage}{\linewidth}
 \begin{verbatim}
     temperature: K, DEGK, DEG K, DEGREES K
                  C, DEGC, DEG C, DEGREES C
@@ -59,8 +68,7 @@ Quantities may be provided in any supported units and will be converted internal
     angle:       DEG, DEGREES
                  RAD, RADIANS
 \end{verbatim}
-
-An example of an atmospheric profile file with the above structure is provided in the \verb"samples" directory in file \verb"NCPA_canonical_profile_trimmed.dat". Most tutorial examples included in this or the on-line help are based on this profile. The corresponding sound speed, effective sound speed for azimuth of $90^0$ and wind speed are illustrated in Figure \ref{fig:canonic_sound_speeds}.  Alternately, a separate file containing only the descriptive header may be specified using the command-line flag \verb"--atmosheaderfile".  If this flag is used, the indicated file will provide the profile metadata and any formatted header in the profile file will be ignored.  An example of this file is provided in the \verb"samples" directory in file \verb"sampleheader.dat" and an example of the proper usage is given as the first sample command in the {\bf WMod} package.
+\end{minipage}
 
 \begin{figure}
 \begin{center}
@@ -71,7 +79,11 @@ An example of an atmospheric profile file with the above structure is provided i
 \label{fig:canonic_sound_speeds}
 \end{figure}
 
+An example of an atmospheric profile file with the above structure is provided in the \verb"samples" directory in file \verb"NCPA_canonical_profile_trimmed.dat". Most tutorial examples included in this or the on-line help are based on this profile. The corresponding sound speed, effective sound speed for azimuth of $90\degree$ and wind speed are illustrated in Figure \ref{fig:canonic_sound_speeds}.  Alternately, a separate file containing only the descriptive header may be specified using the command-line flag \verb"--atmosheaderfile".  If this flag is used, the indicated file will provide the profile metadata and any formatted header in the profile file will be ignored.  An example of this file is provided in the \verb"samples" directory in file \verb"sampleheader.dat" and an example of the proper usage is given as the first sample command in the {\bf WMod} package.
+
 To model propagation through a stratified medium only a single specification file is required. Range dependent profiles for the \verb"ePape" module are specified by providing a summary file that associates a range (in km) with a 1-D atmospheric file in the above format, for example:
+
+\begin{minipage}{\linewidth}
 \begin{verbatim}
 0.0   profiles/profile0000.dat
 89.0  profiles/profile0089.dat
@@ -79,4 +91,6 @@ To model propagation through a stratified medium only a single specification fil
 269.0 profiles/profile0269.dat
 359.0 profiles/profile0359.dat
 \end{verbatim}
-The resulting 2-d specification is piecewise stratified with transitions at the midpoints between the indicated ranges. Additional range-dependent formats are under development.
+\end{minipage}
+
+\noindent The resulting 2-d specification is piecewise stratified with transitions at the midpoints between the indicated ranges. Additional range-dependent formats are under development.
