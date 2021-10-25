@@ -11,12 +11,12 @@ The intent behind **ncpaprop** is to provide reliable software engines for the m
 The following are required to install **ncpaprop**:
 
 * Bash and Perl interpreters.
-* A C++ compiler.  **ncpaprop** was written and built using **g++**.
-* GNU Make or its equivalent.
+* C and C++ compilers.  **ncpaprop** was written and built using the GCC compiler suite.
+* GNU Make or an equivalent that supplies the ``make`` command.
 * [FFTW](https://www.fftw.org/) for Fourier transforms.
 * The [GSL (GNU Scientific Library)](https://www.gnu.org/software/gsl/) for interpolation.
 
-If using a package manager for **FFTW** and **GSL**, note that the development versions are required.  If you are building **ncpaprop** on a Linux system, you can add the ``--enable-autodependencies`` flag to use the system package manager to install the correct versions of these; the flag supports both **apt** and **yum**.
+Most Linux distributions should come with the first three; MacOS users may have to install these using XCode and/or an external package manager such as Homebrew.  If using a package manager for **FFTW** and **GSL**, note that the development versions are required.  If you are building **ncpaprop** on a Linux system, you can add the ``--enable-autodependencies`` flag to use the system package manager to install the correct versions of these; the flag supports both **apt** and **yum**.  This flag is not supported on MacOS due to the number of potential package managers to choose from.
 
 # Installation
 
