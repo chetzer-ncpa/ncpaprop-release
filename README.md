@@ -35,7 +35,7 @@ If you already have architectures of both **PETSc** and **SLEPc** using each of 
 	
 or, alternately, you may specify the values of those four variables in the configure command as:
 
-	./configure PETSC_DIR=${PETSC_DIR} SLEPC_DIR=${SLEP_DIR} PETSC_ARCH_REAL=${PETSC_ARCH_REAL} PETSC_ARCH_COMPLEX=${PETSC_ARCH_COMPLEX} --enable-autodependencies
+	./configure PETSC_DIR=${PETSC_DIR} SLEPC_DIR=${SLEP_DIR} PETSC_ARCH_REAL=${PETSC_ARCH_REAL} PETSC_ARCH_COMPLEX=${PETSC_ARCH_COMPLEX}
 
 See the [manual](./NCPA_prop_manual.pdf) for detailed information on additional parameters.
 
