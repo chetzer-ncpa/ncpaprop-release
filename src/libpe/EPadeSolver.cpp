@@ -87,6 +87,7 @@ void NCPA::EPadeSolver::set_default_values() {
 
 	// int
 	NZ = 0; NR = 0; NR_requested = 0; NAz = 0; NF = 0; npade = 0; nzplot = 0;
+	skiplines = 0;
 
 	// bool
 	use_atm_1d = false; use_atm_2d = false; use_atm_toy = false; use_topo = false;
@@ -117,6 +118,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
   	NR_requested 		= param->getInteger( "Nrng_steps" );
   	freq 				= param->getFloat( "freq" );
 	npade 				= param->getInteger( "npade" );
+	skiplines			= param->getInteger( "skiplines" );
 	starter 			= param->getString( "starter" );
 	attnfile 			= param->getString( "attnfile" );
 	user_starter_file   = param->getString( "starterfile" );
@@ -222,15 +224,16 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		}
 	}
 
-	//NCPA::Atmosphere1D *atm_profile_1d;
 	if (use_atm_1d) {
-		atm_profile_2d = new NCPA::StratifiedAtmosphere2D( param->getString( "atmosfile" ), param->getString("atmosheaderfile") );
-	// } else if (use_atm_toy) {
-	// 	NCPA::Atmosphere1D *tempatm = new NCPA::ToyAtmosphere1D();
-	// 	atm_profile_2d = new NCPA::StratifiedAtmosphere2D( tempatm );
-	// 	delete tempatm;
+		atm_profile_2d = new NCPA::StratifiedAtmosphere2D(
+			param->getString( "atmosfile" ),
+			param->getString("atmosheaderfile"),
+			skiplines );
 	} else if (use_atm_2d) {
-		atm_profile_2d = new NCPA::ProfileSeriesAtmosphere2D( param->getString( "atmosfile2d" ), param->getString( "atmosheaderfile" ) );
+		atm_profile_2d = new NCPA::ProfileSeriesAtmosphere2D(
+			param->getString( "atmosfile2d" ),
+			param->getString( "atmosheaderfile" ),
+			skiplines );
 		atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
 		if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
 			atm_profile_2d->set_maximum_valid_range( r_max );

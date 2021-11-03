@@ -11,7 +11,13 @@ namespace NCPA {
 
 	public:
 		StratifiedAtmosphere3D( const Atmosphere1D *atm );
-		StratifiedAtmosphere3D( const std::string &filename, std::string headerfilename = "" );
+		StratifiedAtmosphere3D( const std::string &filename );
+		StratifiedAtmosphere3D( const std::string &filename,
+			const std::string &headerfilename );
+		StratifiedAtmosphere3D( const std::string &filename,
+			const std::string &headerfilename, size_t skiplines );
+		StratifiedAtmosphere3D( const std::string &filename,
+			size_t skiplines );
 		virtual ~StratifiedAtmosphere3D();
 
 		// setup and building

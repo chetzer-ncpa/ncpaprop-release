@@ -120,9 +120,9 @@ namespace NCPA {
 		int *zgi_r = NULL;   // ground height index
 		double freq;         // current active frequency
 		double *azi;
-		size_t NZ, NR, NR_requested, NAz, NF;
+		size_t NZ, NR, NR_requested, NAz, NF, npade;
 		double dz;
-		size_t npade;
+		size_t skiplines;
 		bool use_atm_1d = false, use_atm_2d = false, use_atm_toy = false, use_topo = false;
 		bool z_ground_specified = false, lossless = false, top_layer = true;
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;

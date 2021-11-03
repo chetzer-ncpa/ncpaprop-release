@@ -18,6 +18,29 @@ NCPA::StratifiedAtmosphere2D::StratifiedAtmosphere2D( const std::string &filenam
 	sorted_ = true;
 }
 
+NCPA::StratifiedAtmosphere2D::StratifiedAtmosphere2D( const std::string &filename ) : Atmosphere2D() {
+	Atmosphere1D *tempatm = new Atmosphere1D( filename );
+	set_insert_range_units( NCPA::Units::fromString( "km" ) );
+	insert_profile( tempatm, 0.0 );
+	sorted_ = true;
+}
+
+NCPA::StratifiedAtmosphere2D::StratifiedAtmosphere2D( const std::string &filename,
+		size_t skiplines ) : Atmosphere2D() {
+	Atmosphere1D *tempatm = new Atmosphere1D( filename, skiplines );
+	set_insert_range_units( NCPA::Units::fromString( "km" ) );
+	insert_profile( tempatm, 0.0 );
+	sorted_ = true;
+}
+
+NCPA::StratifiedAtmosphere2D::StratifiedAtmosphere2D( const std::string &filename,
+		const std::string &headerfilename, size_t skiplines ) : Atmosphere2D() {
+	Atmosphere1D *tempatm = new Atmosphere1D( filename, headerfilename, skiplines );
+	set_insert_range_units( NCPA::Units::fromString( "km" ) );
+	insert_profile( tempatm, 0.0 );
+	sorted_ = true;
+}
+
 NCPA::StratifiedAtmosphere2D::~StratifiedAtmosphere2D() { }
 
 double NCPA::StratifiedAtmosphere2D::get_interpolated_ground_elevation( double range ) {

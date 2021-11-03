@@ -9,9 +9,22 @@ namespace NCPA {
 
 	public:
 		ProfileSeriesAtmosphere2D();
-		ProfileSeriesAtmosphere2D( const std::string &filename, const std::string &headerfilename = "" );
+		ProfileSeriesAtmosphere2D( const std::string &filename );
+		ProfileSeriesAtmosphere2D( const std::string &filename,
+			const std::string &headerfilename );
+		ProfileSeriesAtmosphere2D( const std::string &filename,
+			size_t skiplines );
+		ProfileSeriesAtmosphere2D( const std::string &filename,
+			const std::string &headerfilename,
+			size_t skiplines );
 		~ProfileSeriesAtmosphere2D();
 
+	protected:
+		void read_summary_file( const std::string &filename,
+			std::vector< std::string > &atmlines );
+		void process_summary_file_lines(
+			const std::vector< std::string > &atmlines,
+			const std::string &headerfilename, size_t skiplines );
 	};
 }
 

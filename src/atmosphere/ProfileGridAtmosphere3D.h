@@ -14,17 +14,20 @@ namespace NCPA {
 	class ProfileGridAtmosphere3D : public Atmosphere3D {
 		public:
 			ProfileGridAtmosphere3D( const std::string &summary_file, size_t nz, double *zvec,
-				size_t precision, const std::string &header_file );
+				size_t precision, const std::string &header_file,
+				size_t skiplines = 0 );
 			ProfileGridAtmosphere3D( const std::string &summary_file, size_t nz, double *zvec,
-				size_t precision );
+				size_t precision, size_t skiplines = 0 );
 			ProfileGridAtmosphere3D( const std::string &summary_file, size_t nz, double *zvec,
-				const std::string &header_file );
-			ProfileGridAtmosphere3D( const std::string &summary_file, size_t nz, double *zvec );
+				const std::string &header_file, size_t skiplines = 0 );
+			ProfileGridAtmosphere3D( const std::string &summary_file,
+				size_t nz, double *zvec, size_t skiplines = 0 );
 			virtual ~ProfileGridAtmosphere3D();
 
 			// setup and building
 			void read_atmosphere_from_file( const std::string &summary_file,
-				size_t nz, double *zvec, size_t precision, const std::string &header_file );
+				size_t nz, double *zvec, size_t precision,
+				const std::string &header_file, size_t skiplines );
 			virtual void convert_range_units( units_t new_units );
 			virtual void convert_altitude_units( units_t new_units );
 			virtual void convert_property_units( const std::string &key, units_t new_units );

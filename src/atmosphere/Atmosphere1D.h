@@ -50,7 +50,10 @@ namespace NCPA {
 		@brief Constructor from formatted file.
 		@param filename The name of the file to be read from.
 		*/
-		Atmosphere1D( const std::string &filename, const std::string &headerfilename = "" );
+		Atmosphere1D( const std::string &filename );
+		Atmosphere1D( const std::string &filename, const std::string &headerfilename );
+		Atmosphere1D( const std::string &filename, size_t skiplines );
+		Atmosphere1D( const std::string &filename, const std::string &headerfilename, size_t skiplines );
 
 		/**
 		Copy constructor.
@@ -66,16 +69,27 @@ namespace NCPA {
 		~Atmosphere1D();
 
 		/**
+		Reads a file in and splits the contents into formatted header
+		lines and data lines, optionally skipping some lines at the
+		beginning of the file.
+		@brief Splits a file's contents into header and data lines.
+		@param in The input stream to read from.  Should already be open.
+		@param headerlines A vector to insert the header lines into.
+		@param datalines A vector to insert the data lines into
+		@param skiplines Number of lines to skip before checking lines
+		*/
+		void split_file_lines( std::istream& in, std::vector<std::string> &headerlines,
+			std::vector<std::string> &datalines, size_t skiplines = 0 );
+
+		/**
 		Reads a formatted profile from an input stream, normally a std::ifstream representing a file.
 		@brief Read a formatted atmospheric profile from a stream.
 		@param in The input stream to read the profile from.  Should already be open.
 		*/
-		void read_values_from_stream( std::istream& in );
-
-		/**
-		Reads a formatted header from an input stream
-		*/
-		void read_header_from_stream( std::istream& in );
+		// void read_values_from_stream( std::istream& in );
+		void parse_profile_lines(
+			const std::vector< std::string > &headerlines,
+			const std::vector< std::string > &datalines );
 
 		/**
 		Adds a property, including units, that depends on the altitude to the atmosphere.
@@ -191,7 +205,7 @@ namespace NCPA {
 		//size_t nz_;
 		//std::stack< units_t > z_units_;
 		NCPA::VectorWithUnits *z_;
-		std::vector< std::string > headerlines;
+		// std::vector< std::string > headerlines;
 
 		void do_units_conversion_( size_t n_points, double *inplace, 
 			NCPA::units_t fromUnits, NCPA::units_t toUnits );

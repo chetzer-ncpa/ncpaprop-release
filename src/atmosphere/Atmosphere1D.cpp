@@ -36,34 +36,63 @@ NCPA::Atmosphere1D::Atmosphere1D( size_t n_altitude_points, double *altitude_poi
 	contents_.clear();
 	scalar_contents_.clear();
 	z_ = new NCPA::VectorWithUnits( n_altitude_points, altitude_points, altitude_units );
-
-	//nz_ = n_altitude_points;
-	//z_ = new double[ nz_ ];
-	//std::memcpy( z_, altitude_points, nz_ * sizeof(double) );
-	//z_units_.push( altitude_units );
 }
 
-// NCPA::Atmosphere1D::Atmosphere1D( std::istream& in ) {
-// 	read_from_stream( in );
-// }
+NCPA::Atmosphere1D::Atmosphere1D( const std::string &filename ) {
+	std::vector< std::string > headerlines, datalines;
+	std::ifstream in( filename );
+	split_file_lines( in, headerlines, datalines, 0 );
+	in.close();
+	parse_profile_lines( headerlines, datalines );
+}
 
+NCPA::Atmosphere1D::Atmosphere1D( const std::string &filename,
+	size_t skiplines ) {
+
+	std::vector< std::string > headerlines, datalines;
+	std::ifstream in( filename );
+	split_file_lines( in, headerlines, datalines, skiplines );
+	in.close();
+	parse_profile_lines( headerlines, datalines );
+}
+
+// read atmosphere from a textfile with a separate header file
 NCPA::Atmosphere1D::Atmosphere1D( const std::string &filename,
 	const std::string &headerfilename ) {
 
-	std::string hfile( headerfilename );
-	if (headerfilename.size() == 0) {
-		hfile = filename;
-	}
-	std::ifstream header_in( hfile );
-	read_header_from_stream( header_in );
-	header_in.close();
-
+	std::vector< std::string > headerlines, datalines;
 	std::ifstream in( filename );
-	read_values_from_stream( in );
+	split_file_lines( in, headerlines, datalines, 0 );
 	in.close();
 
-	headerlines.clear();
+	if (headerfilename.size() > 0 && (filename.compare( headerfilename ) != 0)) {
+		std::ifstream hin( headerfilename );
+		split_file_lines( hin, headerlines, datalines, 0 );
+		hin.close();
+	}
+
+	parse_profile_lines( headerlines, datalines );
 }
+
+// read atmosphere from a textfile with a separate header file
+NCPA::Atmosphere1D::Atmosphere1D( const std::string &filename,
+	const std::string &headerfilename, size_t skiplines ) {
+
+	std::vector< std::string > headerlines, datalines;
+	std::ifstream in( filename );
+	split_file_lines( in, headerlines, datalines, skiplines );
+	in.close();
+
+	if (headerfilename.size() > 0 && (filename.compare( headerfilename ) != 0)) {
+		std::ifstream hin( headerfilename );
+		split_file_lines( hin, headerlines, datalines, 0 );
+		hin.close();
+	}
+
+	parse_profile_lines( headerlines, datalines );
+}
+
+
 
 NCPA::Atmosphere1D::Atmosphere1D( const Atmosphere1D &source ) {
 	z_ = new NCPA::VectorWithUnits( *(source.z_) );
@@ -79,11 +108,19 @@ NCPA::Atmosphere1D::Atmosphere1D( const Atmosphere1D &source ) {
 	}
 }
 
-void NCPA::Atmosphere1D::read_header_from_stream( std::istream& in ) {
+void NCPA::Atmosphere1D::split_file_lines( std::istream& in,
+		std::vector<std::string> &headerlines,
+		std::vector<std::string> &datalines,
+		size_t skiplines ) {
 
+	// read in the first line
 	std::string line;
-
+	size_t i = 0;
 	std::getline( in, line );
+	while (i++ < skiplines) {
+		std::getline( in, line );
+	}
+
 	while ( in.good() ) {
 		// lines will either be comments (# ), field descriptions (#% ), or
 		// field contents
@@ -94,47 +131,46 @@ void NCPA::Atmosphere1D::read_header_from_stream( std::istream& in ) {
 				headerlines.push_back( line.substr( 2 ) );
 			} // otherwise it's a regular comment and can be ignored
 
-		}
-
-		std::getline( in, line );
-	}
-
-}
-
-void NCPA::Atmosphere1D::read_values_from_stream( std::istream& in ) {
-	if ( ! in.good() ) {
-		throw std::runtime_error( "Atmosphere1D - Input stream not in good state" );
-	}
-
-	std::string line;
-	std::vector< std::string > atmlines, scalarlines;
-	std::ostringstream oss;     // for exceptions
-	size_t i;                   // repeated index variable
-
-	std::getline( in, line );
-	while ( in.good() ) {
-		// lines will either be comments (# ), field descriptions (#% ), or
-		// field contents
-		line = NCPA::deblank( line );
-		if (line[ 0 ] == '#') {
-			// check second character
-			// if (line.size() > 1 && line[ 1 ] == '%') {
-			// 	headerlines.push_back( line.substr( 2 ) );
-			// } // otherwise it's a regular comment and can be ignored
-
-		} else if (line.size() == 0) {
-			// skip empty lines
-		} else {
-			atmlines.push_back( line );
+		} else if (line.size() > 0) {
+			datalines.push_back( line );
 		}
 
 		std::getline( in, line );
 	}
 	//in.close();
-	//cout << "Found " << headerlines.size() << " header lines" << endl;
-	//cout << "Found " << atmlines.size() << " data lines" << endl;
 
-	// parse them out
+}
+
+// void NCPA::Atmosphere1D::read_header_from_stream( std::istream& in ) {
+
+// 	std::string line;
+
+// 	std::getline( in, line );
+// 	while ( in.good() ) {
+// 		// lines will either be comments (# ), field descriptions (#% ), or
+// 		// field contents
+// 		line = NCPA::deblank( line );
+// 		if (line[ 0 ] == '#') {
+// 			// check second character
+// 			if (line.size() > 1 && line[ 1 ] == '%') {
+// 				headerlines.push_back( line.substr( 2 ) );
+// 			} // otherwise it's a regular comment and can be ignored
+
+// 		}
+
+// 		std::getline( in, line );
+// 	}
+
+// }
+
+
+void NCPA::Atmosphere1D::parse_profile_lines(
+		const std::vector<std::string> &headerlines,
+		const std::vector<std::string> &atmlines ) {
+
+	std::ostringstream oss;     // for exceptions
+	size_t i;                   // repeated index variable
+
 	size_t nfields = headerlines.size();
 	if (nfields == 0) {
 		throw std::runtime_error( "Atmosphere1D - No descriptive fields found." );
@@ -149,7 +185,7 @@ void NCPA::Atmosphere1D::read_values_from_stream( std::istream& in ) {
 	for (std::vector< std::string >::const_iterator it = headerlines.begin(); it != headerlines.end(); ++it) {
 		fields = NCPA::split( NCPA::deblank( *it ), " ," );
 		if ( fields.size() != 3 && fields.size() != 4 ) {
-			oss << "Atmosphere1D - Error parsing descriptive line:" << std::endl << line << std::endl 
+			oss << "Atmosphere1D - Error parsing descriptive line:" << std::endl << *it << std::endl
 				<< "Must be formatted as:" << std::endl
 				<< "column,key,units[,value]" << std::endl
 				<< "Use column=0 and specify value for scalar quantities." << std::endl;
@@ -162,7 +198,7 @@ void NCPA::Atmosphere1D::read_values_from_stream( std::istream& in ) {
 		try {
 			col = (unsigned int)std::stoi( fields[ 0 ] );
 		} catch ( std::invalid_argument &e ) {
-			oss << "Atmosphere1D - Error parsing descriptive line:" << std::endl << line << std::endl 
+			oss << "Atmosphere1D - Error parsing descriptive line:" << std::endl << *it << std::endl
 				<< "First field not parseable as an integer" << std::endl;
 			throw std::invalid_argument( oss.str() );
 		}
@@ -173,15 +209,22 @@ void NCPA::Atmosphere1D::read_values_from_stream( std::istream& in ) {
 		if (tempunits == NCPA::UNITS_NONE) {
 			throw std::invalid_argument( "Unrecognized units string: " + fields[ 2 ] );
 		}
-/*
-		try {
-			tempunits = NCPA::Units::fromString( NCPA::deblank( fields[ 2 ] ) );
-		} catch (std::out_of_range& oor) {
-			throw std::invalid_argument( oor.what() );
-		}
-*/
+
 		if (fields.size() == 4) {
 			tempval = std::stof( deblank(fields[ 3 ]) );
+		}
+
+		// check to see if we need to override a column number
+		std::vector<unsigned int>::iterator colit = std::find(
+			column_numbers.begin(),
+			column_numbers.end(),
+			col );
+		if (colit != column_numbers.end()) {
+			size_t index = colit - column_numbers.begin();
+			column_numbers.erase( column_numbers.begin() + index );
+			keys.erase( keys.begin() + index );
+			units.erase( units.begin() + index );
+			values.erase( values.begin() + index );
 		}
 
 		// add to header vectors
@@ -189,8 +232,6 @@ void NCPA::Atmosphere1D::read_values_from_stream( std::istream& in ) {
 		keys.push_back( deblank( fields[ 1 ] ) );
 		units.push_back( tempunits );
 		values.push_back( tempval );  // this will be ignored for vector quantities
-
-		//cout << "Column " << col << ": " << deblank(fields[1]) << " [ " << Units::toStr( tempunits ) << " ] = " << tempval << endl;
 	}
 
 	// check for uniqueness in keys

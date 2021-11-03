@@ -112,8 +112,12 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 
 
 	// optional parameters
+	ps->addParameter( new NCPA::IntegerParameter( "skiplines", 0 ) );
+	ps->addTest( new NCPA::IntegerGreaterThanOrEqualToTest( "skiplines", 0 ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--skiplines", "Number of lines to skip in atmosphere file before parsing [0]" );
+
 	ps->addParameter( new NCPA::StringParameter( "atmosheaderfile", "" ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--atmosheaderfile", "External header file, overrides internal header [None]" );
+	ps->addParameterDescription( "Optional Parameters [default]", "--atmosheaderfile", "External header file, overrides internal header if present.  Any supplied --skiplines value does not apply to external header files [None]" );
 	
 	ps->addParameter( new NCPA::IntegerParameter( "npade", 4 ) );
 	ps->addTest( new NCPA::IntegerGreaterThanOrEqualToTest( "npade", 3 ) );

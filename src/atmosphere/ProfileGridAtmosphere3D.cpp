@@ -30,23 +30,24 @@
 
 
 NCPA::ProfileGridAtmosphere3D::ProfileGridAtmosphere3D( const std::string &summary_file,
-	size_t nz, double *zvec, size_t precision, const std::string &header_file ) {
-	read_atmosphere_from_file( summary_file, nz, zvec, precision, header_file );
+	size_t nz, double *zvec, size_t precision, const std::string &header_file,
+	size_t skiplines ) {
+	read_atmosphere_from_file( summary_file, nz, zvec, precision, header_file, skiplines );
 }
 
 NCPA::ProfileGridAtmosphere3D::ProfileGridAtmosphere3D( const std::string &summary_file,
-	size_t nz, double *zvec ) {
-	read_atmosphere_from_file( summary_file, nz, zvec, 0, "" );
+	size_t nz, double *zvec, size_t skiplines ) {
+	read_atmosphere_from_file( summary_file, nz, zvec, 0, "", skiplines );
 }
 
 NCPA::ProfileGridAtmosphere3D::ProfileGridAtmosphere3D( const std::string &summary_file,
-	size_t nz, double *zvec, size_t precision ) {
-	read_atmosphere_from_file( summary_file, nz, zvec, precision, "" );
+	size_t nz, double *zvec, size_t precision, size_t skiplines ) {
+	read_atmosphere_from_file( summary_file, nz, zvec, precision, "", skiplines );
 }
 
 NCPA::ProfileGridAtmosphere3D::ProfileGridAtmosphere3D( const std::string &summary_file,
-	size_t nz, double *zvec, const std::string &header_file ) {
-	read_atmosphere_from_file( summary_file, nz, zvec, 0, header_file );
+	size_t nz, double *zvec, const std::string &header_file, size_t skiplines ) {
+	read_atmosphere_from_file( summary_file, nz, zvec, 0, header_file, skiplines );
 }
 
 
@@ -66,7 +67,8 @@ NCPA::ProfileGridAtmosphere3D::~ProfileGridAtmosphere3D() {
 
 
 void NCPA::ProfileGridAtmosphere3D::read_atmosphere_from_file( const std::string &summary_file,
-	size_t nz, double *zvec, size_t precision, const std::string &header_file ) {
+	size_t nz, double *zvec, size_t precision,
+	const std::string &header_file, size_t skiplines ) {
 
 	// read in the lines of the summary file
 	std::ifstream infile( summary_file );
@@ -140,7 +142,8 @@ void NCPA::ProfileGridAtmosphere3D::read_atmosphere_from_file( const std::string
 
 		i = NCPA::find_closest_index( x, nx, xvec[ lineind ] );
 		j = NCPA::find_closest_index( y, ny, yvec[ lineind ] );
-		profilemat[ i ][ j ] = new NCPA::Atmosphere1D( filenames[ lineind ], header_file );
+		profilemat[ i ][ j ] = new NCPA::Atmosphere1D( filenames[ lineind ],
+			header_file, skiplines );
 
 		// make altitude units km internally for simplicity
 		profilemat[ i ][ j ]->convert_altitude_units( NCPA::UNITS_DISTANCE_KILOMETERS );

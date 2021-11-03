@@ -11,9 +11,31 @@ NCPA::StratifiedAtmosphere3D::StratifiedAtmosphere3D( const Atmosphere1D *atm ) 
 	range_units_ = UNITS_DISTANCE_KILOMETERS;
 }
 
-NCPA::StratifiedAtmosphere3D::StratifiedAtmosphere3D( const std::string &filename,
-	std::string headerfilename ) {
+NCPA::StratifiedAtmosphere3D::StratifiedAtmosphere3D(
+	const std::string &filename,
+	const std::string &headerfilename ) {
 	profile_ = new NCPA::Atmosphere1D( filename, headerfilename );
+	range_units_ = UNITS_DISTANCE_KILOMETERS;
+}
+
+NCPA::StratifiedAtmosphere3D::StratifiedAtmosphere3D(
+	const std::string &filename ) {
+	profile_ = new NCPA::Atmosphere1D( filename );
+	range_units_ = UNITS_DISTANCE_KILOMETERS;
+}
+
+NCPA::StratifiedAtmosphere3D::StratifiedAtmosphere3D(
+	const std::string &filename,
+	const std::string &headerfilename,
+	size_t skiplines ) {
+	profile_ = new NCPA::Atmosphere1D( filename, headerfilename, skiplines );
+	range_units_ = UNITS_DISTANCE_KILOMETERS;
+}
+
+NCPA::StratifiedAtmosphere3D::StratifiedAtmosphere3D(
+	const std::string &filename,
+	size_t skiplines ) {
+	profile_ = new NCPA::Atmosphere1D( filename, skiplines );
 	range_units_ = UNITS_DISTANCE_KILOMETERS;
 }
 

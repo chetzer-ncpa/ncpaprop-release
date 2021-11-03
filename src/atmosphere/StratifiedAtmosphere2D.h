@@ -9,8 +9,14 @@ namespace NCPA {
 
 	public:
 		StratifiedAtmosphere2D( const Atmosphere1D *atm );
+		StratifiedAtmosphere2D( const std::string &filename );
 		StratifiedAtmosphere2D( const std::string &filename,
-			const std::string &headerfilename = "" );
+			const std::string &headerfilename );
+		StratifiedAtmosphere2D( const std::string &filename,
+			size_t skiplines );
+		StratifiedAtmosphere2D( const std::string &filename,
+			const std::string &headerfilename, size_t skiplines );
+		
 		//StratifiedAtmosphere2D( const StratifiedAtmosphere2D &atm );
 		~StratifiedAtmosphere2D();
 
