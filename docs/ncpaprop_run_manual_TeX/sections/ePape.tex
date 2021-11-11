@@ -84,7 +84,7 @@ one has the approximation
 \begin{equation}\label{eq:split_step}
 p(r_j)=e^{i\delta(\sqrt{1+Q}-1)}p(r_{j-1})
 \end{equation}
-with $\delta=k_0\Delta r$. This allows us to march out from $r_0$ to $r$ if an efficient approximation for $e^{i\delta(\sqrt{1+Q}-1)}$ can be found. The atmospheric profile can be changed as required. Generally, $r_0$ is some small reference range and the starting pressure field, $p_0=p(r_0)$, is called the starter. The starter is usually chosen in such a way as to mimic the signal at range $r_0$ from a point source. In this release, a point source started has been implemented. 
+with $\delta=k_0\Delta r$. This allows us to march out from $r_0$ to $r$ if an efficient approximation for $e^{i\delta(\sqrt{1+Q}-1)}$ can be found. The atmospheric profile can be changed as required. Generally, $r_0$ is some small reference range and the starting pressure field, $p_0=p(r_0)$, is called the starter. The starter is usually chosen in such a way as to mimic the signal at range $r_0$ from a point source. In this release, a point source starter has been implemented. 
 
 At high enough frequencies the ground can be treated as an impedance plane. This approximation ignores any signal propagation in the substrata and is implemented by imposing the boundary condition 
 \begin{equation}\label{eq:impedance}
