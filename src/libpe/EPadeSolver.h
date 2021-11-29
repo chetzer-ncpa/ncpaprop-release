@@ -15,6 +15,8 @@
 #define NCPAPROP_EPADE_PE_FILENAME_BROADBAND "tloss_broadband.bin"
 #define NCPAPROP_EPADE_PE_FILENAME_STARTER "starter.pe"
 #define NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY "topography.pe"
+#define NCPAPROP_EPADE_PE_ABSORBING_LAYER_MAX_THICKNESS_METERS 5000.0
+#define NCPAPROP_EPADE_PE_ABSORBING_LAYER_WAVELENGTH_MULTIPLIER 3.0
 
 namespace NCPA {
 
@@ -145,7 +147,7 @@ namespace NCPA {
 		std::vector< int > zti;
 		int nzplot;
 
-		double absorption_layer_mu = 0.01;
+		double absorption_layer_mu = 0.1;
 
 		//NCPA::Atmosphere1D *atm_profile;
 		NCPA::Atmosphere2D *atm_profile_2d;
