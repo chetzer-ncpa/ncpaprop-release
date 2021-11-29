@@ -823,9 +823,10 @@ double NCPA::ProfileGridAtmosphere3D::get_minimum_altitude( double x, double y )
 }
 
 
-void NCPA::ProfileGridAtmosphere3D::get_property_template( const std::string &basis,
-				size_t &nx, double *x, NCPA::units_t &x_units,
-				size_t &ny, double *y, NCPA::units_t &y_units,
+void NCPA::ProfileGridAtmosphere3D::get_property_template(
+				const std::string &basis,
+				size_t &nx, double *&x, NCPA::units_t &x_units,
+				size_t &ny, double *&y, NCPA::units_t &y_units,
 				double **&prop ) const {
 
 	NCPA::AtmosphericProperty3D *propptr = get_property( basis );
@@ -838,9 +839,9 @@ void NCPA::ProfileGridAtmosphere3D::get_property_template( const std::string &ba
 }
 
 void NCPA::ProfileGridAtmosphere3D::get_property_template( const std::string &basis,
-			size_t &nx, double *x, NCPA::units_t &x_units,
-			size_t &ny, double *y, NCPA::units_t &y_units,
-			size_t &nz, double *z, NCPA::units_t &z_units,
+			size_t &nx, double *&x, NCPA::units_t &x_units,
+			size_t &ny, double *&y, NCPA::units_t &y_units,
+			size_t &nz, double *&z, NCPA::units_t &z_units,
 			double ***&prop ) const {
 	NCPA::AtmosphericProperty3D *propptr = get_property( basis );
 
@@ -855,8 +856,8 @@ void NCPA::ProfileGridAtmosphere3D::get_property_template( const std::string &ba
 }
 
 void NCPA::ProfileGridAtmosphere3D::free_property_template(
-				size_t nx, double *x,
-				size_t ny, double *y,
+				size_t nx, double *&x,
+				size_t ny, double *&y,
 				double **prop ) const {
 	NCPA::free_matrix<double>( prop, nx, ny );
 	delete [] x;
@@ -864,9 +865,9 @@ void NCPA::ProfileGridAtmosphere3D::free_property_template(
 }
 
 void NCPA::ProfileGridAtmosphere3D::free_property_template(
-				size_t nx, double *x,
-				size_t ny, double *y,
-				size_t nz, double *z,
+				size_t nx, double *&x,
+				size_t ny, double *&y,
+				size_t nz, double *&z,
 				double ***prop ) const {
 	NCPA::free_matrix3d<double>( prop, nx, ny, nz );
 	delete [] x;
@@ -1040,4 +1041,60 @@ void NCPA::ProfileGridAtmosphere3D::get_maximum_altitude_limits( double &minvalu
 		minvalue = NCPA::min( minvalue, it->second->z_max() );
 		maxvalue = NCPA::max( maxvalue, it->second->z_max() );
 	}
+}
+
+void NCPA::ProfileGridAtmosphere3D::slice(
+		double x_origin, double y_origin, double az,
+		size_t nr, double *rvec, size_t nz, double *zvec,
+		NCPA::Atmosphere2D* &profile_slice ) const {
+
+	NCPA::Atmosphere1D *tempatm;
+	double x, y;
+	std::map< std::string, VectorAtmosphericProperty3D *>::const_iterator
+		vit;
+	std::map< std::string, ScalarAtmosphericProperty3D *>::const_iterator
+		sit;
+	double *qvec = new double[ nz ];
+	std::memset( qvec, 0, nz*sizeof(double) );
+
+	profile_slice = new NCPA::Atmosphere2D();
+	profile_slice->set_insert_range_units( NCPA::Units::fromString("km") );
+	profile_slice->set_maximum_valid_range( rvec[ nr-1 ] );
+
+	// generate the x and y vectors
+	size_t i, j;
+	double theta_math = NCPA::Units::convert( 90.0 - az,
+		NCPA::UNITS_ANGLE_DEGREES, NCPA::UNITS_ANGLE_RADIANS );
+	for (i = 0; i < nr; i++) {
+		x = rvec[ i ] * std::cos( theta_math ) + x_origin;
+		y = rvec[ i ] * std::sin( theta_math ) + y_origin;
+
+		tempatm = new NCPA::Atmosphere1D( nz, zvec,
+			this->get_altitude_units() );
+
+		// iterate over vector quantities
+		for (vit = vector_contents_.cbegin();
+			 vit != vector_contents_.cend();
+			 ++vit ) {
+			for (j = 0; j < nz; j++) {
+				qvec[ j ] = vit->second->get( x, y, zvec[ j ] );
+			}
+			tempatm->add_property( vit->first, nz, qvec,
+				vit->second->get_property_units() );
+		}
+
+		for (sit = scalar_contents_.cbegin();
+			 sit != scalar_contents_.cend();
+			 ++sit ) {
+			tempatm->add_property( sit->first, sit->second->get(x,y),
+				sit->second->get_property_units() );
+		}
+
+
+		profile_slice->insert_profile( tempatm, rvec[ i ] );
+		delete tempatm;
+	}
+
+	delete [] qvec;
+
 }

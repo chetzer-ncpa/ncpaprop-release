@@ -123,7 +123,7 @@ namespace NCPA {
 		size_t NZ, NR, NR_requested, NAz, NF;
 		double dz;
 		size_t npade;
-		bool use_atm_1d = false, use_atm_2d = false, use_atm_toy = false, use_topo = false;
+		bool use_atm_1d = false, use_atm_2d = false, use_atm_3d = false, use_atm_toy = false, use_topo = false;
 		bool z_ground_specified = false, lossless = false, top_layer = true;
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
@@ -149,6 +149,7 @@ namespace NCPA {
 
 		//NCPA::Atmosphere1D *atm_profile;
 		NCPA::Atmosphere2D *atm_profile_2d;
+		NCPA::Atmosphere3D *atm_profile_3d;
 
 
 	};

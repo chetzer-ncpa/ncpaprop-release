@@ -32,7 +32,7 @@ namespace NCPA {
 		@brief Constructor from altitude vector.
 		@param n_altitude_points The number of points in the altitude vector
 		@param altitude_points A pointer to the first altitude point
-		@param altitude_units A Units object indicating the distance units used.
+		@param altitude_units The altitude units used.
 		*/
 		Atmosphere1D( size_t n_altitude_points, double *altitude_points,
 			units_t altitude_units );

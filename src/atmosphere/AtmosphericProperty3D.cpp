@@ -26,6 +26,8 @@ NCPA::VectorAtmosphericProperty3D::VectorAtmosphericProperty3D(
 	LANL::prep( spline_, nx, ny, nz );
 	NCPA::AtmosphericProperty1D *temp_prop;
 
+	std::cout << "Creating key " << key << std::endl;
+
 	// populate index variables
 	size_t i, j, k;
 	for (i = 0; i < nx; i++) {

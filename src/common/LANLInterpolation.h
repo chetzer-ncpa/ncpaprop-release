@@ -25,6 +25,10 @@ DEALINGS IN THE SOFTWARE.
 Original InfraGA software obtained from https://github.com/LANL-Seismoacoustics/infraGA
 
 Modified for use in NCPAprop 2.0 by Claus Hetzer, NCPA University of Mississippi, claus@olemiss.edu
+Modifications include:
+ * Moved all declarations into LANL namespace to differentiate from
+   NCPA namespace code
+ * Added typedefs of structs
 */
 
 
@@ -50,6 +54,7 @@ namespace LANL {
         double* f_vals;     // 1D array of f(x) values, f_vals[i] = f(x[i])
         double* slopes;     // Slopes used to generate natural cubic spline solution
     };
+    typedef struct linear_spline_1D Spline1DLinear;
 
     void prep(struct linear_spline_1D &, int);   // Build arrays for an interpolation to get started
     void set(struct linear_spline_1D &);         // Calculate slopes to set interpolation for evaluation
@@ -69,6 +74,7 @@ namespace LANL {
         double* f_vals;     // 1D array of f(x) values, f_vals[i] = f(x[i])
         double* slopes;     // Slopes used to generate natural cubic spline solution
     };
+    typedef struct natural_cubic_spline_1D Spline1DNatural;
 
     void prep(struct natural_cubic_spline_1D &, int);   // Build arrays for an interpolation to get started
     void set(struct natural_cubic_spline_1D &);         // Calculate slopes to set interpolation for evaluation

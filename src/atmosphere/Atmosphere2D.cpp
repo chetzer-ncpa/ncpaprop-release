@@ -591,3 +591,18 @@ double NCPA::Atmosphere2D::get_interpolated_ground_elevation_second_derivative( 
 	}
 	return gsl_spline_eval_deriv2( topo_spline_, range, topo_accel_ );
 }
+
+void NCPA::Atmosphere2D::print_property( const std::string &key,
+	size_t nr, double *rvec,
+	size_t nz, double *zvec, std::ostream &os ) {
+
+	size_t i, j;
+	for (i = 0; i < nr; i++) {
+		for (j = 0; j < nz; j++) {
+			os << rvec[ i ] << " " << zvec[ j ] << " "
+				<< get( rvec[ i ], key, zvec[ j ] ) << std::endl;
+		}
+		os << std::endl;
+	}
+
+}

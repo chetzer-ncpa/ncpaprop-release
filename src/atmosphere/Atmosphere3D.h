@@ -28,6 +28,10 @@ namespace NCPA {
 			virtual void get_maximum_altitude_limits(
 				double &minlimit, double &maxlimit ) const = 0;
 
+			virtual void slice( double x_origin, double y_origin, double az,
+				size_t nr, double *rvec, size_t nz, double *zvec,
+				Atmosphere2D* &profile_slice ) const = 0;
+
 
 			virtual void add_property( const std::string &key, double ***prop,
 				size_t nx, size_t ny, size_t nz, NCPA::units_t units ) = 0;
@@ -37,22 +41,22 @@ namespace NCPA {
 			virtual void remove_vector_property( const std::string &key ) = 0;
 			virtual void remove_scalar_property( const std::string &key ) = 0;
 			virtual void get_property_template( const std::string &basis,
-				size_t &nx, double *x, NCPA::units_t &x_units,
-				size_t &ny, double *y, NCPA::units_t &y_units,
+				size_t &nx, double *&x, NCPA::units_t &x_units,
+				size_t &ny, double *&y, NCPA::units_t &y_units,
 				double **&prop ) const = 0;
 			virtual void get_property_template( const std::string &basis,
-				size_t &nx, double *x, NCPA::units_t &x_units,
-				size_t &ny, double *y, NCPA::units_t &y_units,
-				size_t &nz, double *z, NCPA::units_t &z_units,
+				size_t &nx, double *&x, NCPA::units_t &x_units,
+				size_t &ny, double *&y, NCPA::units_t &y_units,
+				size_t &nz, double *&z, NCPA::units_t &z_units,
 				double ***&prop ) const = 0;
 			virtual void free_property_template(
-				size_t nx, double *x,
-				size_t ny, double *y,
+				size_t nx, double *&x,
+				size_t ny, double *&y,
 				double **prop ) const = 0;
 			virtual void free_property_template(
-				size_t nx, double *x,
-				size_t ny, double *y,
-				size_t nz, double *z,
+				size_t nx, double *&x,
+				size_t ny, double *&y,
+				size_t nz, double *&z,
 				double ***prop ) const = 0;
 			virtual void copy_property( const std::string &old_key,
 				const std::string &new_key ) = 0;

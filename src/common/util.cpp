@@ -163,7 +163,7 @@ std::string NCPA::deblank( const std::string orig ) {
 // Acts like std::getline, but checks for all three permutations of EOL characters
 std::istream &NCPA::safe_getline( std::istream &is, std::string &s ) {
 
-	char ch;
+	char ch = 0;
 	s.clear();
 
 	// Keep going until you get to a linefeed character

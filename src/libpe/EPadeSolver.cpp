@@ -76,7 +76,7 @@ void NCPA::EPadeSolver::set_default_values() {
 
 	// null values otherwise.  Pointers:
 	z = NULL; z_abs = NULL; r = NULL; f = NULL; tl = NULL;
-	zgi_r = NULL; azi = NULL; atm_profile_2d = NULL;
+	zgi_r = NULL; azi = NULL; atm_profile_2d = NULL; atm_profile_3d = NULL;
 
 	// doubles
 	freq = 0.0; dz = 0.0; r_max = 0.0; z_max = 0.0; z_min = 0.0; z_ground = 0.0;
@@ -89,7 +89,8 @@ void NCPA::EPadeSolver::set_default_values() {
 	NZ = 0; NR = 0; NR_requested = 0; NAz = 0; NF = 0; npade = 0; nzplot = 0;
 
 	// bool
-	use_atm_1d = false; use_atm_2d = false; use_atm_toy = false; use_topo = false;
+	use_atm_1d = false; use_atm_2d = false; use_atm_3d = false;
+	use_atm_toy = false; use_topo = false;
 	z_ground_specified = false; lossless = false;
 	multiprop = false; write2d = false;
 	broadband = false; write_starter = false; write_topo = false;
@@ -130,6 +131,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	lossless 			= param->wasFound( "lossless" );
 	use_atm_1d			= param->wasFound( "atmosfile" );
 	use_atm_2d			= param->wasFound( "atmosfile2d" );
+	use_atm_3d			= param->wasFound( "atmosfile3d" );
 	//use_atm_toy			= param->wasFound( "toy" );
 	top_layer			= !(param->wasFound( "disable_top_layer" ));
 	use_topo			= param->wasFound( "topo" );
@@ -225,22 +227,27 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	//NCPA::Atmosphere1D *atm_profile_1d;
 	if (use_atm_1d) {
 		atm_profile_2d = new NCPA::StratifiedAtmosphere2D( param->getString( "atmosfile" ), param->getString("atmosheaderfile") );
-	// } else if (use_atm_toy) {
-	// 	NCPA::Atmosphere1D *tempatm = new NCPA::ToyAtmosphere1D();
-	// 	atm_profile_2d = new NCPA::StratifiedAtmosphere2D( tempatm );
-	// 	delete tempatm;
+		z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
+		use_atm_2d = true;
 	} else if (use_atm_2d) {
 		atm_profile_2d = new NCPA::ProfileSeriesAtmosphere2D( param->getString( "atmosfile2d" ), param->getString( "atmosheaderfile" ) );
 		atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
+		atm_profile_2d->convert_altitude_units( NCPA::Units::fromString( "m" ) );
 		if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
 			atm_profile_2d->set_maximum_valid_range( r_max );
 		}
+		z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
+	// } else if (use_atm_3d) {
+	// 	atm_profile_3d = new NCPA::ProfileGridAtmosphere3D( param->getString( "atmosfile3d" ) );
+	// 	atm_profile_3d->convert_range_units( NCPA::Units::fromString("m") );
+	// 	atm_profile_3d->convert_altitude_units( NCPA::Units::fromString( "m" ) );
+	// 	z_min = atm_profile_3d->get_minimum_altitude( 0.0, 0.0 );
 	} else {
 		std::cerr << "Unknown atmosphere option selected" << std::endl;
 		exit(0);
 	}
 
-	z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
+
 	z_ground = z_min;
 	if (param->wasFound("groundheight_km")) {
 		z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
@@ -248,11 +255,42 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		
 		std::cout << "Overriding profile Z0 value with command-line value " << z_ground 
 		     << " m" << std::endl;
-		atm_profile_2d->remove_property("Z0");
-		atm_profile_2d->add_property( "Z0", z_ground, NCPA::Units::fromString("m") );
+		if (use_atm_2d) {
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->add_property( "Z0", z_ground, NCPA::Units::fromString("m") );
+		} else if (use_atm_3d) {
+			atm_profile_3d->remove_property("Z0");
+			size_t nx, ny;
+			double *x_vec, *y_vec;
+			NCPA::units_t units1, units2;
+			double **prop;
+			atm_profile_3d->get_property_template("T", nx, x_vec, units1,
+				ny, y_vec, units2, prop );
+			NCPA::fill_matrix<double>( prop, nx, ny, z_ground );
+			atm_profile_3d->add_property( "Z0", prop, nx, ny,
+				NCPA::Units::fromString( "m" ) );
+			atm_profile_3d->free_property_template(
+				nx, x_vec, ny, y_vec, prop );
+		}
 	} else {
-		if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
-			atm_profile_2d->add_property("Z0",z_ground,atm_profile_2d->get_altitude_units(0.0));
+		if (use_atm_2d) {
+			if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
+				atm_profile_2d->add_property("Z0",z_ground,atm_profile_2d->get_altitude_units(0.0));
+			}
+		} else if (use_atm_3d) {
+			if (!(atm_profile_3d->contains_scalar("Z0"))) {
+				size_t nx, ny;
+				double *x_vec, *y_vec;
+				NCPA::units_t units1, units2;
+				double **prop;
+				atm_profile_3d->get_property_template("T", nx, x_vec, units1,
+					ny, y_vec, units2, prop );
+				NCPA::fill_matrix<double>( prop, nx, ny, z_ground );
+				atm_profile_3d->add_property( "Z0", prop, nx, ny,
+					atm_profile_3d->get_altitude_units() );
+				atm_profile_3d->free_property_template(
+					nx, x_vec, ny, y_vec, prop );
+			}
 		}
 	}
 
@@ -1904,9 +1942,8 @@ int NCPA::EPadeSolver::approximate_sqrt_1pQ( int NZvec, const Mat *Q, PetscInt J
 
 }
 
+// lambda = c0/freq = 1 wavelength
 void NCPA::EPadeSolver::absorption_layer( double lambda, double *z, int NZ, double *layer ) {
-	// std::cout << "Called absorption_layer( " << lambda << ", [" << z[0] << ", "
-	// 		  << z[1] << ", ... , " << z[NZ-1] << "], " << NZ << ")" << std::endl;
 	double z_t = z[NZ-1] - lambda;
 	for (int i = 0; i < NZ; i++) {
 		layer[ i ] = absorption_layer_mu * std::exp( (z[i]-z_t) / lambda );

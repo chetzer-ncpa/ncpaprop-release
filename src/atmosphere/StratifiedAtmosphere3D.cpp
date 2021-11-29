@@ -182,8 +182,8 @@ double NCPA::StratifiedAtmosphere3D::get_minimum_altitude( double x, double y ) 
 }
 
 void NCPA::StratifiedAtmosphere3D::get_property_template( const std::string &basis,
-				size_t &nx, double *x, NCPA::units_t &x_units,
-				size_t &ny, double *y, NCPA::units_t &y_units,
+				size_t &nx, double *&x, NCPA::units_t &x_units,
+				size_t &ny, double *&y, NCPA::units_t &y_units,
 				double **&prop ) const {
 
 	prop = NCPA::matrix<double>( 1, 1 );
@@ -201,9 +201,9 @@ void NCPA::StratifiedAtmosphere3D::get_property_template( const std::string &bas
 }
 
 void NCPA::StratifiedAtmosphere3D::get_property_template( const std::string &basis,
-			size_t &nx, double *x, NCPA::units_t &x_units,
-			size_t &ny, double *y, NCPA::units_t &y_units,
-			size_t &nz, double *z, NCPA::units_t &z_units,
+			size_t &nx, double *&x, NCPA::units_t &x_units,
+			size_t &ny, double *&y, NCPA::units_t &y_units,
+			size_t &nz, double *&z, NCPA::units_t &z_units,
 			double ***&prop ) const {
 	if (!profile_->contains_vector( basis )) {
 		throw std::runtime_error( "Key " + basis + " not found");
@@ -225,8 +225,8 @@ void NCPA::StratifiedAtmosphere3D::get_property_template( const std::string &bas
 }
 
 void NCPA::StratifiedAtmosphere3D::free_property_template(
-				size_t nx, double *x,
-				size_t ny, double *y,
+				size_t nx, double *&x,
+				size_t ny, double *&y,
 				double **prop ) const {
 	NCPA::free_matrix<double>( prop, nx, ny );
 	delete [] x;
@@ -234,9 +234,9 @@ void NCPA::StratifiedAtmosphere3D::free_property_template(
 }
 
 void NCPA::StratifiedAtmosphere3D::free_property_template(
-				size_t nx, double *x,
-				size_t ny, double *y,
-				size_t nz, double *z,
+				size_t nx, double *&x,
+				size_t ny, double *&y,
+				size_t nz, double *&z,
 				double ***prop ) const {
 	NCPA::free_matrix3d<double>( prop, nx, ny, nz );
 	delete [] x;
@@ -272,4 +272,12 @@ void NCPA::StratifiedAtmosphere3D::get_maximum_altitude_limits( double &minlimit
 			double &maxlimit ) const {
 	minlimit = profile_->get_maximum_altitude();
 	maxlimit = minlimit;
+}
+
+void NCPA::StratifiedAtmosphere3D::slice( double x_origin, double y_origin,
+		double az, size_t nr, double *rvec, size_t nz, double *zvec,
+		NCPA::Atmosphere2D* &profile_slice ) const {
+
+	profile_slice = new NCPA::StratifiedAtmosphere2D( profile_ );
+
 }

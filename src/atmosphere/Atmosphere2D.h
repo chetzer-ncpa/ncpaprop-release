@@ -59,6 +59,9 @@ namespace NCPA {
 		virtual double get_interpolated_ground_elevation( double range );
 		virtual double get_interpolated_ground_elevation_first_derivative( double range );
 		virtual double get_interpolated_ground_elevation_second_derivative( double range );
+		void print_property( const std::string &key,
+			size_t nr, double *rvec, size_t nz, double *zvec,
+			std::ostream &os = std::cout );
 
 
 		// metadata
