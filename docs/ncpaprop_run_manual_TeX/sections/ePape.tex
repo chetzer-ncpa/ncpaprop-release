@@ -67,7 +67,7 @@ Eq. \ref{eq:parabolic} has a formal solution,
 \[
 p(r)=e^{ik_0(\sqrt{1+Q}-1)(r-r_0)} p(r_0)
 \]
-where $r_0<r$. One thinks of $p(r)$ as having been propagated out in range from $r_0$ to $r$. The PE algorithm is based on the formula (Trotter product formula \cite{stoer2013introduction} 
+where $r_0<r$. One thinks of $p(r)$ as having been propagated out in range from $r_0$ to $r$. The PE algorithm is based on the formula (Trotter product formula \cite{stoer2013introduction})
 \begin{equation}\label{eq:trotter_prod}
 p(r)=\lim_{N\rightarrow\infty}\Big(e^{ik_0(\sqrt{1+Q}-1)\frac{r-r_0}{N}}\Big)^N p(r_0)
 \end{equation}
@@ -162,14 +162,13 @@ In {\bf ePape} $m$ is fixed at $n+1$. The user is given an option to choose $m$.
 
 Atmospheric attenuation is taken into account by adding an imaginary part, $\alpha_{\text{att}}$, known as the attenuation coefficient, to the wave number $k$. Standard models for the attenuation coefficient are to be found in the literature and generally attributed to Sutherland and Bass\cite{bass_suth}. An extension of the Sutherland-Bass model due to Godin takes into account the influence of the winds and can be used as well\cite{Godin_attenuation}. 
 
-An artificial attenuation layer is introduced at the top of the computational domain to prevent spurious reflections. The absorbing layer comprises an additional imaginary part $\alpha_A(z)$ of $k(z)$ where $\alpha_A$ is zero for $z$ less than some fixed altitude, $z_T$, but increases above that altitude slowly enough that there are no significant signal returns from the layer, but becomes large enough to attenuate all signals. The form used in {\bf ePape} is 
+An artificial attenuation layer is introduced at the top of the computational domain to prevent spurious reflections. The absorbing layer comprises an additional imaginary part $\alpha_A(z)$ of $k(z)$ where $\alpha_A$ is zero as $z$ approaches some fixed altitude $z_T$, then increases slowly enough that there are no significant signal returns from the layer, but becomes large enough to attenuate all signals. The form used in {\bf ePape} is
 \begin{equation}
-\alpha_A(z)=\begin{cases}
-0 & \text{if } z<z_T\\
-\mu e^{\frac{k_0(z-z_t)}{2\pi m}} & \text{if } z>z_T.
-\end{cases}
+\alpha_A(z)=\mu e^{\frac{z-z_T}{\lambda_T}}.
 \label{eq:artificial_attenuation}\end{equation}
-Currently, we have set $\mu=0.01$, $m=1$, and $z_t = z_max-\frac{2\pi}{k_0}$. Rather than introducing a new symbol we will define  
+Currently, we have set $\mu=0.1$, $z_T = z_{max}-\lambda_T$, and $\lambda_T=min(\frac{2\pi}{k_0},5 km)$.
+
+Rather than introducing a new symbol we will define
 \begin{equation}
 k(z)
 =
@@ -237,7 +236,7 @@ Ground topography will be modeled by extending the computational domain downward
   \centering
   \includegraphics[width=0.75\textwidth]{figs/topography.pdf}
 \end{figure*}
-Let $S(r)$ is the altitude of the ground surface relative to some reference altitude or depth. In practice it can be relative to the bottom of the comutational domain, or basement, but will be considered sufficiently distant from the bottom that the depth of the basement may be considered infinite. For the wavenumber $k(z)$ we extend 
+Let $S(r)$ is the altitude of the ground surface relative to some reference altitude or depth. In practice it can be relative to the bottom of the computational domain, or basement, but will be considered sufficiently distant from the bottom that the depth of the basement may be considered infinite. For the wavenumber $k(z)$ we extend
 \begin{equation}
 k(z)=\begin{cases}
 0 & \text{   if } z<S(r)\\
