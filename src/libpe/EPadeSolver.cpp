@@ -1904,12 +1904,14 @@ int NCPA::EPadeSolver::approximate_sqrt_1pQ( int NZvec, const Mat *Q, PetscInt J
 
 }
 
+
 void NCPA::EPadeSolver::absorption_layer( double lambda, double *z, int NZ, double *layer ) {
-	// std::cout << "Called absorption_layer( " << lambda << ", [" << z[0] << ", "
-	// 		  << z[1] << ", ... , " << z[NZ-1] << "], " << NZ << ")" << std::endl;
-	double z_t = z[NZ-1] - lambda;
+	double thickness = NCPA::min<double>(
+		NCPAPROP_EPADE_PE_ABSORBING_LAYER_MAX_THICKNESS_METERS,
+		lambda * NCPAPROP_EPADE_PE_ABSORBING_LAYER_WAVELENGTH_MULTIPLIER );
+	double z_t = z[NZ-1] - thickness;
 	for (int i = 0; i < NZ; i++) {
-		layer[ i ] = absorption_layer_mu * std::exp( (z[i]-z_t) / lambda );
+		layer[ i ] = absorption_layer_mu * std::exp( (z[i]-z_t) / thickness );
 	}
 }
 
