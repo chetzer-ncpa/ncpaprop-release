@@ -1253,7 +1253,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 		if (write_topo) {
 			write_topography( tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY),
-				calc_az, r_max, 1.0 );
+				calc_az, r_max, 1000.0 );
 		}
 		
 		atm_profile_2d->remove_property( "_CEFF_" );
@@ -2403,7 +2403,7 @@ void NCPA::EPadeSolver::write_topography( std::string filename, double azimuth,
 	}
 
 	for (r = 0.0; r <= r_max; r += dr) {
-		outfile << azimuth << " " << r << " " 
+		outfile << azimuth << " " << r / 1000.0 << " "
 				<< atm_profile_2d->get_interpolated_ground_elevation( r ) 
 				<< std::endl;
 	}
