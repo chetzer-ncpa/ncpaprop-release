@@ -168,8 +168,8 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	//ps->addUsageLine( "Flags:" );
 	ps->addParameter( new NCPA::FlagParameter( "write_2d_tloss" ) );
 	ps->addParameterDescription( "Flags", "--write_2d_tloss", "Output 2-D transfer function to tloss_2d.pe" );
-	ps->addParameter( new NCPA::FlagParameter( "write_atm_profile" ) );
-	ps->addParameterDescription( "Flags", "--write_atm_profile", "Output atmospheric profile to atm_profile.pe" );
+	// ps->addParameter( new NCPA::FlagParameter( "write_atm_profile" ) );
+	// ps->addParameterDescription( "Flags", "--write_atm_profile", "Output atmospheric profile to atm_profile.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_starter" ) );
 	ps->addParameterDescription( "Flags", "--write_starter", "Output starter to starter.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_topography" ) );

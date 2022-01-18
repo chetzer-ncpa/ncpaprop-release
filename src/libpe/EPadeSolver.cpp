@@ -401,7 +401,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	std::complex<double> ground_impedence_factor( 0.0, 0.0 );
 
 	// truncate multiprop file if needed
-	if (multiprop) {
+	if (write2d) {
 		std::ofstream ofs( tag_filename(NCPAPROP_EPADE_PE_FILENAME_2D),
 			std::ofstream::out | std::ofstream::trunc );
 		ofs.close();
@@ -908,7 +908,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	std::complex<double> ground_impedence_factor( 0.0, 0.0 );
 
 	// truncate multiprop file if needed
-	if (multiprop) {
+	if (write2d) {
 		std::ofstream ofs( tag_filename(NCPAPROP_EPADE_PE_FILENAME_2D),
 			std::ofstream::out | std::ofstream::trunc );
 		ofs.close();
