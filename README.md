@@ -20,6 +20,10 @@ Most Linux distributions should come with the first three; MacOS users may have 
 
 # Installation
 
+First, download the repository into the current directory with:
+
+	git clone https://github.com/chetzer-ncpa/ncpaprop-release.git .
+
 Run ``./configure`` with appropriate parameters.  Most parameters involve how to link to the [PETSc](https://petsc.org/release/) suite and its [SLEPc](https://slepc.upv.es/) extension.  If, as is likely, you do not already have these both installed with the correct configuration flags (see below), you should use:
 
 	./configure --with-localpetsc
@@ -29,13 +33,13 @@ This will download, configure, and build **PETSc** and **SLEPc** locally, within
 	arch-${OS}-c-real:     --with-scalar-type=real
 	arch-${OS}-c-complex:  --with-scalar-type=complex
 
-If you already have architectures of both **PETSc** and **SLEPc** using each of these two architectures, you can link to them instead of building them locally.  To do this, set the ``PETSC_DIR`` and ``SLEPC_DIR`` variables to the root directories of **PETSc** and **SLEPc**, and set the ``PETSC_ARCH_REAL`` and ``PETSC_ARCH_COMPLEX`` variables to the names of the architectures as they were built.  Then, you may use:
+If you already have instances built of both **PETSc** and **SLEPc** using each of these two architectures, you can link to them instead of building them locally.  To do this, set the ``PETSC_DIR`` and ``SLEPC_DIR`` variables to the root directories of **PETSc** and **SLEPc**, and set the ``PETSC_ARCH_REAL`` and ``PETSC_ARCH_COMPLEX`` variables to the names of the architectures as they were built.  Then, you may use:
 
 	./configure
 	
 or, alternately, you may specify the values of those four variables in the configure command as:
 
-	./configure PETSC_DIR=${PETSC_DIR} SLEPC_DIR=${SLEP_DIR} PETSC_ARCH_REAL=${PETSC_ARCH_REAL} PETSC_ARCH_COMPLEX=${PETSC_ARCH_COMPLEX}
+	./configure PETSC_DIR=${PETSC_DIR} SLEPC_DIR=${SLEPC_DIR} PETSC_ARCH_REAL=${PETSC_ARCH_REAL} PETSC_ARCH_COMPLEX=${PETSC_ARCH_COMPLEX}
 
 See the [manual](./NCPA_prop_manual.pdf) for detailed information on additional parameters.
 
