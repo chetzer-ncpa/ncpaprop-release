@@ -501,7 +501,11 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 
 	// Now create the splines
 	size_t np = rvec.size();
+#if GSL_MAJOR_VERSION > 1
 	topo_spline_ = gsl_spline_alloc( gsl_interp_steffen, np + 2 );
+#else
+	topo_spline_ = gsl_spline_alloc( gsl_interp_cspline, np + 2 );
+#endif
 	topo_ground_heights_ = new double[ np + 2 ];
 	topo_ranges_ = new double[ np + 2 ];
 	std::memset( topo_ground_heights_, 0, (np + 2) * sizeof(double) );
@@ -526,7 +530,11 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 
 void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_profiles_() {
 	size_t np = profiles_.size();
+#if GSL_MAJOR_VERSION > 1
 	topo_spline_ = gsl_spline_alloc( gsl_interp_steffen, np + 2 );
+#else
+	topo_spline_ = gsl_spline_alloc( gsl_interp_cspline, np + 2 );
+#endif
 	topo_ground_heights_ = new double[ np + 2 ];
 	topo_ranges_ = new double[ np + 2 ];
 	std::memset( topo_ground_heights_, 0, (np + 2) * sizeof(double) );
