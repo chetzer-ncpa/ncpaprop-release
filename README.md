@@ -22,7 +22,7 @@ Most Linux distributions should come with the first three; MacOS users may have 
 
 First, download the repository into the current directory with:
 
-	git clone https://github.com/ncpaprop-release.git .
+	git clone https://github.com/chetzer-ncpa/ncpaprop-release.git .
 
 Run ``./configure`` with appropriate parameters.  Most parameters involve how to link to the [PETSc](https://petsc.org/release/) suite and its [SLEPc](https://slepc.upv.es/) extension.  If, as is likely, you do not already have these both installed with the correct configuration flags (see below), you should use:
 
