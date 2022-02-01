@@ -483,7 +483,7 @@ void NCPA::ScalarAtmosphericProperty3D::convert_range_units( NCPA::units_t new_u
 	std::memcpy( x, spline_.x_vals, nx*sizeof(double) );
 	y = new double[ ny ];
 	std::memcpy( y, spline_.y_vals, ny*sizeof(double) );
-	f = NCPA::matrix<double>( nx, ny );
+	f = NCPA::allocate_matrix<double>( nx, ny );
 	for (i = 0; i < nx; i++) {
 		std::memcpy( f[ i ], spline_.f_vals[ i ], ny*sizeof(double) );
 	}
@@ -518,7 +518,7 @@ void NCPA::ScalarAtmosphericProperty3D::convert_property_units( NCPA::units_t ne
 	std::memcpy( x, spline_.x_vals, nx*sizeof(double) );
 	y = new double[ ny ];
 	std::memcpy( y, spline_.y_vals, ny*sizeof(double) );
-	f = NCPA::matrix<double>( nx, ny );
+	f = NCPA::allocate_matrix<double>( nx, ny );
 	for (i = 0; i < nx; i++) {
 		std::memcpy( f[ i ], spline_.f_vals[ i ], ny*sizeof(double) );
 	}

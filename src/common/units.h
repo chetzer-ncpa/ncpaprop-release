@@ -55,6 +55,7 @@ To add a unit and its associated conversions, the following should be done:
 #define NCPAPROP_UNITS_H_INCLUDED
 
 #include <map>
+#include <vector>
 #include <stack>
 #include <utility>
 #include <iostream>
@@ -85,6 +86,7 @@ namespace NCPA {
 		UNITS_PRESSURE_PASCALS,					/**< Pressure in Pa */
 		UNITS_PRESSURE_MILLIBARS,				/**< Pressure in mbar */
 		UNITS_PRESSURE_HECTOPASCALS,			/**< Pressure in hPa */
+		UNITS_PRESSURE_ATMOSPHERES,				/**< Pressure in atm */
 		
 		UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER,		/**< Density in kg/m^3 */
 		UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER,		/**< Density in g/cm^3 */
@@ -176,6 +178,12 @@ namespace NCPA {
 		 */
 		static void list_recognized_strings( std::ostream& o = std::cout );
 	
+		/**
+		 * Retrieves a vector of recognized unit strings.
+		 *
+		 * @return 		A std::vector<std::string> list of recognized unit names
+		 */
+		static std::vector<std::string> get_recognized_strings();
 	protected:
 		
 		static conversion_map_t map_;    
@@ -240,6 +248,9 @@ namespace NCPA {
 		virtual ~ScalarWithUnits();
 
 		virtual double get() const;
+		virtual void set_value( double newval );
+		virtual void set_units( units_t new_units );
+		virtual void set( double newval, units_t new_units );
 
 		virtual void convert_units( units_t new_units );
 		virtual units_t get_units() const;

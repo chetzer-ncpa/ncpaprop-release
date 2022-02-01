@@ -186,7 +186,7 @@ void NCPA::StratifiedAtmosphere3D::get_property_template( const std::string &bas
 				size_t &ny, double *y, NCPA::units_t &y_units,
 				double **&prop ) const {
 
-	prop = NCPA::matrix<double>( 1, 1 );
+	prop = NCPA::allocate_matrix<double>( 1, 1 );
 	nx = 1;
 	x = new double[ 1 ];
 	x[ 0 ] = 0.0;

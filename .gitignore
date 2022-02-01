@@ -13,5 +13,7 @@ src/wmod/WMod
 bin/ePape
 src/epade_pe/ePape
 config.log
+bin/gfpe
+src/gfpe/gfpe
 config.status
 docs/NCPA_prop_manual.pdf

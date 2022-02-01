@@ -6,7 +6,7 @@ include @SLEPC_INCLUDE_FILE_GENERIC@
 #include $(SLEPC_DIR)/conf/slepc_common
 
 INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
-SOURCES=EPadeSolver.cpp
+SOURCES=EPadeSolver.cpp GFPESolver.cpp
 
 OBJS=$(SOURCES:.cpp=.o)
 TARGET=libpe.a

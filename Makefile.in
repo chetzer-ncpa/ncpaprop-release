@@ -12,7 +12,7 @@
 # PETSC_INCLUDE_FILE_GENERIC = @PETSC_INCLUDE_FILE_GENERIC@
 # SLEPC_INCLUDE_FILE_GENERIC = @SLEPC_INCLUDE_FILE_GENERIC@
 
-package-parts=common atmosphere libmodes libpe libbroadband modess wmod modbb epade_pe
+package-parts=common atmosphere libmodes libpe libbroadband modess wmod modbb epade_pe gfpe
 
 
 # Build everything
@@ -51,6 +51,10 @@ modbb:
 # High-angle high-mach parabolic equation
 epade_pe:
 	$(MAKE) -C src/epade_pe all PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+
+# Green's function parabolic equation
+gfpe:
+	$(MAKE) -C src/gfpe all PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 
 # Wide-angle high-mach number normal modes, single frequency
 wmod:

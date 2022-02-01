@@ -8,6 +8,7 @@
 #include <complex>
 #include <cfloat>
 #include <cstring>
+#include <cassert>
 
 #ifndef PI
 #define PI 3.141592653589793
@@ -20,6 +21,7 @@ namespace NCPA {
 	std::string deblank( const std::string& orig );
 
 	double mean( double*, size_t );
+	size_t nextpow2( size_t v );
 
 	std::istream &safe_getline( std::istream &is, std::string &s );
 
@@ -33,6 +35,9 @@ namespace NCPA {
 	// Split a string into more strings by tokenizing
 	std::vector< std::string > split( std::string input, std::string delimiters = " \t\n" );
 	std::string deblank( const std::string& str, const std::string& whitespace );
+
+	// random numbers
+	std::vector<double> random_numbers( size_t N, double scale = 1.0 );
 
 	bool checkAzimuthLimits( double toCheck, double target, double tolerance );
 	// double normalizeAzimuth( double in );
@@ -159,7 +164,43 @@ namespace NCPA {
 		return ivec;
 	}
 
-	template<typename T> T** matrix( size_t nr, size_t nc ) {
+	// linearly spaced vector from firstval to lastval
+	template<typename T>
+	void linspace( T firstval, T lastval, size_t N,
+			T *&vec ) {
+		T stepsize = (lastval - firstval) / ((T)(N - 1));
+		std::memset( vec, 0, N*sizeof(T) );
+		for (size_t i = 0; i < N; i++) {
+			vec[i] = firstval + ((T)i) * stepsize;
+		}
+	}
+	template<typename T>
+	T* linspace( T firstval, T lastval, size_t N ) {
+		T *vec = NCPA::zeros<T>( N );
+		NCPA::linspace<T>( firstval, lastval, N, vec );
+		return vec;
+	}
+
+	// logarithmically spaced vector from a to b (NOT from 10^a to 10^b)
+	template<typename T>
+	void logspace( T a, T b, size_t k, T *&ls ) {
+		T la = std::log10(a);
+		T lb = std::log10(b);
+		NCPA::linspace( la, lb, k, ls );
+		for (size_t i = 0; i < k; i++) {
+			ls[ i ] = std::pow( (T)(10.0), ls[ i ] );
+		}
+	}
+
+	template<typename T>
+	T* logspace( T firstval, T lastval, size_t N ) {
+		T *vec = NCPA::zeros<T>( N );
+		NCPA::logspace<T>( firstval, lastval, N, vec );
+		return vec;
+	}
+
+
+	template<typename T> T** allocate_matrix( size_t nr, size_t nc ) {
 		T **v;
 		v = new T* [nr];
 		for (size_t i = 0; i < nr; i++) {
@@ -194,18 +235,39 @@ namespace NCPA {
 		}
 	}
 
-	template<typename T> size_t find_closest_index( T *z, size_t NZ, T zs ) {
+	template<typename T>
+	size_t find_closest_index( T *z, size_t NZ, T zs ) {
+		if (NZ == 1) {
+			return 0;
+		}
 		double diff = 0.0, mindiff = DBL_MAX;
-		size_t tmpind;
+		size_t tmpind = 0;
 
 		for (size_t i = 0; i < NZ; i++) {
-			diff = abs( ((double)z[i]) - ((double)zs) );
+			diff = std::abs( ((double)z[i]) - ((double)zs) );
 			if (diff < mindiff) {
 				tmpind = i;
 				mindiff = diff;
 			}
 		}
 
+		return tmpind;
+	}
+
+	template<typename T>
+	size_t find_closest_index( std::vector<T> z, T zs ) {
+		if (z.size() == 1) {
+			return 0;
+		}
+		T diff = 0.0, mindiff = 9999999999999;
+		size_t tmpind = 0, i;
+		for (i = 0; i < z.size(); i++) {
+			diff = std::abs( z[i] - zs );
+			if (diff < mindiff) {
+				tmpind = i;
+				mindiff = diff;
+			}
+		}
 		return tmpind;
 	}
 
@@ -271,6 +333,111 @@ namespace NCPA {
 			out << col1[i] << del << col2[i] << std::endl;
 		}
 	}
+
+	template<typename T>
+	T trapz( size_t N, T *xvec, T *yvec ) {
+		assert(N > 1);
+		T sum = 0.0;
+		for (size_t i = 1; i < N; i++) {
+			sum += (yvec[i] + yvec[i-1]) * 0.5 * (xvec[i] - xvec[i-1]);
+		}
+		return sum;
+	}
+
+	template<typename T,typename U>
+	void vector_scale( size_t N, U *in, T factor, U *&out ) {
+		U *tempvec = NCPA::zeros<U>(N);
+		for (size_t i = 0; i < N; i++) {
+			tempvec[ i ] = in[ i ] * factor;
+		}
+		std::memcpy( out, tempvec, N*sizeof(U) );
+		delete [] tempvec;
+	}
+
+	template<typename T> void vector_multiply( size_t N, T *v1, T *v2,
+		T *&v12 ) {
+		T *tempvec = NCPA::zeros<T>(N);
+		for (size_t i = 0; i < N; i++) {
+			tempvec[ i ] = v1[i] * v2[i];
+		}
+		std::memcpy( v12, tempvec, N*sizeof(T) );
+		delete [] tempvec;
+	}
+
+	template<typename T> void vector_add( size_t N, T *v1, T *v2,
+		T *&v12 ) {
+		T *tempvec = NCPA::zeros<T>(N);
+		for (size_t i = 0; i < N; i++) {
+			tempvec[ i ] = v1[i] + v2[i];
+		}
+		std::memcpy( v12, tempvec, N*sizeof(T) );
+		delete [] tempvec;
+	}
+
+	template<typename T> void vector_subtract( size_t N, T *v1, T *v2,
+		T *&v12 ) {
+		T *tempvec = NCPA::zeros<T>(N);
+		for (size_t i = 0; i < N; i++) {
+			tempvec[ i ] = v1[i] - v2[i];
+		}
+		std::memcpy( v12, tempvec, N*sizeof(T) );
+		delete [] tempvec;
+	}
+
+	template<typename T> void vector_divide( size_t N, T *v1, T *v2,
+		T *&v12 ) {
+		T *tempvec = NCPA::zeros<T>(N);
+		for (size_t i = 0; i < N; i++) {
+			tempvec[ i ] = v1[i] / v2[i];
+		}
+		std::memcpy( v12, tempvec, N*sizeof(T) );
+		delete [] tempvec;
+	}
+
+	template<typename T> void circshift( T *in, size_t N, int shift,
+			T *&out ) {
+		assert(((size_t)abs(shift)) < N);
+		size_t i;
+		T *tempvec = NCPA::zeros<T>( N );
+		if (shift < 0) {
+			// move from the back to the front
+			size_t negshift = (size_t)(-shift);
+			for (i = negshift; i < N; i++) {
+				tempvec[ i - negshift ] = in[ i ];
+			}
+			for (i = 0; i < negshift; i++) {
+				tempvec[ N - negshift + i ] = in[ i ];
+			}
+		} else if (shift > 0) {
+			// move from the front to the back
+			for (i = 0; i < N-shift; i++) {
+				tempvec[ i + shift ] = in[ i ];
+			}
+			for (i = N - shift; i < N; i++) {
+				tempvec[ i - (N - shift) ] = in[ i ];
+			}
+		} else {
+			std::memcpy( tempvec, in, N*sizeof(T) );
+		}
+
+		// copy over so it can be done in place if desired
+		std::memcpy( out, tempvec, N*sizeof(T) );
+		delete [] tempvec;
+	}
+
+	template<typename T> void reverse( T *in, size_t N, T *&out ) {
+		T *tempvec = NCPA::zeros<T>( N );
+		size_t j;
+		for (j = 0; j < N; j++) {
+			tempvec[ N-1-j ] = in[ j ];
+		}
+		std::memcpy( out, tempvec, N * sizeof(T) );
+
+		delete [] tempvec;
+	}
+
+
+
 
 	// Class for 3-D matrices with 1-D storage behind the scenes.  Cuts a lot
 	// of looping out

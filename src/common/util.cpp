@@ -10,6 +10,7 @@
 #include <vector>
 #include <sstream>
 #include <cfloat>
+#include <random>
 #include "util.h"
 
 #ifndef PI
@@ -445,7 +446,7 @@ void NCPA::read_matrix_from_file( const std::string &filename, double **&content
 	nrows = textcontents[0].size();
 
 	// allocate the memory
-	contents = NCPA::matrix<double>( ncols, nrows );
+	contents = NCPA::allocate_matrix<double>( ncols, nrows );
 
 	for (size_t colind = 0; colind < ncols; colind++) {
 		std::vector< std::string > *vecPtr = &(textcontents[colind]);
@@ -488,4 +489,42 @@ void NCPA::read_text_columns_from_file( const std::string &filename,
 		}
 	}
 	infile.close();
+}
+
+// void NCPA::linspace( double a, double b, size_t k, double *&ls ) {
+// 	double d = (b - a) / ((double)(k - 1));
+// 	for (size_t i = 0; i < k; i++) {
+// 		ls[ i ] = a + ((double)i) * d;
+// 	}
+// }
+
+// void NCPA::logspace( double a, double b, size_t k, double *&ls ) {
+// 		double la = std::log10(a);
+// 		double lb = std::log10(b);
+// 		NCPA::linspace( la, lb, k, ls );
+// 		for (size_t i = 0; i < k; i++) {
+// 			ls[ i ] = std::pow( 10.0, ls[ i ] );
+// 		}
+// 	}
+
+std::vector<double> NCPA::random_numbers( size_t N_, double scale ) {
+	std::vector<double> randn;
+	randn.reserve( N_ );
+	std::random_device rd;
+	std::mt19937 generator(rd());
+	std::uniform_real_distribution<> distribution(0.0, scale);
+	for (size_t i = 0; i < N_; i++) {
+		double r = distribution( generator );
+		randn.push_back( r );
+	}
+	return randn;
+}
+
+size_t NCPA::nextpow2( size_t v ) {
+	size_t p = 0;
+	double dv = (double)v;
+	while (std::exp2(p) < dv) {
+		p++;
+	}
+	return p;
 }

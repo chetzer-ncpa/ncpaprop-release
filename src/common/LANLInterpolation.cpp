@@ -1,8 +1,39 @@
 #include <iostream>
 #include <cmath>
+#include <cstring>
+#include <iostream>
+#include "util.h"
 #include "LANLInterpolation.h"
 
-using namespace std;
+//using namespace std;
+
+void NCPA::extrapolating_spline( size_t old_n, double *old_x, double *old_f,
+        size_t new_n, double *new_x, double *&new_f ) {
+    LANL::Spline1DNatural spline;
+    LANL::prep( spline, old_n );
+    std::memcpy( spline.x_vals, old_x, old_n*sizeof(double) );
+    std::memcpy( spline.f_vals, old_f, old_n*sizeof(double) );
+    LANL::set( spline );
+    double old_x_min = old_x[ 0 ];
+    double old_x_max = old_x[ old_n - 1 ];
+
+    for (size_t i = 0; i < new_n; i++) {
+        // do linear extrapolation if outside range
+        if (new_x[ i ] < old_x_min) {
+            double dx = new_x[ i ] - old_x_min;
+            double dfdx = LANL::eval_df( old_x_min, spline );
+            new_f[ i ] = dx * dfdx + old_f[ 0 ];
+        } else if (new_x[ i ] > old_x_max) {
+            double dx = new_x[ i ] - old_x_max;
+            double dfdx = LANL::eval_df( old_x_max, spline );
+            new_f[ i ] = dx * dfdx + old_f[ old_n - 1 ];
+        } else {
+            new_f[ i ] = LANL::eval_f( new_x[ i ], spline );
+        }
+    }
+
+    LANL::clear( spline );
+}
 
 //----------------------------------------//
 //------------Common Functions------------//
@@ -12,8 +43,8 @@ int LANL::find_segment(double x, double* x_vals, int length, int & prev){
     bool done = false;
     
     if(x > x_vals[length - 1] || x < x_vals[0]){
-        cout << "Cannot interpolate outside of given bounds.  x = " << x;
-        cout << " is outside of bounds (" << x_vals[0] << ", " << x_vals[length - 1] << ")." << '\n';
+        std::cout << "Cannot interpolate outside of given bounds.  x = " << x;
+        std::cout << " is outside of bounds (" << x_vals[0] << ", " << x_vals[length - 1] << ")." << '\n';
     } else {
         if(x >= x_vals[prev] && x <= x_vals[prev+1]){
             done = true;
@@ -47,7 +78,7 @@ int LANL::find_segment(double x, double* x_vals, int length, int & prev){
 
 
 double LANL::in_interval(double x, double x_min, double x_max){
-    return min(max(x, x_min), x_max);
+    return std::min(std::max(x, x_min), x_max);
 }
 
 
@@ -104,7 +135,7 @@ void LANL::set(struct natural_cubic_spline_1D & spline){
     
     bi = 2.0 / (spline.x_vals[1] - spline.x_vals[0]);
     ci = 1.0 / (spline.x_vals[1] - spline.x_vals[0]);
-    di = 3.0 * (spline.f_vals[1] - spline.f_vals[0]) / pow(spline.x_vals[1] - spline.x_vals[0], 2);
+    di = 3.0 * (spline.f_vals[1] - spline.f_vals[0]) / std::pow(spline.x_vals[1] - spline.x_vals[0], 2);
     
     new_c[0] = ci / bi;
     new_d[0] = di / bi;
@@ -114,8 +145,8 @@ void LANL::set(struct natural_cubic_spline_1D & spline){
                 dx2 = spline.x_vals[i + 1] - spline.x_vals[i];
         
         ai = 1.0 / dx1; bi = 2.0 * (1.0 / dx1 + 1.0 / dx2); ci = 1.0 / dx2;
-        di = 3.0 * ((spline.f_vals[i] - spline.f_vals[i - 1]) / pow(dx1, 2)
-                  + (spline.f_vals[i + 1] - spline.f_vals[i]) / pow(dx2, 2));
+        di = 3.0 * ((spline.f_vals[i] - spline.f_vals[i - 1]) / std::pow(dx1, 2)
+                  + (spline.f_vals[i + 1] - spline.f_vals[i]) / std::pow(dx2, 2));
         
         new_c[i] = ci / (bi - new_c[i - 1] * ai);
         new_d[i] = (di - new_d[i - 1] * ai) / (bi - new_c[i - 1] * ai);
@@ -124,7 +155,7 @@ void LANL::set(struct natural_cubic_spline_1D & spline){
     ai = 1.0 / (spline.x_vals[spline.length - 1] - spline.x_vals[spline.length - 2]);
     bi = 2.0 / (spline.x_vals[spline.length - 1] - spline.x_vals[spline.length - 2]);
     di = 3.0 * (spline.f_vals[spline.length - 1] - spline.f_vals[spline.length - 2])
-          / pow(spline.x_vals[spline.length - 1] - spline.x_vals[spline.length - 2], 2);
+          / std::pow(spline.x_vals[spline.length - 1] - spline.x_vals[spline.length - 2], 2);
     
     new_d[spline.length - 1] = (di - new_d[spline.length - 2] * ai) / (bi - new_c[spline.length - 2] * ai);
     
@@ -183,7 +214,7 @@ double LANL::eval_ddf(double x, struct natural_cubic_spline_1D & spline){
     A = spline.slopes[k] * dx - df;
     B = -spline.slopes[k+1] * dx + df;
 
-    return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dx, 2);
+    return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dx, 2);
 }
 
 double LANL::eval_dddf(double x, struct natural_cubic_spline_1D & spline){
@@ -199,7 +230,7 @@ double LANL::eval_dddf(double x, struct natural_cubic_spline_1D & spline){
     A = spline.slopes[k] * dx - df;
     B = -spline.slopes[k+1] * dx + df;
 
-    return 6.0 * (A - B) / pow(dx, 3);
+    return 6.0 * (A - B) / std::pow(dx, 3);
 }
 
 void LANL::eval_all(double x, struct natural_cubic_spline_1D & spline, double & f, double & dfdx){
@@ -234,7 +265,7 @@ void LANL::eval_all(double x, struct natural_cubic_spline_1D & spline, double & 
 
     f = spline.f_vals[k] + X * (df + (1.0 - X) * (A * (1.0 - X) + B * X));
     dfdx = df / dx + (1.0 - 2.0 * X) * (A * (1.0 - X) + B * X) / dx + X * (1.0 - X) * (B - A) / dx;
-    ddfdxdx = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dx, 2);
+    ddfdxdx = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dx, 2);
 }
 
 void LANL::eval_all(double x, struct natural_cubic_spline_1D & spline, double & f, double & dfdx, double & ddfdxdx, double & dddfdxdxdx){
@@ -252,8 +283,8 @@ void LANL::eval_all(double x, struct natural_cubic_spline_1D & spline, double & 
 
     f = spline.f_vals[k] + X * (df + (1.0 - X) * (A * (1.0 - X) + B * X));
     dfdx = df / dx + (1.0 - 2.0 * X) * (A * (1.0 - X) + B * X) / dx + X * (1.0 - X) * (B - A) / dx;
-    ddfdxdx = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dx, 2);
-    dddfdxdxdx = 6.0 * (A - B) / pow(dx, 3);
+    ddfdxdx = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dx, 2);
+    dddfdxdxdx = 6.0 * (A - B) / std::pow(dx, 3);
 }
 
 //-------------------------------------//
@@ -281,7 +312,7 @@ void LANL::set(struct natural_cubic_spline_2D & spline){
     for(int nx = 0; nx < spline.length_x; nx++){
         bi = 2.0 / (spline.y_vals[1] - spline.y_vals[0]);
         ci = 1.0 / (spline.y_vals[1] - spline.y_vals[0]);
-        di = 3.0 * (spline.f_vals[nx][1] - spline.f_vals[nx][0]) / pow(spline.y_vals[1] - spline.y_vals[0], 2);
+        di = 3.0 * (spline.f_vals[nx][1] - spline.f_vals[nx][0]) / std::pow(spline.y_vals[1] - spline.y_vals[0], 2);
         
         new_c[0] = ci / bi;
         new_d[0] = di / bi;
@@ -291,8 +322,8 @@ void LANL::set(struct natural_cubic_spline_2D & spline){
             dy2 = spline.y_vals[ny + 1] - spline.y_vals[ny];
         
             ai = 1.0 / dy1; bi = 2.0 * (1.0 / dy1 + 1.0 / dy2); ci = 1.0 / dy2;
-            di = 3.0 * ((spline.f_vals[nx][ny] - spline.f_vals[nx][ny - 1]) / pow(dy1, 2)
-                      + (spline.f_vals[nx][ny + 1] - spline.f_vals[nx][ny]) / pow(dy2, 2));
+            di = 3.0 * ((spline.f_vals[nx][ny] - spline.f_vals[nx][ny - 1]) / std::pow(dy1, 2)
+                      + (spline.f_vals[nx][ny + 1] - spline.f_vals[nx][ny]) / std::pow(dy2, 2));
             
             new_c[ny] = ci / (bi - new_c[ny - 1] * ai);
             new_d[ny] = (di - new_d[ny - 1] * ai) / (bi - new_c[ny - 1] * ai);
@@ -301,7 +332,7 @@ void LANL::set(struct natural_cubic_spline_2D & spline){
         ai = 1.0 / (spline.y_vals[spline.length_y - 1] - spline.y_vals[spline.length_y - 2]);
         bi = 2.0 / (spline.y_vals[spline.length_y - 1] - spline.y_vals[spline.length_y - 2]);
         di = 3.0 * (spline.f_vals[nx][spline.length_y - 1] - spline.f_vals[nx][spline.length_y - 2])
-                    / pow(spline.y_vals[spline.length_y - 1] - spline.y_vals[spline.length_y - 2], 2);
+                    / std::pow(spline.y_vals[spline.length_y - 1] - spline.y_vals[spline.length_y - 2], 2);
         
         new_d[spline.length_y - 1] = (di - new_d[spline.length_y - 2] * ai) / (bi - new_c[spline.length_y - 2] * ai);
         
@@ -362,7 +393,7 @@ double LANL::eval_node_ddfdydy(double y, struct natural_cubic_spline_2D spline, 
     A = spline.f_slopes[nx][ny] * dy - df;
     B = -spline.f_slopes[nx][ny + 1] * dy + df;
 
-    return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dy, 2);
+    return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dy, 2);
 }
 
 double LANL::eval_node_dddfdydydy(double y, struct natural_cubic_spline_2D spline, int nx, int ny){
@@ -375,7 +406,7 @@ double LANL::eval_node_dddfdydydy(double y, struct natural_cubic_spline_2D splin
     A = spline.f_slopes[nx][ny] * dy - df;
     B = -spline.f_slopes[nx][ny + 1] * dy + df;
 
-    return 6.0 * (A - B) / pow(dy, 3);
+    return 6.0 * (A - B) / std::pow(dy, 3);
 }
 
 void LANL::set_node_slopes(double node_vals [], double node_slopes [], struct natural_cubic_spline_2D spline){
@@ -385,7 +416,7 @@ void LANL::set_node_slopes(double node_vals [], double node_slopes [], struct na
 
     bi = 2.0 / (spline.x_vals[1] - spline.x_vals[0]);
     ci = 1.0 / (spline.x_vals[1] - spline.x_vals[0]);
-    di = 3.0 * (node_vals[1] - node_vals[0]) / pow(spline.x_vals[1] - spline.x_vals[0], 2);
+    di = 3.0 * (node_vals[1] - node_vals[0]) / std::pow(spline.x_vals[1] - spline.x_vals[0], 2);
     
     new_c[0] = ci / bi;
     new_d[0] = di / bi;
@@ -395,8 +426,8 @@ void LANL::set_node_slopes(double node_vals [], double node_slopes [], struct na
         dx2 = spline.x_vals[nx + 1] - spline.x_vals[nx];
         
         ai = 1.0 / dx1; bi = 2.0 * (1.0 / dx1 + 1.0 / dx2); ci = 1.0 / dx2;
-        di = 3.0 * ((node_vals[nx] - node_vals[nx - 1]) / pow(dx1, 2)
-                  + (node_vals[nx + 1] - node_vals[nx]) / pow(dx2, 2));
+        di = 3.0 * ((node_vals[nx] - node_vals[nx - 1]) / std::pow(dx1, 2)
+                  + (node_vals[nx + 1] - node_vals[nx]) / std::pow(dx2, 2));
         
         new_c[nx] = ci / (bi - new_c[nx - 1] * ai);
         new_d[nx] = (di - new_d[nx - 1] * ai)/(bi - new_c[nx - 1] * ai);
@@ -404,7 +435,7 @@ void LANL::set_node_slopes(double node_vals [], double node_slopes [], struct na
     
     ai = 1.0 / (spline.x_vals[spline.length_x - 1] - spline.x_vals[spline.length_x - 2]);
     bi = 2.0 / (spline.x_vals[spline.length_x - 1] - spline.x_vals[spline.length_x - 2]);
-    di = 3.0 * (node_vals[spline.length_x - 1] - node_vals[spline.length_x - 2]) / pow(spline.x_vals[spline.length_x - 1] - spline.x_vals[spline.length_x - 2], 2);
+    di = 3.0 * (node_vals[spline.length_x - 1] - node_vals[spline.length_x - 2]) / std::pow(spline.x_vals[spline.length_x - 1] - spline.x_vals[spline.length_x - 2], 2);
     
     new_d[spline.length_x - 1] = (di - new_d[spline.length_x - 2] * ai) / (bi - new_c[spline.length_x - 2] * ai);
 
@@ -496,7 +527,7 @@ double LANL::eval_ddf(double x, double y, int n1, int n2, struct natural_cubic_s
     B = -node_slopes[kx + 1] * dx + df;
 
     if(n1 + n2 == 0){
-        return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dx, 2);
+        return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dx, 2);
     } else if(n1  + n2 == 1){
         return df / dx + (1.0 - 2.0 * X) * (A * (1.0 - X) + B * X) / dx + X * (1.0 - X) * (B - A) / dx;
     } else { 
@@ -532,9 +563,9 @@ double LANL::eval_dddf(double x, double y, int n1, int n2, int n3, struct natura
     B = -node_slopes[kx + 1] * dx + df;
 
     if(n1 + n2 + n3 == 0){
-        return 6.0 * (A - B) / pow(dx, 3);
+        return 6.0 * (A - B) / std::pow(dx, 3);
     } else if(n1 + n2 + n3 == 1){
-        return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dx, 2);
+        return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dx, 2);
     } else if(n1 + n2 + n3 == 2){
         return df / dx + (1.0 - 2.0 * X) * (A * (1.0 - X) + B * X) / dx + X * (1.0 - X) * (B - A) / dx;
     } else {
@@ -603,7 +634,7 @@ void LANL::eval_all(double x, double y, struct natural_cubic_spline_2D & spline,
 
     f = node_f_vals[kx] + X * (df + (1.0 - X) * (A * (1.0 - X) + B * X));
     dfdx[0] = df / dx + (1.0 - 2.0 * X) * (A * (1.0 - X) + B * X) / dx + X * (1.0 - X) * (B - A) / dx;
-    ddfdxdx[0] = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dx, 2);
+    ddfdxdx[0] = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dx, 2);
 
     df = node_df_vals[kx + 1] - node_df_vals[kx];
     A = node_df_slopes[kx] * dx - df;
@@ -651,8 +682,8 @@ void LANL::eval_all(double x, double y, struct natural_cubic_spline_2D & spline,
     
     f = node_f_vals[kx] + X * (df + (1.0 - X) * (A * (1.0 - X) + B * X));
     dfdx[0] = df / dx + (1.0 - 2.0 * X) * (A * (1.0 - X) + B * X) / dx + X * (1.0 - X) * (B - A) / dx;
-    ddfdxdx[0] = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dx, 2);
-    dddfdxdxdx[0] = 6.0 * (A - B) / pow(dx, 3);
+    ddfdxdx[0] = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dx, 2);
+    dddfdxdxdx[0] = 6.0 * (A - B) / std::pow(dx, 3);
 
     df = node_df_vals[kx + 1] - node_df_vals[kx];
     A = node_df_slopes[kx] * dx - df;
@@ -660,7 +691,7 @@ void LANL::eval_all(double x, double y, struct natural_cubic_spline_2D & spline,
 
     dfdx[1] = node_df_vals[kx] + X * (df + (1.0 - X) * (A * (1.0 - X) + B * X));
     ddfdxdx[1] = df / dx + (1.0 - 2.0 * X) * (A * (1.0 - X) + B * X) / dx + X * (1.0 - X) * (B - A) / dx;
-    dddfdxdxdx[1] = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dx, 2);
+    dddfdxdxdx[1] = 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dx, 2);
 
     df = node_ddf_vals[kx + 1] - node_ddf_vals[kx];
     A = node_ddf_slopes[kx] * dx - df;
@@ -740,11 +771,11 @@ void LANL::update_spline_coeffs(int nx1, int ny1, struct bicubic_spline & spline
     double A[16], X[16];
     int nx1_up, nx1_dn, nx2, nx2_up, nx2_dn, ny1_up, ny1_dn, ny2, ny2_up, ny2_dn;
     
-    nx1_up = nx1 + 1; nx1_dn = max(nx1 - 1, 0); nx2 = nx1 + 1;
-    ny1_up = ny1 + 1; ny1_dn = max(ny1 - 1, 0); ny2 = ny1 + 1;
+    nx1_up = nx1 + 1; nx1_dn = std::max(nx1 - 1, 0); nx2 = nx1 + 1;
+    ny1_up = ny1 + 1; ny1_dn = std::max(ny1 - 1, 0); ny2 = ny1 + 1;
     
-    nx2_up = min(nx2 + 1, spline.length_x - 1); nx2_dn = nx2 - 1;
-    ny2_up = min(ny2 + 1, spline.length_y - 1); ny2_dn = ny2 - 1;
+    nx2_up = std::min(nx2 + 1, spline.length_x - 1); nx2_dn = nx2 - 1;
+    ny2_up = std::min(ny2 + 1, spline.length_y - 1); ny2_dn = ny2 - 1;
     
     X[0] = spline.f_vals[nx1][ny1];                                         X[1] = spline.f_vals[nx2][ny1];
     X[2] = spline.f_vals[nx1][ny2];                                         X[3] = spline.f_vals[nx2][ny2];
@@ -790,7 +821,7 @@ double LANL::eval_f(double x, double y, struct bicubic_spline & spline){
     result = 0.0;
     for(int j = 0; j < 4; j++){
         for(int k = 0; k < 4; k++){
-            result += pow(x_scaled, j) * pow(y_scaled, k) * spline.f_coeffs[j][k];
+            result += std::pow(x_scaled, j) * std::pow(y_scaled, k) * spline.f_coeffs[j][k];
         }
     }
     return result;
@@ -816,17 +847,17 @@ double LANL::eval_df(double x, double y, int n, struct bicubic_spline & spline){
     if (n == 0){
         for(int j = 1; j < 4; j++){
             for(int k = 0; k < 4; k++){
-                result += pow(x_scaled, j - 1) * pow(y_scaled, k) * spline.f_coeffs[j][k] * float(j) / dx;
+                result += std::pow(x_scaled, j - 1) * std::pow(y_scaled, k) * spline.f_coeffs[j][k] * float(j) / dx;
             }
         }
     } else if (n==1){
         for(int j = 0; j < 4; j++){
             for(int k = 1; k < 4; k++){
-                result += pow(x_scaled, j) * pow(y_scaled, k - 1) * spline.f_coeffs[j][k] * float(k) / dy;
+                result += std::pow(x_scaled, j) * std::pow(y_scaled, k - 1) * spline.f_coeffs[j][k] * float(k) / dy;
             }
         }
     } else {
-        cout << "Interpolation derivative index must be 0 or 1 for a 2D function." << '\n';
+        std::cout << "Interpolation derivative index must be 0 or 1 for a 2D function." << '\n';
         return 0.0;
     }
     
@@ -853,23 +884,23 @@ double LANL::eval_ddf(double x, double y, int n1, int n2, struct bicubic_spline 
     if (n1 == 0 && n2 == 0){
         for(int j = 2; j < 4; j++){
             for(int k = 0; k < 4; k++){
-                result += pow(x_scaled, j - 2) * pow(y_scaled, k) * spline.f_coeffs[j][k] * float(j * (j - 1)) / (dx * dx);
+                result += std::pow(x_scaled, j - 2) * std::pow(y_scaled, k) * spline.f_coeffs[j][k] * float(j * (j - 1)) / (dx * dx);
             }
         }
     } else if (n1 == 1 && n2 == 1){
         for(int j = 0; j < 4; j++){
             for(int k = 2; k < 4; k++){
-                result += pow(x_scaled, j) * pow(y_scaled, k - 2) * spline.f_coeffs[j][k] * float(k * (k - 1)) / (dy * dy);
+                result += std::pow(x_scaled, j) * std::pow(y_scaled, k - 2) * spline.f_coeffs[j][k] * float(k * (k - 1)) / (dy * dy);
             }
         }
     } else if ((n1 == 0 && n2 == 1) || (n1 == 1 && n2 == 0)){
         for(int j = 1; j < 4; j++){
             for(int k = 1; k < 4; k++){
-                result += pow(x_scaled, j - 1) * pow(y_scaled, k - 1) * spline.f_coeffs[j][k] * float(j * k) / (dx * dy);
+                result += std::pow(x_scaled, j - 1) * std::pow(y_scaled, k - 1) * spline.f_coeffs[j][k] * float(j * k) / (dx * dy);
             }
         }
     } else {
-        cout << "Interpolation derivative index must be 0 or 1 for a 2D function." << '\n';
+        std::cout << "Interpolation derivative index must be 0 or 1 for a 2D function." << '\n';
         return 0.0;
     }
     
@@ -915,7 +946,7 @@ void LANL::set(struct hybrid_spline_3D & spline){
         for(int my = 0; my < spline.length_y; my++){
             bi = 2.0 / (spline.z_vals[1] - spline.z_vals[0]);
             ci = 1.0 / (spline.z_vals[1] - spline.z_vals[0]);
-            di = 3.0 * (spline.f_vals[mx][my][1] - spline.f_vals[mx][my][0]) / pow(spline.z_vals[1] - spline.z_vals[0], 2);
+            di = 3.0 * (spline.f_vals[mx][my][1] - spline.f_vals[mx][my][0]) / std::pow(spline.z_vals[1] - spline.z_vals[0], 2);
             
             new_c[0] = ci / bi;
             new_d[0] = di / bi;
@@ -925,8 +956,8 @@ void LANL::set(struct hybrid_spline_3D & spline){
                 dz2 = spline.z_vals[i + 1] - spline.z_vals[i];
             
                 ai = 1.0 / dz1; bi = 2.0 * (1.0 / dz1 + 1.0 / dz2); ci = 1.0 / dz2;
-                di = 3.0 * ((spline.f_vals[mx][my][i] - spline.f_vals[mx][my][i - 1]) / pow(dz1, 2)
-                          + (spline.f_vals[mx][my][i + 1] - spline.f_vals[mx][my][i]) / pow(dz2, 2));
+                di = 3.0 * ((spline.f_vals[mx][my][i] - spline.f_vals[mx][my][i - 1]) / std::pow(dz1, 2)
+                          + (spline.f_vals[mx][my][i + 1] - spline.f_vals[mx][my][i]) / std::pow(dz2, 2));
 
                 new_c[i] = ci / (bi - new_c[i - 1] * ai);
                 new_d[i] = (di - new_d[i - 1] * ai)/(bi - new_c[i - 1] * ai);
@@ -935,7 +966,7 @@ void LANL::set(struct hybrid_spline_3D & spline){
             ai = 1.0 / (spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2]);
             bi = 2.0 / (spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2]);
             di = 3.0 * (spline.f_vals[mx][my][spline.length_z - 1] - spline.f_vals[mx][my][spline.length_z - 2])
-                            / pow(spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2], 2);
+                            / std::pow(spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2], 2);
             
             new_d[spline.length_z-1] = (di - new_d[spline.length_z - 2] * ai) / (bi - new_c[spline.length_z - 2] * ai);
             
@@ -953,11 +984,11 @@ void LANL::set(struct hybrid_spline_3D & spline){
     for(int mx = 0; mx < spline.length_x; mx++){
         for(int my = 0; my < spline.length_y; my++){
             for(int mz = 0; mz < spline.length_z; mz++){
-                mx_up = min(mx + 1, spline.length_x - 1);
-                my_up = min(my + 1, spline.length_y - 1);
+                mx_up = std::min(mx + 1, spline.length_x - 1);
+                my_up = std::min(my + 1, spline.length_y - 1);
                 
-                mx_dn = max(mx - 1, 0);
-                my_dn = max(my - 1, 0);
+                mx_dn = std::max(mx - 1, 0);
+                my_dn = std::max(my - 1, 0);
                 
                 dfdx[mx][my][mz] = (spline.f_vals[mx_up][my][mz] - spline.f_vals[mx_dn][my][mz]) / (spline.x_vals[mx_up] - spline.x_vals[mx_dn]);
                 dfdy[mx][my][mz] = (spline.f_vals[mx][my_up][mz] - spline.f_vals[mx][my_dn][mz]) / (spline.y_vals[my_up] - spline.y_vals[my_dn]);
@@ -970,7 +1001,7 @@ void LANL::set(struct hybrid_spline_3D & spline){
         for(int my = 0; my < spline.length_y; my++){
             bi = 2.0 / (spline.z_vals[1] - spline.z_vals[0]);
             ci = 1.0 / (spline.z_vals[1] - spline.z_vals[0]);
-            di = 3.0 * (dfdx[mx][my][1] - dfdx[mx][my][0]) / pow(spline.z_vals[1] - spline.z_vals[0], 2);
+            di = 3.0 * (dfdx[mx][my][1] - dfdx[mx][my][0]) / std::pow(spline.z_vals[1] - spline.z_vals[0], 2);
             
             new_c[0] = ci / bi;
             new_d[0] = di / bi;
@@ -980,8 +1011,8 @@ void LANL::set(struct hybrid_spline_3D & spline){
                 dz2 = spline.z_vals[i + 1] - spline.z_vals[i];
             
                 ai = 1.0 / dz1; bi = 2.0 * (1.0 / dz1 + 1.0 / dz2); ci = 1.0 / dz2;
-                di = 3.0 * ((dfdx[mx][my][i] - dfdx[mx][my][i - 1]) / pow(dz1, 2)
-                          + (dfdx[mx][my][i + 1] - dfdx[mx][my][i]) / pow(dz2, 2));
+                di = 3.0 * ((dfdx[mx][my][i] - dfdx[mx][my][i - 1]) / std::pow(dz1, 2)
+                          + (dfdx[mx][my][i + 1] - dfdx[mx][my][i]) / std::pow(dz2, 2));
                 
                 new_c[i] = ci/(bi - new_c[i - 1] * ai);
                 new_d[i] = (di - new_d[i-1] * ai) / (bi - new_c[i-1] * ai);
@@ -990,7 +1021,7 @@ void LANL::set(struct hybrid_spline_3D & spline){
             ai = 1.0 / (spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2]);
             bi = 2.0 / (spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2]);
             di = 3.0 * (dfdx[mx][my][spline.length_z - 1] - dfdx[mx][my][spline.length_z - 2])
-                        / pow(spline.z_vals[spline.length_z-1] - spline.z_vals[spline.length_z - 2], 2);
+                        / std::pow(spline.z_vals[spline.length_z-1] - spline.z_vals[spline.length_z - 2], 2);
             
             new_d[spline.length_z - 1] = (di - new_d[spline.length_z - 2] * ai) / (bi - new_c[spline.length_z - 2] * ai);
             spline.dfdx_slopes[mx][my][spline.length_z - 1] = new_d[spline.length_z - 1];
@@ -1004,7 +1035,7 @@ void LANL::set(struct hybrid_spline_3D & spline){
         for(int my = 0; my < spline.length_y; my++){
             bi = 2.0 / (spline.z_vals[1] - spline.z_vals[0]);
             ci = 1.0 / (spline.z_vals[1] - spline.z_vals[0]);
-            di = 3.0 * (dfdy[mx][my][1] - dfdy[mx][my][0]) / pow(spline.z_vals[1] - spline.z_vals[0], 2);
+            di = 3.0 * (dfdy[mx][my][1] - dfdy[mx][my][0]) / std::pow(spline.z_vals[1] - spline.z_vals[0], 2);
             
             new_c[0] = ci / bi;
             new_d[0] = di / bi;
@@ -1014,8 +1045,8 @@ void LANL::set(struct hybrid_spline_3D & spline){
                 dz2 = spline.z_vals[i + 1] - spline.z_vals[i];
             
                 ai = 1.0 / dz1; bi = 2.0 * (1.0 / dz1 + 1.0 / dz2); ci = 1.0 / dz2;
-                di = 3.0 * ((dfdy[mx][my][i] - dfdy[mx][my][i - 1]) / pow(dz1, 2)
-                          + (dfdy[mx][my][i + 1] - dfdy[mx][my][i]) / pow(dz2, 2) );
+                di = 3.0 * ((dfdy[mx][my][i] - dfdy[mx][my][i - 1]) / std::pow(dz1, 2)
+                          + (dfdy[mx][my][i + 1] - dfdy[mx][my][i]) / std::pow(dz2, 2) );
                 
                 new_c[i] = ci / (bi - new_c[i - 1] * ai);
                 new_d[i] = (di - new_d[i - 1] * ai) / (bi - new_c[i - 1] * ai);
@@ -1024,7 +1055,7 @@ void LANL::set(struct hybrid_spline_3D & spline){
             ai = 1.0/(spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2]);
             bi = 2.0/(spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2]);
             di = 3.0 * (dfdy[mx][my][spline.length_z - 1] - dfdy[mx][my][spline.length_z - 2])
-                    / pow(spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2], 2);
+                    / std::pow(spline.z_vals[spline.length_z - 1] - spline.z_vals[spline.length_z - 2], 2);
             
             new_d[spline.length_z - 1] = (di - new_d[spline.length_z - 2] * ai) / (bi - new_c[spline.length_z - 2] * ai);
             spline.dfdy_slopes[mx][my][spline.length_z - 1] = new_d[spline.length_z - 1];
@@ -1076,8 +1107,8 @@ double LANL::eval_node_dfdx(double z, struct hybrid_spline_3D spline, int kx, in
     int kx_up, kx_dn;
     double dfdx_kz, dfdx_kzp1, df, dz, X, A, B;
     
-    kx_up = min(kx + 1, spline.length_x - 1);
-    kx_dn = max(kx - 1, 0);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    kx_dn = std::max(kx - 1, 0);
     
     dfdx_kz = (spline.f_vals[kx_up][ky][kz] - spline.f_vals[kx_dn][ky][kz])/(spline.x_vals[kx_up] - spline.x_vals[kx_dn]);
     dfdx_kzp1 = (spline.f_vals[kx_up][ky][kz + 1] - spline.f_vals[kx_dn][ky][kz + 1])/(spline.x_vals[kx_up] - spline.x_vals[kx_dn]);
@@ -1096,8 +1127,8 @@ double LANL::eval_node_dfdy(double z, struct hybrid_spline_3D spline, int kx, in
     int ky_up, ky_dn;
     double dfdy_kz, dfdy_kzp1, df, dz, X, A, B;
     
-    ky_up = min(ky + 1, spline.length_y - 1);
-    ky_dn = max(ky - 1, 0);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
+    ky_dn = std::max(ky - 1, 0);
     
     dfdy_kz =   (spline.f_vals[kx][ky_up][kz] - spline.f_vals[kx][ky_dn][kz]) / (spline.y_vals[ky_up] - spline.y_vals[ky_dn]);
     dfdy_kzp1 = (spline.f_vals[kx][ky_up][kz + 1] - spline.f_vals[kx][ky_dn][kz + 1]) / (spline.y_vals[ky_up] - spline.y_vals[ky_dn]);
@@ -1129,8 +1160,8 @@ double LANL::eval_node_ddfdxdz(double z, struct hybrid_spline_3D spline, int kx,
     int kx_up, kx_dn;
     double dfdx_kz, dfdx_kzp1, df, dz, X, A, B;
     
-    kx_up = min(kx + 1, spline.length_x - 1);
-    kx_dn = max(kx - 1, 0);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    kx_dn = std::max(kx - 1, 0);
     
     dfdx_kz = (spline.f_vals[kx_up][ky][kz] - spline.f_vals[kx_dn][ky][kz])/(spline.x_vals[kx_up] - spline.x_vals[kx_dn]);
     dfdx_kzp1 = (spline.f_vals[kx_up][ky][kz + 1] - spline.f_vals[kx_dn][ky][kz + 1])/(spline.x_vals[kx_up] - spline.x_vals[kx_dn]);
@@ -1149,8 +1180,8 @@ double LANL::eval_node_ddfdydz(double z, struct hybrid_spline_3D spline, int kx,
     int ky_up, ky_dn;
     double dfdy_kz, dfdy_kzp1, df, dz, X, A, B;
     
-    ky_up = min(ky + 1, spline.length_y - 1);
-    ky_dn = max(ky - 1, 0);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
+    ky_dn = std::max(ky - 1, 0);
     
     dfdy_kz =   (spline.f_vals[kx][ky_up][kz] - spline.f_vals[kx][ky_dn][kz]) / (spline.y_vals[ky_up] - spline.y_vals[ky_dn]);
     dfdy_kzp1 = (spline.f_vals[kx][ky_up][kz + 1] - spline.f_vals[kx][ky_dn][kz + 1]) / (spline.y_vals[ky_up] - spline.y_vals[ky_dn]);
@@ -1175,15 +1206,15 @@ double LANL::eval_node_ddfdzdz(double z, struct hybrid_spline_3D spline, int kx,
     A = spline.f_slopes[kx][ky][kz] * dz - df;
     B = -spline.f_slopes[kx][ky][kz + 1] * dz + df;
     
-    return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / pow(dz, 2);
+    return 2.0 * (B - 2.0 * A + (A - B) * 3.0 * X) / std::pow(dz, 2);
 }
 
 // Finite difference derivatives for defining the bicubic spline corners
 double LANL::finite_diff_dfdx(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, kx_dn;
 
-    kx_up = min(kx + 1, spline.length_x - 1);
-    kx_dn = max(kx - 1, 0);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    kx_dn = std::max(kx - 1, 0);
     
     return (eval_node_f(z, spline, kx_up, ky, kz) - eval_node_f(z, spline, kx_dn, ky, kz)) / (spline.x_vals[kx_up] - spline.x_vals[kx_dn]);
 }
@@ -1191,8 +1222,8 @@ double LANL::finite_diff_dfdx(double z, struct hybrid_spline_3D spline, int kx, 
 double LANL::finite_diff_dfdy(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int ky_up, ky_dn;
     
-    ky_up = min(ky + 1, spline.length_y - 1);
-    ky_dn = max(ky - 1, 0);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
+    ky_dn = std::max(ky - 1, 0);
     
     return (eval_node_f(z, spline, kx, ky_up, kz) - eval_node_f(z, spline, kx, ky_dn, kz)) / (spline.y_vals[ky_up] - spline.y_vals[ky_dn]);
 }
@@ -1200,8 +1231,8 @@ double LANL::finite_diff_dfdy(double z, struct hybrid_spline_3D spline, int kx, 
 double LANL::finite_diff_ddfdxdx(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, kx_dn;
     
-    kx_up = min(kx + 1, spline.length_x - 1);
-    kx_dn = max(kx - 1, 0);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    kx_dn = std::max(kx - 1, 0);
     
     return (eval_node_dfdx(z, spline, kx_up, ky, kz) - eval_node_dfdx(z, spline, kx_dn, ky, kz)) / (spline.x_vals[kx_up] - spline.x_vals[kx_dn]);
 }
@@ -1209,8 +1240,8 @@ double LANL::finite_diff_ddfdxdx(double z, struct hybrid_spline_3D spline, int k
 double LANL::finite_diff_ddfdydy(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int ky_up, ky_dn;
     
-    ky_up = min(ky + 1, spline.length_y - 1);
-    ky_dn = max(ky - 1, 0);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
+    ky_dn = std::max(ky - 1, 0);
     
     return (eval_node_dfdy(z, spline, kx, ky_up, kz) - eval_node_dfdy(z, spline, kx, ky_dn, kz)) / (spline.y_vals[ky_up] - spline.y_vals[ky_dn]);
 }
@@ -1218,11 +1249,11 @@ double LANL::finite_diff_ddfdydy(double z, struct hybrid_spline_3D spline, int k
 double LANL::finite_diff_ddfdxdy(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, ky_up, kx_dn, ky_dn;
 
-    kx_up = min(kx + 1, spline.length_x - 1);
-    ky_up = min(ky + 1, spline.length_y - 1);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
     
-    kx_dn = max(kx - 1, 0);
-    ky_dn = max(ky - 1, 0);
+    kx_dn = std::max(kx - 1, 0);
+    ky_dn = std::max(ky - 1, 0);
 
     return (eval_node_f(z, spline, kx_up, ky_up, kz) - eval_node_f(z, spline, kx_up, ky_dn, kz) - eval_node_f(z, spline, kx_dn, ky_up, kz) + eval_node_f(z, spline, kx_dn, ky_dn, kz))
                     /((spline.x_vals[kx_up] - spline.x_vals[kx_dn]) * (spline.y_vals[ky_up] - spline.y_vals[ky_dn]));
@@ -1231,8 +1262,8 @@ double LANL::finite_diff_ddfdxdy(double z, struct hybrid_spline_3D spline, int k
 double LANL::finite_diff_ddfdxdz(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, kx_dn;
 
-    kx_up = min(kx + 1, spline.length_x - 1);
-    kx_dn = max(kx - 1, 0);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    kx_dn = std::max(kx - 1, 0);
     
     return (eval_node_dfdz(z, spline, kx_up, ky, kz) - eval_node_dfdz(z, spline, kx_dn, ky, kz)) / (spline.x_vals[kx_up] - spline.x_vals[kx_dn]);
 }
@@ -1240,8 +1271,8 @@ double LANL::finite_diff_ddfdxdz(double z, struct hybrid_spline_3D spline, int k
 double LANL::finite_diff_ddfdydz(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int ky_up, ky_dn;
     
-    ky_up = min(ky + 1, spline.length_y - 1);
-    ky_dn = max(ky - 1, 0);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
+    ky_dn = std::max(ky - 1, 0);
     
     return (eval_node_dfdz(z, spline, kx, ky_up, kz) - eval_node_dfdz(z, spline, kx, ky_dn, kz)) / (spline.y_vals[ky_up] - spline.y_vals[ky_dn]);
 }
@@ -1250,11 +1281,11 @@ double LANL::finite_diff_ddfdydz(double z, struct hybrid_spline_3D spline, int k
 double LANL::finite_diff_dddfdxdxdy(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, ky_up, kx_dn, ky_dn;
 
-    kx_up = min(kx + 1, spline.length_x - 1);
-    ky_up = min(ky + 1, spline.length_y - 1);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
     
-    kx_dn = max(kx - 1, 0);
-    ky_dn = max(ky - 1, 0);
+    kx_dn = std::max(kx - 1, 0);
+    ky_dn = std::max(ky - 1, 0);
     
     return (eval_node_dfdx(z, spline, kx_up, ky_up, kz) - eval_node_dfdx(z, spline, kx_up, ky_dn, kz)
             - eval_node_dfdx(z, spline, kx_dn, ky_up, kz) + eval_node_dfdx(z, spline, kx_dn, ky_dn, kz))
@@ -1264,11 +1295,11 @@ double LANL::finite_diff_dddfdxdxdy(double z, struct hybrid_spline_3D spline, in
 double LANL::finite_diff_dddfdxdydy(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, ky_up, kx_dn, ky_dn;
 
-    kx_up = min(kx + 1, spline.length_x - 1);
-    ky_up = min(ky + 1, spline.length_y - 1);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
     
-    kx_dn = max(kx - 1, 0);
-    ky_dn = max(ky - 1, 0);
+    kx_dn = std::max(kx - 1, 0);
+    ky_dn = std::max(ky - 1, 0);
 
     return (eval_node_dfdy(z, spline, kx_up, ky_up, kz) - eval_node_dfdy(z, spline, kx_up, ky_dn, kz)
             - eval_node_dfdy(z, spline, kx_dn, ky_up, kz) + eval_node_dfdy(z, spline, kx_dn, ky_dn, kz))
@@ -1278,11 +1309,11 @@ double LANL::finite_diff_dddfdxdydy(double z, struct hybrid_spline_3D spline, in
 double LANL::finite_diff_dddfdxdydz(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, ky_up, kx_dn, ky_dn;
 
-    kx_up = min(kx + 1, spline.length_x - 1);
-    ky_up = min(ky + 1, spline.length_y - 1);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
     
-    kx_dn = max(kx - 1, 0);
-    ky_dn = max(ky - 1, 0);
+    kx_dn = std::max(kx - 1, 0);
+    ky_dn = std::max(ky - 1, 0);
     
     return (eval_node_dfdz(z, spline, kx_up, ky_up, kz) - eval_node_dfdz(z, spline, kx_up, ky_dn, kz)
             - eval_node_dfdz(z, spline, kx_dn, ky_up, kz) + eval_node_dfdz(z, spline, kx_dn, ky_dn, kz))
@@ -1292,8 +1323,8 @@ double LANL::finite_diff_dddfdxdydz(double z, struct hybrid_spline_3D spline, in
 double LANL::finite_diff_dddfdxdzdz(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, kx_dn;
 
-    kx_up = min(kx + 1, spline.length_x - 1);
-    kx_dn = max(kx - 1, 0);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    kx_dn = std::max(kx - 1, 0);
 
     return (eval_node_ddfdzdz(z, spline, kx_up, ky, kz) - eval_node_ddfdzdz(z, spline, kx_dn, ky, kz)) / (spline.x_vals[kx_up] - spline.x_vals[kx_dn]);
 }
@@ -1301,8 +1332,8 @@ double LANL::finite_diff_dddfdxdzdz(double z, struct hybrid_spline_3D spline, in
 double LANL::finite_diff_dddfdydzdz(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int ky_up, ky_dn;
     
-    ky_up = min(ky + 1, spline.length_y - 1);
-    ky_dn = max(ky - 1, 0);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
+    ky_dn = std::max(ky - 1, 0);
     
     return (eval_node_ddfdzdz(z, spline, kx, ky_up, kz) - eval_node_ddfdzdz(z, spline, kx, ky_dn, kz)) / (spline.y_vals[ky_up] - spline.y_vals[ky_dn]);
 
@@ -1311,11 +1342,11 @@ double LANL::finite_diff_dddfdydzdz(double z, struct hybrid_spline_3D spline, in
 double LANL::finite_diff_ddddfdxdydzdz(double z, struct hybrid_spline_3D spline, int kx, int ky, int kz){
     int kx_up, ky_up, kx_dn, ky_dn;
 
-    kx_up = min(kx + 1, spline.length_x - 1);
-    ky_up = min(ky + 1, spline.length_y - 1);
+    kx_up = std::min(kx + 1, spline.length_x - 1);
+    ky_up = std::min(ky + 1, spline.length_y - 1);
     
-    kx_dn = max(kx - 1, 0);
-    ky_dn = max(ky - 1, 0);
+    kx_dn = std::max(kx - 1, 0);
+    ky_dn = std::max(ky - 1, 0);
         
     return (eval_node_ddfdzdz(z, spline, kx_up, ky_up, kz) - eval_node_ddfdzdz(z, spline, kx_up, ky_dn, kz)
             - eval_node_ddfdzdz(z, spline, kx_dn, ky_up, kz) + eval_node_ddfdzdz(z, spline, kx_dn, ky_dn, kz))
@@ -1353,7 +1384,7 @@ double LANL::eval_f(double x, double y, double z, struct hybrid_spline_3D & spli
     result = 0.0;
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            result += A_vec[k2 * 4 + k1] * pow(x_scaled, k1) * pow(y_scaled, k2);
+            result += A_vec[k2 * 4 + k1] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2);
         }
     }
 	
@@ -1406,19 +1437,19 @@ double LANL::eval_df(double x, double y, double z, int n, struct hybrid_spline_3
     if(n == 0){
         for(int k1 = 1; k1 < 4; k1++){
             for(int k2 = 0; k2 < 4; k2++){
-                result += A_vec[k2 * 4 + k1] * pow(x_scaled, k1 - 1) * pow(y_scaled, k2) * float(k1) / dx;
+                result += A_vec[k2 * 4 + k1] * std::pow(x_scaled, k1 - 1) * std::pow(y_scaled, k2) * float(k1) / dx;
             }
         }
     } else if(n == 1){
         for(int k1 = 0; k1 < 4; k1++){
             for(int k2 = 1; k2 < 4; k2++){
-                result += A_vec[k2 * 4 + k1] * pow(x_scaled, k1) * pow(y_scaled, k2 - 1) * float(k2) / dy;
+                result += A_vec[k2 * 4 + k1] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2 - 1) * float(k2) / dy;
             }
         }
     } else {
         for(int k1 = 0; k1 < 4; k1++){
             for(int k2 = 0; k2 < 4; k2++){
-                result += A_vec[k2 * 4 + k1] * pow(x_scaled, k1) * pow(y_scaled, k2);
+                result += A_vec[k2 * 4 + k1] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2);
             }
         }
     }
@@ -1506,25 +1537,25 @@ double LANL::eval_ddf(double x, double y, double z, int n1, int n2, struct hybri
     if (n1 == 2 && n2 == 2) {
         for(int k1 = 0; k1 < 4; k1++){
             for(int k2 = 0; k2 < 4; k2++){
-                result += A_vec[k2 * 4 + k1] * pow(x_scaled, k1) * pow(y_scaled, k2);
+                result += A_vec[k2 * 4 + k1] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2);
             }
         }
     } else if((n1 == 0 && n2 == 0) || (n1 == 0 && n2 == 2) || (n1 == 2 && n2 == 0)){
         for(int k1 = 1; k1 < 4; k1++){
             for(int k2 = 0; k2 < 4; k2++){
-                result += A_vec[k2 * 4 + k1] * pow(x_scaled, k1 - 1) * pow(y_scaled, k2) * float(k1) / dx;
+                result += A_vec[k2 * 4 + k1] * std::pow(x_scaled, k1 - 1) * std::pow(y_scaled, k2) * float(k1) / dx;
             }
         }
     } else if((n1 == 1 && n2 == 1) || (n1 == 1 && n2 == 2) || (n1 == 2 && n2 == 1)){
         for(int k1 = 0; k1 < 4; k1++){
             for(int k2 = 1; k2 < 4; k2++){
-                result += A_vec[k2 * 4 + k1] * pow(x_scaled, k1) * pow(y_scaled, k2 - 1) * float(k2) / dy;
+                result += A_vec[k2 * 4 + k1] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2 - 1) * float(k2) / dy;
             }
         }
     } else {
         for(int k1 = 1; k1 < 4; k1++){
             for(int k2 = 1; k2 < 4; k2++){
-                result += A_vec[k2 * 4 + k1] * pow(x_scaled, k1 - 1) * pow(y_scaled, k2 - 1) * float(k1 * k2) / (dx * dy);
+                result += A_vec[k2 * 4 + k1] * std::pow(x_scaled, k1 - 1) * std::pow(y_scaled, k2 - 1) * float(k1 * k2) / (dx * dy);
             }
         }
     }
@@ -1564,19 +1595,19 @@ void LANL::eval_all(double x, double y, double z, struct hybrid_spline_3D & spli
 
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            f += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2);
+            f += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2);
         }
     }
     
     for(int k1 = 1; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            df[0] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1 - 1) * pow(y_scaled, k2) * float(k1) / dx;
+            df[0] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1 - 1) * std::pow(y_scaled, k2) * float(k1) / dx;
         }
     }
 
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 1; k2 < 4; k2++){
-            df[1] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2 - 1) * float(k2) / dy;
+            df[1] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2 - 1) * float(k2) / dy;
         }
     }
 	
@@ -1601,7 +1632,7 @@ void LANL::eval_all(double x, double y, double z, struct hybrid_spline_3D & spli
     
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            df[2] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2);
+            df[2] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2);
         }
     }
 }
@@ -1638,28 +1669,28 @@ void LANL::eval_all(double x, double y, double z, struct hybrid_spline_3D & spli
     f = 0.0;
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            f += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2);
+            f += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2);
         }
     }
 
     df[0] = 0.0;
     for(int k1 = 1; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            df[0] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1 - 1) * pow(y_scaled, k2) * float(k1) / dx;
+            df[0] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1 - 1) * std::pow(y_scaled, k2) * float(k1) / dx;
         }
     }
     
     df[1] = 0.0;
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 1; k2 < 4; k2++){
-            df[1] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2 - 1) * float(k2) / dy;
+            df[1] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2 - 1) * float(k2) / dy;
         }
     }
 
     ddf[3] = 0.0;
     for(int k1 = 1; k1 < 4; k1++){
         for(int k2 = 1; k2 < 4; k2++){
-            ddf[3] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1 - 1) * pow(y_scaled, k2 - 1) * float(k1 * k2) / (dx * dy);
+            ddf[3] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1 - 1) * std::pow(y_scaled, k2 - 1) * float(k1 * k2) / (dx * dy);
         }
     }
     
@@ -1684,21 +1715,21 @@ void LANL::eval_all(double x, double y, double z, struct hybrid_spline_3D & spli
     df[2] = 0.0;
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            df[2] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2);
+            df[2] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2);
         }
     }
 
     ddf[4] = 0.0;
     for(int k1 = 1; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            ddf[4] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1 - 1) * pow(y_scaled, k2) * float(k1) / dx;
+            ddf[4] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1 - 1) * std::pow(y_scaled, k2) * float(k1) / dx;
         }
     }
 
     ddf[5] = 0.0;
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 1; k2 < 4; k2++){
-            ddf[5] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2 - 1) * float(k2) / dy;
+            ddf[5] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2 - 1) * float(k2) / dy;
         }
     }
     
@@ -1723,7 +1754,7 @@ void LANL::eval_all(double x, double y, double z, struct hybrid_spline_3D & spli
     ddf[0] = 0.0;
     for(int k1 = 1; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            ddf[0] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1 - 1) * pow(y_scaled, k2) * float(k1) / dx;
+            ddf[0] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1 - 1) * std::pow(y_scaled, k2) * float(k1) / dx;
         }
     }
     
@@ -1748,7 +1779,7 @@ void LANL::eval_all(double x, double y, double z, struct hybrid_spline_3D & spli
     ddf[1] = 0.0;
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 1; k2 < 4; k2++){
-            ddf[1] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2 - 1) * float(k2) / dy;
+            ddf[1] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2 - 1) * float(k2) / dy;
         }
     }
     
@@ -1773,7 +1804,7 @@ void LANL::eval_all(double x, double y, double z, struct hybrid_spline_3D & spli
     ddf[2] = 0;
     for(int k1 = 0; k1 < 4; k1++){
         for(int k2 = 0; k2 < 4; k2++){
-            ddf[2] += A_vec[k1 + 4 * k2] * pow(x_scaled, k1) * pow(y_scaled, k2);
+            ddf[2] += A_vec[k1 + 4 * k2] * std::pow(x_scaled, k1) * std::pow(y_scaled, k2);
         }
     }
 }

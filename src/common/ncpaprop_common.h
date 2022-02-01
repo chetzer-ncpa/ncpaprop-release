@@ -4,6 +4,8 @@
 #include "util.h"
 #include "units.h"
 #include "parameterset.h"
+#include "matrix.h"
+#include "ncpa_fft.h"
 
 #include "binaryreader.h"
 #include "geographic.h"

@@ -3,7 +3,7 @@
 
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
-
+#include "AtmosphericProperty3D.h"
 
 namespace NCPA {
 
