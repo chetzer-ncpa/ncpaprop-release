@@ -592,13 +592,18 @@ int NCPA::GFPESolver::solve() {
 				dr = dr_requested;
 			}
 
+			double scalemod = 1.0;
+			while (std::log10( dr * std::pow( 10.0, scalemod ) ) < 0.0) {
+				scalemod += 1.0;
+			}
+
 			// we will round dr to an appropriate number of decimal places
 			// by scaling it up, constructing a temporary array of integers,
 			// and then scaling them back down
 			// @todo use decimal places of requested dr so as not to
 			//       lose precision
 			double scale = std::pow( 10.0,
-				std::floor( std::log10( dr ) ) + 1.0 );
+				std::floor( std::log10( dr ) ) + scalemod + 1.0 );
 			int dr_scaled = (int)std::round( dr * scale );
 			int this_r = dr_scaled;
 			int rmax_scaled = (int)std::round(range->get() * scale);
