@@ -16,32 +16,148 @@
 
 namespace NCPA {
 
+	/**
+	Converts a numerical time to its equivalent time string in the
+	format yyyy-mm-dd hh:mm:ss.mmm
+	@brief Returns a human-readable time from an epoch time.
+	@param d The time to print, as an epoch time_t value.
+	@returns The string representation of the time.
+	*/
 	std::string timeAsString( double d );
+
+	/**
+	Determines if a given filename represents a readable file by
+	attempting to open it and determining if it is in a good state.
+	@brief Determines if a given filename represents a readable file.
+	@param filename The name of the file to attempt to open.
+	@returns true if the file can be read on open, false otherwise.
+	*/
 	bool fexists( const char *filename );
+
+	/**
+	Removes leading and trailing whitespace from a string.
+	Whitespace is defined as spaces, tabs, or newline characters.
+	@brief Removes leading and trailing whitespace from a string.
+	@param orig The original string to deblank.
+	@returns The original string with leading and trailing whitespace removed.
+	*/
 	std::string deblank( const std::string& orig );
 
-	double mean( double*, size_t );
+	/**
+	Removes leading and trailing whitespace from a string, using
+	specified whitespace characters.
+	@brief Removes leading and trailing whitespace from a string.
+	@param orig The original string to deblank.
+	@param whitespace A string containing all characters to treat as whitespace
+	@returns The original string with leading and trailing whitespace removed.
+	*/
+	std::string deblank( const std::string& str,
+		const std::string& whitespace );
+
+	/**
+	Computes the mean of a double array.
+	@brief Computes the mean of a double array.
+	@param d The array of doubles to average.
+	@param n The size of the array.
+	@returns The computed mean.
+	*/
+	double mean( double* d, size_t n );
+
+	/**
+	For input v, returns the lowest positive integer n such that
+	2^n >= v.
+	@brief Returns the next integer power of 2.
+	@param v The input number to start at.
+	@returns The next integer power of 2.
+	*/
 	size_t nextpow2( size_t v );
 
+	/**
+	Acts as std::getline, but checks for all variations of newline
+	characters \r, \n, and \r\n.
+	@brief Gets a line, checking for several variants of newline.
+	@param is The stream to read the line from
+	@param s The line returned.
+	@returns The original stream after reading the line.
+	*/
 	std::istream &safe_getline( std::istream &is, std::string &s );
 
-	// perform a simple linear interpolation
+	/**
+	Performs a simple linear interpolation.  Returns the value at x
+	between (x1,y1) and (x2,y2).
+	@brief Performs a simple linear interpolation.
+	@param x1 The x coordinate of the start point.
+	@param y1 The y coordinate of the start point.
+	@param x2 The x coordinate of the end point.
+	@param y2 The y coordinate of the end point.
+	@param x The x value at which to perform the interpolation.
+	@returns The value of y at x.
+	*/
 	double linearInterp( double x1, double y1, double x2, double y2, double x );
+
+	/**
+	Converts the supplied string to upper case.
+	@brief Converts to upper case.
+	@param in The string to convert.
+	@returns The input string converted into all upper case.
+	*/
 	void toUpperCase( char *in );
+
+	/**
+	Converts the supplied string to lower case.
+	@brief Converts to lower case.
+	@param in The string to convert.
+	@returns The input string converted into all lower case.
+	*/
 	void toLowerCase( char *in );
+
+	/**
+	Converts the supplied string to upper case.
+	@brief Converts to upper case.
+	@param in The string to convert.
+	@returns The input string converted into all upper case.
+	*/
 	std::string toUpperCase( const std::string in );
+
+	/**
+	Converts the supplied string to lower case.
+	@brief Converts to lower case.
+	@param in The string to convert.
+	@returns The input string converted into all lower case.
+	*/
 	std::string toLowerCase( const std::string in );
 
-	// Split a string into more strings by tokenizing
-	std::vector< std::string > split( std::string input, std::string delimiters = " \t\n" );
-	std::string deblank( const std::string& str, const std::string& whitespace );
+	/**
+	Splits a string into tokens using supplied delimiter characters.
+	Similar to the Perl split() function.
+	@brief Breaks a string into tokens using delimiter characters.
+	@param input The string to split.
+	@param delimiters The delimiter characters.  Defaults to whitespace.
+	@returns A vector of the string tokens.
+	*/
+	std::vector< std::string > split( std::string input,
+		std::string delimiters = " \t\n\r" );
 
-	// random numbers
+	/**
+	Generates a vector of N random numbers in the range [0,scale).
+	@brief Generates a vector of random numbers.
+	@param N Number of random values to generate.
+	@param scale The upper end of the range.  Defaults to 1.0.
+	@returns A vector of random numbers.
+	*/
 	std::vector<double> random_numbers( size_t N, double scale = 1.0 );
 
-	bool checkAzimuthLimits( double toCheck, double target, double tolerance );
-	// double normalizeAzimuth( double in );
-	template<typename T> T normalizeAzimuth( T in ) {
+
+	// bool checkAzimuthLimits( double toCheck, double target,
+	// 	double tolerance );
+
+	/**
+	@brief Normalizes an azimuth into the range [0,360)
+	@param in The azimuth value to normalize, in degrees.
+	@returns The normalized azimuth, in degrees.
+	*/
+	template<typename T>
+	T normalizeAzimuth( T in ) {
 		double out = (double)in;
 		while (out < 0.0) {
 			out += 360.0;
@@ -52,7 +168,13 @@ namespace NCPA {
 		return (T)out;
 	}
 
-	template<typename T> T normalizeAzimuthRadians( T in ) {
+	/**
+	@brief Normalizes an azimuth into the range [0,2*pi)
+	@param in The azimuth value to normalize, in radians.
+	@returns The normalized azimuth, in radians.
+	*/
+	template<typename T>
+	T normalizeAzimuthRadians( T in ) {
 		double out = (double)in;
 		while (out < 0.0) {
 			out += 2.0 * PI;
@@ -63,33 +185,178 @@ namespace NCPA {
 		return (T)out;
 	}
 	
-	// Utility functions
+	/**
+	Dynamically allocates a 2-D array of int values and returns
+	a pointer to the array.
+	@brief Allocates and returns an int**.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@returns A pointer to the first value of the array.
+	\deprecated{Deprecated in favor of the NCPA::matrix<> class template
+		(if matrix arithmetic capability is needed) or the
+		NCPA::allocate_matrix<> template (if not).}
+	*/
 	int **imatrix(long nr, long nc);
-	int free_imatrix(int** v, long nr, long nc);
-	double **dmatrix(long nr, long nc);
-	int free_dmatrix(double** v, long nr, long nc);
-	std::complex<double> **cmatrix(long nr, long nc);
-	int free_cmatrix(std::complex<double> **v, long nr, long nc);
-	std::complex<double> ***c3Darray(size_t xlen, size_t ylen, size_t zlen);
-	void free_c3Darray(std::complex<double> ***data, size_t xlen, size_t ylen);
 
-	// coordinate system transformations
+	/**
+	Frees a dynamically-allocated 2-D array of int values.
+	@brief Frees an int**.
+	@param v The pointer to free.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@returns 0 on success.
+	\deprecated{Deprecated in favor of NCPA::free_matrix<> template.}
+	*/
+	int free_imatrix(int** v, long nr, long nc);
+
+	/**
+	Dynamically allocates a 2-D array of double values and returns
+	a pointer to the array.
+	@brief Allocates and returns a double**.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@returns A pointer to the first value of the array.
+	\deprecated{Deprecated in favor of the NCPA::matrix<> class template
+		(if matrix arithmetic capability is needed) or the
+		NCPA::allocate_matrix<> template (if not).}
+	*/
+	double **dmatrix(long nr, long nc);
+
+	/**
+	Frees a dynamically-allocated 2-D array of double values.
+	@brief Frees a double**.
+	@param v The pointer to free.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@returns 0 on success.
+	\deprecated{Deprecated in favor of NCPA::free_matrix<> template.}
+	*/
+	int free_dmatrix(double** v, long nr, long nc);
+
+	/**
+	Dynamically allocates a 2-D array of complex values and returns
+	a pointer to the array.
+	@brief Allocates and returns a std::complex<double>**.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@returns A pointer to the first value of the array.
+	\deprecated{Deprecated in favor of the NCPA::matrix<> class template
+		(if matrix arithmetic capability is needed) or the
+		NCPA::allocate_matrix<> template (if not).}
+	*/
+	std::complex<double> **cmatrix(long nr, long nc);
+
+	/**
+	Frees a dynamically-allocated 2-D array of complex values.
+	@brief Frees a std::complex<double>**.
+	@param v The pointer to free.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@returns 0 on success.
+	\deprecated{Deprecated in favor of NCPA::free_matrix<> template.}
+	*/
+	int free_cmatrix(std::complex<double> **v, long nr, long nc);
+
+	/**
+	Dynamically allocates a 3-D array of complex values and returns
+	a pointer to the array.
+	@brief Allocates and returns a std::complex<double>***.
+	@param xlen The first dimension of the array.
+	@param ylen The second dimension of the array.
+	@param zlen The third dimension of the array.
+	@returns A pointer to the first value of the array.
+	\deprecated{Deprecated in favor of the NCPA::matrix3d<> template.}
+	*/
+	std::complex<double> ***c3Darray(size_t xlen, size_t ylen, size_t zlen);
+
+	/**
+	Frees a dynamically-allocated 3-D array of complex values.
+	@brief Frees a std::complex<double>***.
+	@param data The pointer to free.
+	@param xlen The first dimension of the array.
+	@param ylen The second dimension of the array.
+	\deprecated{Deprecated in favor of NCPA::free_matrix3d<> template.}
+	*/
+	void free_c3Darray(std::complex<double> ***data, size_t xlen,
+		size_t ylen);
+
+	/**
+	@brief Converts from polar to Cartesian coordinates.
+	@param r The r polar input coordinate.
+	@param theta_rad The theta input polar coordinate, in radians.
+	@param x The x Cartesian output coordinate.
+	@param y The y Cartesian output coordinate.
+	*/
 	void pol2cart( double r, double theta_rad, double &x, double &y );
+
+	/**
+	@brief Converts from Cartesian to polar coordinates.
+	@param x The x Cartesian input coordinate.
+	@param y The y Cartesian input coordinate.
+	@param r The r polar output coordinate.
+	@param theta_rad The theta output polar coordinate, in radians.
+	*/
 	void cart2pol( double x, double y, double &r, double &theta_rad );
 
+	/**
+	@brief Counts the rows in a file.
+	@input filename The filename to count the rows from.
+	@returns The number of rows in the file.
+	*/
 	int count_rows_arbcol( const std::string& filename );
-	void read_matrix_from_file( const std::string &filename, double **&contents,
-		size_t &ncols, size_t &nrows, std::string delimiters = " \t\n" );
+
+	/**
+	@brief Reads a matrix from a text file, one row per line.
+	@param filename The file to read from.
+	@param contents A dynamically-allocated double[ncols][nrows].
+	@param ncols The number of columns read from the file.
+	@param nrows The number of rows read from the file.
+	@param delimiters Delimiters to use between values.  Defaults to whitespace.
+	*/
+	void read_matrix_from_file( const std::string &filename,
+		double **&contents, size_t &ncols, size_t &nrows,
+		std::string delimiters = " \t\r\n" );
+
+	/**
+	@brief Reads columns from a text file.
+	@param filename The file to read from.
+	@param contents The columns from the file, one vector of strings per column.
+	@param delimiters Delimiters to use between values.  Defaults to whitespace.
+	*/
 	void read_text_columns_from_file( const std::string &filename,
 		std::vector< std::vector< std::string > > &contents,
-		std::string delimiters = " \t\n" );
+		std::string delimiters = " \t\r\n" );
 
-	// function templates.  Need to be defined here as well as declared so compiler can
-	// find and generate them properly.
-	template<typename T> T min( T a, T b ) { return a < b ? a : b; }
-	template<typename T> T max( T a, T b ) { return a > b ? a : b; }
+	/**
+	@brief Returns the lesser of two values.
+	@param a First value.
+	@param b Second value.
+	@returns a if a < b, b otherwise.
+	*/
+	template<typename T>
+	T min( T a, T b ) {
+		return a < b ? a : b;
+	}
 
-	template<typename T> T max( const T *vals, size_t size ) {
+	/**
+	@brief Returns the greater of two values.
+	@param a First value.
+	@param b Second value.
+	@returns a if a > b, b otherwise.
+	*/
+	template<typename T>
+	T max( T a, T b ) {
+		return a > b ? a : b;
+	}
+
+	/**
+	@brief Returns the maximum value from an array.
+	@param vals The array holding the values to check.
+	@param size The size of the array.
+	@returns The maximum value found in the array.
+	*/
+	template<typename T>
+	T max( const T *vals, size_t size ) {
 		T maxval = vals[ 0 ];
 		for (size_t i = 1; i < size; i++) {
 			maxval = NCPA::max( vals[i], maxval );
@@ -97,7 +364,14 @@ namespace NCPA {
 		return maxval;
 	}
 
-	template<typename T> T min( const T *vals, size_t size ) {
+	/**
+	@brief Returns the minimum value from an array.
+	@param vals The array holding the values to check.
+	@param size The size of the array.
+	@returns The minimum value found in the array.
+	*/
+	template<typename T>
+	T min( const T *vals, size_t size ) {
 		T minval = vals[ 0 ];
 		for (size_t i = 1; i < size; i++) {
 			minval = NCPA::min( vals[ i ], minval );
@@ -105,7 +379,13 @@ namespace NCPA {
 		return minval;
 	}
 
-	template<typename T> T max( std::vector< T > vals ) {
+	/**
+	@brief Returns the minimum value from a vector.
+	@param vals The vector holding the values to check.
+	@returns The minimum value found in the vector.
+	*/
+	template<typename T>
+	T max( std::vector< T > vals ) {
 		T maxval = vals.front();
 		for (typename std::vector<T>::const_iterator cit = vals.cbegin();
 				cit != vals.cend(); ++cit) {
@@ -114,7 +394,13 @@ namespace NCPA {
 		return maxval;
 	}
 
-	template<typename T> T min( std::vector< T > vals ) {
+	/**
+	@brief Returns the maximum value from a vector.
+	@param vals The vector holding the values to check.
+	@returns The maximum value found in the vector.
+	*/
+	template<typename T>
+	T min( std::vector< T > vals ) {
 		T minval = vals.front();
 		for (typename std::vector<T>::const_iterator cit = vals.cbegin();
 				cit != vals.cend(); ++cit) {
@@ -123,31 +409,92 @@ namespace NCPA {
 		return minval;
 	}
 
-	template<typename T> T deg2rad( T deg_in ) { return (T)(((double)deg_in) * PI / 180.0); }
-	template<typename T> T rad2deg( T deg_in ) { return (T)(((double)deg_in) * 180.0 / PI); }
-
-	template<typename T> void move_origin( size_t npts,
-			const T *old_x, const T *old_y, T x_new_origin, T y_new_origin,
-			T *new_x, T *new_y ) {
-		for (size_t i = 0; i < npts; i++) {
-			new_x[ i ] = old_x[ i ] - x_new_origin;
-			new_y[ i ] = old_y[ i ] - y_new_origin;
-		}
+	/**
+	@brief Converts from degrees to radians.
+	@param deg_in The input value in degrees.
+	@returns The output value in radians.
+	*/
+	template<typename T>
+	T deg2rad( T deg_in ) {
+		return (T)(((double)deg_in) * PI / 180.0);
 	}
 
-	template<typename T> void move_origin( T old_x, T old_y,
+	/**
+	@brief Converts from radians to degrees.
+	@param rad_in The input value in radians.
+	@returns The output value in degrees.
+	*/
+	template<typename T>
+	T rad2deg( T rad_in ) {
+		return (T)(((double)rad_in) * 180.0 / PI);
+	}
+
+	/**
+	Shifts a point in Cartesian coordinates to a new position
+	relative to a different origin.
+	@brief Returns coordinates relative to a new origin.
+	@param old_x The x coordinate relative to (0,0).
+	@param old_y The y coordinate relative to (0,0).
+	@param x_new_origin The x coordinate of the new origin.
+	@param y_new_origin The y coordinate of the new origin.
+	@param new_x The new x coordinate.
+	@param new_y The new y coordiante.
+	*/
+	template<typename T>
+	void move_origin( T old_x, T old_y,
 			T x_new_origin, T y_new_origin, T &new_x, T &new_y ) {
 		new_x = old_x - x_new_origin;
 		new_y = old_y - y_new_origin;
 	}
 
-	template<typename T> T *zeros( size_t n ) {
+	/**
+	Shifts an array of Cartesian points from an origin at (0,0) to
+	a new origin, and returns the coordinates relative to the new
+	origin.
+	@brief Returns coordinates relative to a new origin.
+	@param npts The number of points to move.
+	@param old_x The x coordinates relative to (0,0)
+	@param old_y The y coordinates relative to (0,0)
+	@param x_new_origin The x coordinate of the new origin
+	@param y_new_origin The y coordinate of the new origin
+	@param new_x The array to hold the new x coordinates.
+	@param new_y The array to hold the new y coordinates.
+	*/
+	template<typename T>
+	void move_origin( size_t npts, const T *old_x, const T *old_y,
+			T x_new_origin, T y_new_origin, T *new_x, T *new_y ) {
+		for (size_t i = 0; i < npts; i++) {
+			move_origin<T>( old_x[ i ], old_y[ i ],
+				x_new_origin, y_new_origin, new_x[ i ], new_y[ i ] );
+			// new_x[ i ] = old_x[ i ] - x_new_origin;
+			// new_y[ i ] = old_y[ i ] - y_new_origin;
+		}
+	}
+
+	/**
+	Dynamically allocates a new array and sets all elements to zero
+	before returning it.
+	@brief Returns a new array of all zeros.
+	@param n The size of the array.
+	@returns A pointer to the newly-allocated array.
+	*/
+	template<typename T>
+	T *zeros( size_t n ) {
 		T *out = new T[ n ];
 		std::memset( out, 0, n*sizeof(T) );
 		return out;
 	}
 
-	template<typename T> T *single_valued_vector( size_t n, T val ) {
+	/**
+	Dynamically allocates a new array and sets all elements to the same
+	value before returning it.
+	@brief Returns a new array of a single value.
+	@param n The size of the array.
+	@param val The value to set all elements to.
+	@returns A pointer to the newly-allocated array.
+	*/
+	template<typename T>
+	T *single_valued_vector( size_t n, T val ) {
 		T *out = new T[ n ];
 		for (size_t i = 0; i < n; i++) {
 			out[ i ] = val;
@@ -155,7 +502,15 @@ namespace NCPA {
 		return out;
 	}
 
-	template<typename T> T* index_vector( size_t n ) {
+	/**
+	Dynamically allocates a new array and sets the elements to
+	(0, 1, 2, ..., n-1).
+	@brief Returns a new array of index values.
+	@param n The size of the array.
+	@returns A pointer to the newly-allocated array.
+	*/
+	template<typename T>
+	T *index_vector( size_t n ) {
 		T *ivec = new T[ n ];
 		T Tn = (T)n;
 		for (T i = 0; i < Tn; i++) {
@@ -164,7 +519,16 @@ namespace NCPA {
 		return ivec;
 	}
 
-	// linearly spaced vector from firstval to lastval
+
+	/**
+	Returns an array of N values, linearly spaced between two
+	supplied end points, placed in a pre-allocated array.
+	@brief Populates a linearly spaced array of values.
+	@param firstval The starting value of the array.
+	@param lastval The ending value of the array.
+	@param N The number of values to return.
+	@param vec The array to place the values in.
+	*/
 	template<typename T>
 	void linspace( T firstval, T lastval, size_t N,
 			T *&vec ) {
@@ -174,6 +538,16 @@ namespace NCPA {
 			vec[i] = firstval + ((T)i) * stepsize;
 		}
 	}
+
+	/**
+	Dynamically allocates an array of N values, linearly spaced
+	between two supplied end points, and returns the new array.
+	@brief Returns a new linearly spaced array of values.
+	@param firstval The starting value of the array.
+	@param lastval The ending value of the array.
+	@param N The number of values to return.
+	@returns The new array containing the values.
+	*/
 	template<typename T>
 	T* linspace( T firstval, T lastval, size_t N ) {
 		T *vec = NCPA::zeros<T>( N );
@@ -182,6 +556,18 @@ namespace NCPA {
 	}
 
 	// logarithmically spaced vector from a to b (NOT from 10^a to 10^b)
+	/**
+	Returns an array of N values, logarithmically spaced between two
+	supplied end points a and b, placed in a pre-allocated array.  Note
+	that this returns the values, not the exponents of the values as in
+	some other logspace functions; in other words, it returns the array
+	(a, ..., b) and NOT (10^a, ..., 10^b).
+	@brief Populates a linearly spaced array of values.
+	@param a The starting value of the array.
+	@param b The ending value of the array.
+	@param k The number of values to return.
+	@param ls The array to place the values in.
+	*/
 	template<typename T>
 	void logspace( T a, T b, size_t k, T *&ls ) {
 		T la = std::log10(a);
@@ -192,15 +578,34 @@ namespace NCPA {
 		}
 	}
 
+	/**
+	Dynamically allocates and returns an array of N values, logarithmically
+	spaced between two supplied end points a and b, placed in a
+	pre-allocated array.
+	Note that this returns the values, not the exponents of the values
+	as in some other logspace functions; in other words, it returns
+	the array (a, ..., b) and NOT (10^a, ..., 10^b).
+	@brief Populates a linearly spaced array of values.
+	@param a The starting value of the array.
+	@param b The ending value of the array.
+	@param N The number of values to return.
+	@returns The new array containing the values.
+	*/
 	template<typename T>
-	T* logspace( T firstval, T lastval, size_t N ) {
+	T* logspace( T a, T b, size_t N ) {
 		T *vec = NCPA::zeros<T>( N );
-		NCPA::logspace<T>( firstval, lastval, N, vec );
+		NCPA::logspace<T>( a, b, N, vec );
 		return vec;
 	}
 
-
-	template<typename T> T** allocate_matrix( size_t nr, size_t nc ) {
+	/**
+	@brief Dynamically allocates and returns a two-dimensional array.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@returns A pointer to the newly-allocated array.
+	*/
+	template<typename T>
+	T** allocate_matrix( size_t nr, size_t nc ) {
 		T **v;
 		v = new T* [nr];
 		for (size_t i = 0; i < nr; i++) {
@@ -210,14 +615,30 @@ namespace NCPA {
 		return v;
 	}
 
-	template<typename T> void free_matrix( T **v, size_t nr, size_t nc ) {
+	/**
+	@brief Frees a dynamically allocated 2-D array.
+	@param v The array to free.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	*/
+	template<typename T>
+	void free_matrix( T **v, size_t nr, size_t nc ) {
 		for (size_t i = 0; i < nr; i++) {
 			delete [] v[ i ];
 		}
 		delete [] v;
 	}
 
-	template<typename T> void free_matrix_and_contents( T **v, size_t nr, size_t nc ) {
+	/**
+	Frees a dynamically-allocated 2-D array of objects, and calls
+	delete on each element in the process.
+	@brief Frees a dynamically allocated 2-D array and its contents.
+	@param v The array to free.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	*/
+	template<typename T>
+	void free_matrix_and_contents( T **v, size_t nr, size_t nc ) {
 		for (size_t i = 0; i < nr; i++) {
 			for (size_t j = 0; j < nc; j++) {
 				delete v[ i ][ j ];
@@ -227,7 +648,15 @@ namespace NCPA {
 		delete [] v;
 	}
 
-	template<typename T> void fill_matrix( T **v, size_t nr, size_t nc, const T &val ) {
+	/**
+	@brief Sets each element of a 2-D array to a constant value.
+	@param v The array to fill.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@param val The value to set each element to.
+	*/
+	template<typename T>
+	void fill_matrix( T **v, size_t nr, size_t nc, const T &val ) {
 		for (size_t i = 0; i < nr; i++) {
 			for (size_t j = 0; j < nc; j++) {
 				v[ i ][ j ] = val;
@@ -235,6 +664,15 @@ namespace NCPA {
 		}
 	}
 
+	/**
+	Finds and returns the index of the array element that is closest
+	in value to a supplied reference value.  Minimizes abs( z - zref ).
+	@brief Finds the index of the closest array element to a value.
+	@param z The array to check.
+	@param NZ The size of the array.
+	@param zs The reference value.
+	@returns The index of the array element closest to the reference value.
+	*/
 	template<typename T>
 	size_t find_closest_index( T *z, size_t NZ, T zs ) {
 		if (NZ == 1) {
@@ -254,6 +692,14 @@ namespace NCPA {
 		return tmpind;
 	}
 
+	/**
+	Finds and returns the index of the vector element that is closest
+	in value to a supplied reference value.  Minimizes abs( z - zref ).
+	@brief Finds the index of the closest vector element to a value.
+	@param z The vector to check.
+	@param zs The reference value.
+	@returns The index of the vector element closest to the reference value.
+	*/
 	template<typename T>
 	size_t find_closest_index( std::vector<T> z, T zs ) {
 		if (z.size() == 1) {
@@ -271,7 +717,15 @@ namespace NCPA {
 		return tmpind;
 	}
 
-	template<typename T> T*** matrix3d( size_t nd1, size_t nd2, size_t nd3 ) {
+	/**
+	@brief Dynamically allocates and returns a three-dimensional array.
+	@param nd1 The first dimension of the array.
+	@param nd2 The second dimension of the array.
+	@param nd3 The third dimension of the array.
+	@returns A pointer to the newly-allocated array.
+	*/
+	template<typename T>
+	T*** matrix3d( size_t nd1, size_t nd2, size_t nd3 ) {
 		size_t i, j;
 		T ***p = new T** [ nd1 ];
 
@@ -285,7 +739,15 @@ namespace NCPA {
 		return p;
 	}
 
-	template<typename T> void free_matrix3d( T ***data, size_t nd1, size_t nd2, size_t nd3 ) {
+	/**
+	@brief Frees a dynamically-allocated three-dimensional array.
+	@param data The array to free.
+	@param nd1 The first dimension of the array.
+	@param nd2 The second dimension of the array.
+	@param nd3 The third dimension of the array.
+	*/
+	template<typename T>
+	void free_matrix3d( T ***data, size_t nd1, size_t nd2, size_t nd3 ) {
 		size_t i, j;
 		for (i=0; i < nd1; ++i) {
 		  if (data[i] != NULL) {
@@ -298,8 +760,17 @@ namespace NCPA {
 		delete [] data;
 	}
 
-
-	template<typename T> void free_matrix3d_and_contents( T ***data,
+	/**
+	Frees a dynamically-allocated three-dimensional array, and calls
+	delete on each element as it does so.
+	@brief Frees a dynamically-allocated three-dimensional array and its contents.
+	@param data The array to free.
+	@param nd1 The first dimension of the array.
+	@param nd2 The second dimension of the array.
+	@param nd3 The third dimension of the array.
+	*/
+	template<typename T>
+	void free_matrix3d_and_contents( T ***data,
 				size_t nd1, size_t nd2, size_t nd3 ) {
 		size_t i, j, k;
 		for (i=0; i < nd1; ++i) {
@@ -316,7 +787,16 @@ namespace NCPA {
 		delete [] data;
 	}
 
-	template<typename T> void fill_matrix3d( T ***v, size_t nr, size_t nc, size_t nz,
+	/**
+	@brief Sets each element of a three-dimensional array to a constant value.
+	@param v The array to fill.
+	@param nr The first dimension of the array.
+	@param nc The second dimension of the array.
+	@param nz The third dimension of the array.
+	@param val The value to set each element to.
+	*/
+	template<typename T>
+	void fill_matrix3d( T ***v, size_t nr, size_t nc, size_t nz,
 				const T &val ) {
 		for (size_t i = 0; i < nr; i++) {
 			for (size_t j = 0; j < nc; j++) {
@@ -327,13 +807,29 @@ namespace NCPA {
 		}
 	}
 
-	template<typename T, typename U> void print_2_columns( std::ostream &out, size_t nz,
+	/**
+	@brief Prints two arbitrary columns to a stream with specified delimiter.
+	@param out The stream to output to.
+	@param nz The number of values in each array.
+	@param col1 The first column.
+	@param col2 The second column.
+	@param del The delimiter.  Defaults to a single space.
+	*/
+	template<typename T, typename U>
+	void print_2_columns( std::ostream &out, size_t nz,
 		T *col1, U *col2, std::string del = " " ) {
 		for (size_t i = 0; i < nz; i++) {
 			out << col1[i] << del << col2[i] << std::endl;
 		}
 	}
 
+	/**
+	@brief Peforms a simple trapezoidal integration.
+	@param N The number of points to integrate over.
+	@param xvec The x values.
+	@param yvec The y values.
+	@returns The computed integral.
+	*/
 	template<typename T>
 	T trapz( size_t N, T *xvec, T *yvec ) {
 		assert(N > 1);
@@ -344,6 +840,15 @@ namespace NCPA {
 		return sum;
 	}
 
+	/**
+	Scales an array of values by a constant value, returning the
+	result in a dynamically-allocated array.
+	@brief Scales an array by a constant value.
+	@param N The number of points in the array.
+	@param in The array to scale.
+	@param factor The factor to scale by.
+	@param out The new, dynamically-allocated scaled array.
+	*/
 	template<typename T,typename U>
 	void vector_scale( size_t N, U *in, T factor, U *&out ) {
 		U *tempvec = NCPA::zeros<U>(N);
@@ -354,8 +859,31 @@ namespace NCPA {
 		delete [] tempvec;
 	}
 
-	template<typename T> void vector_multiply( size_t N, T *v1, T *v2,
-		T *&v12 ) {
+	/**
+	Scales an array of values in-place by a constant value
+	@brief Scales an array by a constant value in place.
+	@param N The number of points in the array.
+	@param in The array to scale.
+	@param factor The factor to scale by.
+	*/
+	template<typename T,typename U>
+	void vector_scale( size_t N, U *in, T factor ) {
+		for (size_t i = 0; i < N; i++) {
+			in[ i ] *= factor;
+		}
+	}
+
+	/**
+	Multiplies two arrays together element-wise, returning the
+	product in a supplied array.
+	@brief Performs element-wise array multiplication.
+	@param N The number of points in the array.
+	@param v1 The first array to multiply.
+	@param v2 The second array to multiply.
+	@param v12 The array to hold the product.  Can be the same as either input array, in which case the values are replaced.
+	*/
+	template<typename T>
+	void vector_multiply( size_t N, T *v1, T *v2, T *&v12 ) {
 		T *tempvec = NCPA::zeros<T>(N);
 		for (size_t i = 0; i < N; i++) {
 			tempvec[ i ] = v1[i] * v2[i];
@@ -364,8 +892,17 @@ namespace NCPA {
 		delete [] tempvec;
 	}
 
-	template<typename T> void vector_add( size_t N, T *v1, T *v2,
-		T *&v12 ) {
+	/**
+	Adds two arrays together element-wise, returning the
+	sum in a supplied array.
+	@brief Performs element-wise array addition.
+	@param N The number of points in the array.
+	@param v1 The first array to add.
+	@param v2 The second array to add.
+	@param v12 The array to hold the sum.  Can be the same as either input array, in which case the values are replaced.
+	*/
+	template<typename T>
+	void vector_add( size_t N, T *v1, T *v2, T *&v12 ) {
 		T *tempvec = NCPA::zeros<T>(N);
 		for (size_t i = 0; i < N; i++) {
 			tempvec[ i ] = v1[i] + v2[i];
@@ -374,8 +911,17 @@ namespace NCPA {
 		delete [] tempvec;
 	}
 
-	template<typename T> void vector_subtract( size_t N, T *v1, T *v2,
-		T *&v12 ) {
+	/**
+	Subtracts one array from another element-wise, returning the
+	difference in a supplied array.
+	@brief Performs element-wise array subtraction.
+	@param N The number of points in the array.
+	@param v1 The array to subtract from.
+	@param v2 The array to subtract.
+	@param v12 The array to hold the difference.  Can be the same as either input array, in which case the values are replaced.
+	*/
+	template<typename T>
+	void vector_subtract( size_t N, T *v1, T *v2, T *&v12 ) {
 		T *tempvec = NCPA::zeros<T>(N);
 		for (size_t i = 0; i < N; i++) {
 			tempvec[ i ] = v1[i] - v2[i];
@@ -384,7 +930,17 @@ namespace NCPA {
 		delete [] tempvec;
 	}
 
-	template<typename T> void vector_divide( size_t N, T *v1, T *v2,
+	/**
+	Divides one array by another element-wise, returning the
+	quotient in a supplied array.
+	@brief Performs element-wise array division.
+	@param N The number of points in the array.
+	@param v1 The array to divide.
+	@param v2 The array to divide by.
+	@param v12 The array to hold the quotient.  Can be the same as either input array, in which case the values are replaced.
+	*/
+	template<typename T>
+	void vector_divide( size_t N, T *v1, T *v2,
 		T *&v12 ) {
 		T *tempvec = NCPA::zeros<T>(N);
 		for (size_t i = 0; i < N; i++) {
@@ -394,30 +950,43 @@ namespace NCPA {
 		delete [] tempvec;
 	}
 
-	template<typename T> void circshift( T *in, size_t N, int shift,
+	/**
+	Circularly shifts the elements in an array X by K positions. If K is
+    positive, then the values of X are circularly shifted from the
+    beginning to the end. If K is negative, they are shifted from the
+    end to the beginning.  The resultant shifted array is returned in
+    a new dynamically-allocated array.
+    @brief Circularly shifts array elements.
+    @param X The array whose elements are to be shifted.
+    @param N The size of the array.
+    @param K The number of positions to shift.
+    @param out The shifted array.  Can be the same as either input to perform in-place.
+    */
+	template<typename T>
+	void circshift( T *X, size_t N, int K,
 			T *&out ) {
-		assert(((size_t)abs(shift)) < N);
+		assert(((size_t)abs(K)) < N);
 		size_t i;
 		T *tempvec = NCPA::zeros<T>( N );
-		if (shift < 0) {
+		if (K < 0) {
 			// move from the back to the front
-			size_t negshift = (size_t)(-shift);
+			size_t negshift = (size_t)(-K);
 			for (i = negshift; i < N; i++) {
-				tempvec[ i - negshift ] = in[ i ];
+				tempvec[ i - negshift ] = X[ i ];
 			}
 			for (i = 0; i < negshift; i++) {
-				tempvec[ N - negshift + i ] = in[ i ];
+				tempvec[ N - negshift + i ] = X[ i ];
 			}
-		} else if (shift > 0) {
+		} else if (K > 0) {
 			// move from the front to the back
-			for (i = 0; i < N-shift; i++) {
-				tempvec[ i + shift ] = in[ i ];
+			for (i = 0; i < N-K; i++) {
+				tempvec[ i + K ] = X[ i ];
 			}
-			for (i = N - shift; i < N; i++) {
-				tempvec[ i - (N - shift) ] = in[ i ];
+			for (i = N - K; i < N; i++) {
+				tempvec[ i - (N - K) ] = X[ i ];
 			}
 		} else {
-			std::memcpy( tempvec, in, N*sizeof(T) );
+			std::memcpy( tempvec, X, N*sizeof(T) );
 		}
 
 		// copy over so it can be done in place if desired
@@ -425,7 +994,15 @@ namespace NCPA {
 		delete [] tempvec;
 	}
 
-	template<typename T> void reverse( T *in, size_t N, T *&out ) {
+
+	/**
+	@brief Reverses the order of an array.
+	@param in The input array.
+	@param N The size of the array.
+	@param out Holds the output array. Can be the same as the input.
+	*/
+	template<typename T>
+	void reverse( T *in, size_t N, T *&out ) {
 		T *tempvec = NCPA::zeros<T>( N );
 		size_t j;
 		for (j = 0; j < N; j++) {
@@ -441,6 +1018,13 @@ namespace NCPA {
 
 	// Class for 3-D matrices with 1-D storage behind the scenes.  Cuts a lot
 	// of looping out
+	/**
+	A three-dimensional array wrapper with optimized storage.
+	A class that represents a three-dimensional array, but maintains
+	internal storage as a one-dimensional array with array index
+	translation handled internally, so that initialization and cleanup
+	are not looped.
+	*/
 	template<class T> class StorageOptimizedMatrix3D {
 	protected:
 		T *data;
@@ -455,6 +1039,13 @@ namespace NCPA {
 		}
 
 	public:
+
+		/**
+		@brief Basic constructor.
+		@param dim1 First logical dimension of array.
+		@param dim2 Second logical dimension of array.
+		@param dim3 Third logical dimension of array.
+		*/
 		StorageOptimizedMatrix3D( size_t dim1, size_t dim2, size_t dim3 ) {
 			data = zeros<T>( dim1 * dim2 * dim3 );
 			dim1_ = dim1;
@@ -462,14 +1053,31 @@ namespace NCPA {
 			dim3_ = dim3;
 		}
 
+		/**
+		Basic destructor.
+		*/
 		~StorageOptimizedMatrix3D() {
 			delete [] data;
 		}
 
+		/**
+		@brief Set a value of the array.
+		@param ind1 First index.
+		@param ind2 Second index.
+		@param ind3 Third index.
+		@param val The value to set.
+		*/
 		void set( size_t ind1, size_t ind2, size_t ind3, T val ) {
 			data[ indices_3_to_1( ind1, ind2, ind3 ) ] = val;
 		}
 
+		/**
+		@brief Return a value of the array.
+		@param ind1 First index.
+		@param ind2 Second index.
+		@param ind3 Third index.
+		@returns The value of the array at (ind1,ind2,ind3).
+		*/
 		T get( size_t ind1, size_t ind2, size_t ind3 ) const {
 			return data[ indices_3_to_1( ind1, ind2, ind3 ) ];
 		}
