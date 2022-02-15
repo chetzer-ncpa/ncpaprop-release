@@ -147,6 +147,12 @@ void NCPA::configure_gfpe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::FloatParameter( "turbulence_scale_m", 100.0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_scale_m", "Turbulence scale (m) [100]" );
 
+	ps->addParameter( new NCPA::FloatParameter( "turbulence_t_factor", 1.0e-10 ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_t_factor", "Temperature factor for turbulence spectrum (K) [1.0e-10]" );
+
+	ps->addParameter( new NCPA::FloatParameter( "turbulence_v_factor", 1.0e-8 ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_v_factor", "Wind velocity factor for turbulence spectrum (m/s) [1.0e-8]" );
+
 	ps->addParameter( new NCPA::FloatParameter( "k_min", 0.1 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--k_min", "Wavenumber filter minimum [0.1]" );
 
@@ -189,15 +195,17 @@ void NCPA::configure_gfpe_parameter_set( NCPA::ParameterSet *ps ) {
 	// ps->addFooterTextVerbatim("  starter.pe:                  z, starter (real), starter(imag)" );
 	// ps->addFooterTextVerbatim("  topography.pe:               az, r, z0" );
 	ps->addBlankFooterLine();
-	ps->addFooterText("Examples (run from 'samples' directory):");
+	ps->addFooterText("Examples (run from samples directory):");
 	ps->setFooterIndent( 4 );
 	ps->setFooterHangingIndent( 4 );
 	ps->setCommandMode( true );
 	ps->addBlankFooterLine();
 
-	ps->addFooterText("./gfpe --atmosfile synthetic.atm --singleprop --azimuth 90 --maxrange_km 0.5 --sourceheight_km 0.001 --receiverheight_km 0.001 --write_2d_tloss --freq 800" );
+	ps->addFooterText("../bin/gfpe --atmosfile synthetic.atm --singleprop --azimuth 90 --maxrange_km 0.5 --sourceheight_km 0.001 --receiverheight_km 0.001 --write_2d_tloss --freq 800" );
 	ps->addBlankFooterLine();
-	ps->addFooterText("./gfpe --atmosfile synthetic.atm --multiprop --azimuth_start 0 --azimuth_end 360 --azimuth_step 2 --freq 400 --maxrange_km 0.5 --sourceheight_km 0.001 --receiverheight_km 0.001" );
+	ps->addFooterText("../bin/gfpe --atmosfile synthetic.atm --multiprop --azimuth_start 0 --azimuth_end 360 --azimuth_step 2 --freq 400 --maxrange_km 0.5 --sourceheight_km 0.001 --receiverheight_km 0.001" );
+	ps->addBlankFooterLine();
+	ps->addFooterText("../bin/gfpe --atmosfile synthetic.atm --singleprop --azimuth 90 --maxrange_km 1.0 --freq 500 --n_suite 50");
 	ps->addBlankFooterLine();
 	
 	ps->setFooterHangingIndent( 0 );
