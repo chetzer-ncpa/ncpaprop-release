@@ -141,8 +141,8 @@ void NCPA::configure_gfpe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::StringParameter( "turbulence_file" ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_file", "File containing 2*n_turbulence numbers in [0,1) range [randomize]" );
 
-	ps->addParameter( new NCPA::FloatParameter( "turbulence_ref_temp", 293.0 ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_ref_temp", "Reference temperature, in K, for turbulence calculation [293]" );
+//	ps->addParameter( new NCPA::FloatParameter( "turbulence_ref_temp", 293.0 ) );
+//	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_ref_temp", "Reference temperature, in K, for turbulence calculation [293]" );
 
 	ps->addParameter( new NCPA::FloatParameter( "turbulence_scale_m", 100.0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_scale_m", "Turbulence scale (m) [100]" );

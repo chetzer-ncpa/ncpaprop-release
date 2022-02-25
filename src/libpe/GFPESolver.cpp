@@ -335,37 +335,10 @@ NCPA::GFPESolver::GFPESolver( NCPA::ParameterSet *param ) {
 	random_turbulence = !(param->wasFound("turbulence_file"));
 	if (!random_turbulence)
 		turbulence_file = param->getString("turbulence_file");
-	T0 = param->getFloat( "turbulence_ref_temp" );
+	// T0 = param->getFloat( "turbulence_ref_temp" );
 	Lt = param->getFloat( "turbulence_scale_m" );
-
-
-	// std::vector<double> rand1, rand2;
-	// if (param->wasFound("turbulence_file")) {
-	// 	std::string randfile = param->getString( "turbulence_file" );
-	// 	if (verbose) {
-	// 		std::cout << "Reading " << 2*turbulence_size
-	// 				  << " values from " << randfile << std::endl;
-	// 	}
-	// 	std::ifstream rand_in( randfile );
-	// 	rand1.reserve( turbulence_size );
-	// 	for (i = 0; i < turbulence_size; i++) {
-	// 		rand_in >> rand1[ i ];
-	// 	}
-	// 	rand2.reserve( turbulence_size );
-	// 	for (i = 0; i < turbulence_size; i++) {
-	// 		rand_in >> rand2[ i ];
-	// 	}
-	// 	rand_in.close();
-	// } else {
-	// 	rand1 = NCPA::random_numbers( turbulence_size );
-	// 	rand2 = NCPA::random_numbers( turbulence_size );
-	// }
-
-	// turbulence = new NCPA::Turbulence( turbulence_size, T0, Lt );
-	// turbulence->set_wavenumbers_log( turbulence_k1, turbulence_k2 );
-	// turbulence->compute_phases( rand1 );
-	// turbulence->compute();
-	// turbulence->set_alpha( rand2 );
+	temperature_factor = param->getFloat( "turbulence_t_factor" );
+	velocity_factor    = param->getFloat( "turbulence_v_factor" );
 
 	// Ground impedence
 	sigma = param->getFloat( "ground_impedence" );
@@ -416,8 +389,10 @@ void NCPA::GFPESolver::set_default_values() {
 	turbulence_k1 = 0.1;
 	turbulence_k2 = 20.0;
 	turbulence_size = 20;
-	T0 = 293;
-	Lt = 100;
+	// T0 = 293.0;
+	Lt = 100.0;
+	temperature_factor = 1.0e-10;
+	velocity_factor    = 1.0e-8;
 	N_suite = 1;
 	filetag = "";
 
@@ -660,8 +635,11 @@ int NCPA::GFPESolver::solve() {
 						rand1 = NCPA::random_numbers( turbulence_size );
 						rand2 = NCPA::random_numbers( turbulence_size );
 					} // otherwise they're already precalculated
-					turbulence = new NCPA::Turbulence( turbulence_size,
-						T0, Lt );
+					turbulence = new NCPA::Turbulence( turbulence_size );
+					turbulence->set_turbulence_scale( Lt );
+					// turbulence->set_reference_temperature( T0 );
+					turbulence->set_temperature_factor( temperature_factor );
+					turbulence->set_velocity_factor( velocity_factor );
 					turbulence->set_wavenumbers_log( turbulence_k1,
 						turbulence_k2 );
 					turbulence->compute_phases( rand1 );

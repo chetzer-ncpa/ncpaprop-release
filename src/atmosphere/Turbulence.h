@@ -14,13 +14,16 @@ namespace NCPA {
 	class Turbulence {
 
 	public:
-		Turbulence( size_t N, double reference_temperature, double scale );
+		Turbulence( size_t N );
 		~Turbulence();
 
 		size_t size() const;
 
-		void set_reference_temperature( double T );
+		void set_defaults();
+		// void set_reference_temperature( double T );
 		void set_turbulence_scale( double Lt );
+		void set_temperature_factor( double d );
+		void set_velocity_factor( double d );
 
 		void compute();
 
@@ -49,7 +52,7 @@ namespace NCPA {
 		std::vector<double> G_, kvec_;
 		std::vector<std::complex<double>> phases_;
 		std::vector<double> alpha_;
-		double T0_, Lt_;
+		double Lt_, C_T_factor_, C_v_factor_;
 	};
 
 

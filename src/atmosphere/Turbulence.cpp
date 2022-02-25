@@ -7,17 +7,23 @@
 #include <vector>
 #include <stdexcept>
 
-NCPA::Turbulence::Turbulence( size_t N, double T0, double Lt ) {
+NCPA::Turbulence::Turbulence( size_t N ) {
 	N_ = N;
 	G_.reserve( N_ );
 	kvec_.reserve( N_ );
 	alpha_.reserve( N_ );
 	phases_.reserve( N_ );
-	T0_ = T0;
-	Lt_ = Lt;
+	set_defaults();
 }
 
 NCPA::Turbulence::~Turbulence() { }
+
+void NCPA::Turbulence::set_defaults() {
+	// set_reference_temperature( 293.0 );
+	set_turbulence_scale( 100.0 );
+	set_temperature_factor( 1.0e-10 );
+	set_velocity_factor( 1.0e-8 );
+}
 
 size_t NCPA::Turbulence::size() const {
 	return N_;
@@ -90,12 +96,20 @@ void NCPA::Turbulence::set_alpha() {
 	alpha_ = random_numbers( N_, 2.0*PI );
 }
 
-void NCPA::Turbulence::set_reference_temperature( double T ) {
-	T0_ = T;
-}
+// void NCPA::Turbulence::set_reference_temperature( double T ) {
+// 	T0_ = T;
+// }
 
 void NCPA::Turbulence::set_turbulence_scale( double Lt ) {
 	Lt_ = Lt;
+}
+
+void NCPA::Turbulence::set_temperature_factor( double t ) {
+	C_T_factor_ = t;
+}
+
+void NCPA::Turbulence::set_velocity_factor( double t ) {
+	C_v_factor_ = t;
 }
 
 void NCPA::Turbulence::compute() {
@@ -127,10 +141,12 @@ std::vector<double> NCPA::Turbulence::von_karman_spectral_density() {
 	double D = 4.588959617428759e-01;
 	double E = 1.223722564647669e+00;
 	double G = 1.833333333333333e+00;
-	double c_0 = 331.5*std::sqrt(1 + (T0_ - 273.15)/273.15);
+	// double c_0 = 331.5*std::sqrt(1 + (T0_ - 273.15)/273.15);
 	double K_0 = (2.0*PI)/Lt_;
-	double C_T = std::sqrt( T0_ * T0_ * 1.0e-10 );
-	double C_v = std::sqrt( T0_ * T0_ * 1.0e-8  );
+	// double C_T = std::sqrt( T0_ * T0_ * C_T_factor_ );
+	// double C_v = std::sqrt( T0_ * T0_ * C_v_factor_  );
+	double CToT02 = C_T_factor_;
+	double Cvoc02 = C_v_factor_;
 	double ksq, factor1, factor2, factor3;
 	std::vector<double> F( N_ );
 
@@ -138,9 +154,11 @@ std::vector<double> NCPA::Turbulence::von_karman_spectral_density() {
 		ksq = std::pow( phases_[i].real(), 2.0 )
 			+ std::pow( phases_[i].imag(), 2.0 );
 		factor1 = A / std::pow( (ksq + K_0*K_0), 4.0/3.0 );
-		factor2 = B * std::pow( C_T / T0_, 2.0 ) / 4.0;
+		// factor2 = B * std::pow( C_T / T0_, 2.0 ) / 4.0;
+		factor2 = B * CToT02 / 4.0;
 		factor3 = E * std::pow( phases_[i].imag(), 2.0 ) / (ksq + K_0*K_0);
-		F[ i ] = factor1 * (factor2 + (D + factor3)*G*std::pow(C_v/c_0,2.0));
+		// F[ i ] = factor1 * (factor2 + (D + factor3)*G*std::pow(C_v/c_0,2.0));
+		F[ i ] = factor1 * (factor2 + (D + factor3)*G*Cvoc02);
 	}
 	return F;
 }

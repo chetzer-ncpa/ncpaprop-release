@@ -195,7 +195,8 @@ namespace NCPA {
 
 		// turbulence parameters
 		bool use_turbulence, random_turbulence;
-		double turbulence_k1, turbulence_k2, T0, Lt;
+		double turbulence_k1, turbulence_k2, Lt,
+			temperature_factor, velocity_factor;
 		size_t turbulence_size;
 		std::string turbulence_file;
 
