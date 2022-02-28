@@ -417,10 +417,11 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	atm_profile_2d->get_minimum_altitude_limits( minlimit, z_min );
 	//z_min = atm_profile_2d->get_highest_minimum_altitude();
 	// if ( (!z_ground_specified) && atm_profile_2d->contains_scalar( 0.0, "Z0" )) {
-	if ( !z_ground_specified ) {
+	// if ( !z_ground_specified ) {
 		// z_ground = atm_profile_2d->get( 0.0, "Z0" );
-		z_ground = z_min;
-	}
+	// 	z_ground = z_min;
+	// }
+	// z_ground = atm_profile_2d->get(0.0,"Z0");
 	if (z_ground < z_min) {
 		std::cerr << "Supplied ground height is outside of atmospheric specification." << std::endl;
 		exit(0);
@@ -542,7 +543,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 					n, npade+1, 0, &q_starter );
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
 				get_starter_self( NZ, z, zs, ground_index, k0, qpowers_starter, npade, 
-					&psi_o );
+					false, &psi_o );
 				
 				ierr = MatDestroy( &q_starter );CHKERRQ(ierr);
 			} else if (starter == "gaussian") {
@@ -1083,7 +1084,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					&q_starter );
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
 				get_starter_self( NZ_starter, z_starter, zs, 0, k0_starter, 
-					qpowers_starter, npade, &psi_o );
+					qpowers_starter, npade, true, &psi_o );
 
 				// now interpolate calculated starter to actual Z vector
 				std::deque< double > z_spline, r_spline, i_spline;
@@ -1943,7 +1944,7 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z, double zs, do
 
 
 int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nzground, 
-	double k0, Mat *qpowers, size_t npade, Vec *psi ) {
+	double k0, Mat *qpowers, size_t npade, bool absolute, Vec *psi ) {
 
 	Vec rhs, ksi, Bksi, tempvec;
 	Mat /*A, AA,*/ B, C;
@@ -1958,10 +1959,14 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nz
 	ierr = VecSetFromOptions( rhs );CHKERRQ(ierr);
 	ierr = VecSet( rhs, 0.0 );CHKERRQ(ierr);
 	
-	// find closest index to zs. Make sure the picked point is above the ground surface
+	// find closest index to zs. Make sure the picked point is above
+	// the ground surface if we're working in absolute elevation.  If
+	// we're in relative elevation, the ground is at 0 by definition
 	PetscInt nzsrc = (PetscInt)(find_closest_index( z, NZ, zs ));
-	while (z[nzsrc] < z_ground) {
-		nzsrc++;
+	if (absolute) {
+		while (z[nzsrc] < z_ground) {
+			nzsrc++;
+		}
 	}
 
 	double h = z[1] - z[0];
