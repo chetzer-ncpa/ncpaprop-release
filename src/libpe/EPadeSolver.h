@@ -84,7 +84,7 @@ namespace NCPA {
 		// functions to calculate the various starter fields
 		int get_starter_gaussian( size_t NZ, double *z, double zs, double k0, int ground_index, Vec *psi );
 		int get_starter_self( size_t NZ, double *z, double z_source, int ground_index, 
-			double k0, Mat *qpowers, size_t npade, Vec *psi );
+			double k0, Mat *qpowers, size_t npade, bool absolute, Vec *psi );
 		int get_starter_user( std::string filename, int NZ, double *z, Vec *psi );
 		int interpolate_starter( std::deque<double> &z_orig, std::deque<double> &r_orig, 
 			std::deque<double> &i_orig, size_t NZ_new, double *z_new, Vec *psi );
