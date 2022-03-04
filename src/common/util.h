@@ -199,13 +199,13 @@ namespace NCPA {
 		size_t tmpind;
 
 		for (size_t i = 0; i < NZ; i++) {
-			diff = abs( ((double)z[i]) - ((double)zs) );
+			diff = std::fabs( ((double)z[i]) - ((double)zs) );
 			if (diff < mindiff) {
 				tmpind = i;
 				mindiff = diff;
 			}
 		}
-
+		
 		return tmpind;
 	}
 
