@@ -876,7 +876,7 @@ double NCPA::EPadeSolver::check_ground_height_coincidence_with_grid( double *z,
 	size_t NZ, double tolerance, double z_ground ) {
 
 	int closest_source_grid_point = (int)(NCPA::find_closest_index( z, NZ, z_ground ));
-	if (fabs(z_ground - z[ closest_source_grid_point ]) < tolerance) {
+	if (std::fabs(z_ground - z[ closest_source_grid_point ]) < tolerance) {
 		if (z_ground - z[ closest_source_grid_point ] <= 0) {
 			return z_ground - tolerance;
 		} else {
@@ -1072,7 +1072,6 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					z_starter[ ii ] = z[ ii + ground_index ];
 				}
 
-				// std::memcpy( z_starter, z+ground_index, NZ_starter * sizeof(double) );
 				calculate_atmosphere_parameters( atm_profile_2d, NZ_starter, z_starter,
 					0.0, z_ground, lossless, top_layer, freq, false, k0_starter, 
 					c0_starter, c_starter, a_starter, k_starter, n_starter );
@@ -1083,7 +1082,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					k0_starter, h2, ground_impedence_factor, n_starter, npade+1, 0, 
 					&q_starter );
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
-				get_starter_self( NZ_starter, z_starter, zs, 0, k0_starter, 
+				get_starter_self( NZ_starter, z_starter, zs, 0, k0_starter,
 					qpowers_starter, npade, true, &psi_o );
 
 				// now interpolate calculated starter to actual Z vector
@@ -1962,7 +1961,7 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nz
 	// find closest index to zs. Make sure the picked point is above
 	// the ground surface if we're working in absolute elevation.  If
 	// we're in relative elevation, the ground is at 0 by definition
-	PetscInt nzsrc = (PetscInt)(find_closest_index( z, NZ, zs ));
+	size_t nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
 	if (absolute) {
 		while (z[nzsrc] < z_ground) {
 			nzsrc++;
@@ -1971,7 +1970,8 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nz
 
 	double h = z[1] - z[0];
 	PetscScalar hinv = 1.0 / h;
-	ierr = VecSetValues( rhs, 1, &nzsrc, &hinv, INSERT_VALUES );CHKERRQ(ierr);
+	PetscInt ps_nzsrc = nzsrc;
+	ierr = VecSetValues( rhs, 1, &ps_nzsrc, &hinv, INSERT_VALUES );CHKERRQ(ierr);
 	
 	// solve first part (Eq. 26)
 	ierr = VecDuplicate( rhs, &ksi );CHKERRQ(ierr);
