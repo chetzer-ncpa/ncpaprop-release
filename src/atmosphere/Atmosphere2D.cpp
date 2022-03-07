@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "gsl/gsl_version.h"
 #include "gsl/gsl_errno.h"
 #include "gsl/gsl_spline.h"
 
@@ -537,6 +538,10 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 #if GSL_MAJOR_VERSION > 1
 	topo_spline_ = gsl_spline_alloc( gsl_interp_steffen, np + 2 );
 #else
+	std::cout << "Version 1 of GSL does not include Steffen interpolation."
+			  << std::endl
+			  << "Defaulting to Cubic Spline interpolation for ground height."
+			  << std::endl;
 	topo_spline_ = gsl_spline_alloc( gsl_interp_cspline, np + 2 );
 #endif
 	topo_ground_heights_ = new double[ np + 2 ];
@@ -566,6 +571,10 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_profiles_() {
 #if GSL_MAJOR_VERSION > 1
 	topo_spline_ = gsl_spline_alloc( gsl_interp_steffen, np + 2 );
 #else
+	std::cout << "Version 1 of GSL does not include Steffen interpolation."
+			  << std::endl
+			  << "Defaulting to Cubic Spline interpolation for ground height."
+			  << std::endl;
 	topo_spline_ = gsl_spline_alloc( gsl_interp_cspline, np + 2 );
 #endif
 	topo_ground_heights_ = new double[ np + 2 ];

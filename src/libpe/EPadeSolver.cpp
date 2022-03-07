@@ -1024,7 +1024,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 		  	// Check ground elevation for coincidence with grid points
 		  	z_ground = check_ground_height_coincidence_with_grid( z, NZ, 
-		  		grid_tolerance, atm_profile_2d->get( 0.0, "Z0" ) );
+		  		grid_tolerance,
+		  		atm_profile_2d->get_interpolated_ground_elevation( 0.0 ) );
 
 		  	// set up transmission loss matrix
 			tl = NCPA::cmatrix( NZ, NR-1 );
@@ -1163,9 +1164,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 				double rr = r[ ir ];
 				z_ground = check_ground_height_coincidence_with_grid( z, NZ, 
-		  			grid_tolerance, atm_profile_2d->get_interpolated_ground_elevation( rr ) );
-				calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground, lossless, 
-					top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
+		  			grid_tolerance,
+		  			atm_profile_2d->get_interpolated_ground_elevation( rr ) );
+				calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground,
+					lossless, top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
 				Mat last_q;
 				ierr = MatConvert( qpowers[0], MATSAME, MAT_INITIAL_MATRIX, &last_q );CHKERRQ(ierr);
 				delete_matrix_polynomial( npade+1, &qpowers );
@@ -1191,6 +1193,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					tl[ i ][ ir ] = contents[ i ] * hank;
 				}
 
+				// make sure the receiver height is above ground
 				double z0g = z_ground;
 				z0g = NCPA::max( z0g, zr );
 				zgi_r[ ir ] = (int)(NCPA::find_closest_index( z, NZ, z0g ));
@@ -1252,7 +1255,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		}
 
 		if (write_topo) {
-			write_topography( tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY),
+			write_topography(
+				tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY),
 				calc_az, r_max, 1000.0 );
 		}
 		
@@ -2398,8 +2402,8 @@ int NCPA::EPadeSolver::zero_below_ground( Mat *q, int NZ, PetscInt ground_index 
 	return 1;
 }
 
-void NCPA::EPadeSolver::write_topography( std::string filename, double azimuth, 
-	double r_max, double dr ) {
+void NCPA::EPadeSolver::write_topography( std::string filename,
+	double azimuth, double r_max, double dr ) {
 
 	double r;
 	std::ofstream outfile( filename, std::ofstream::out | std::ofstream::app );
