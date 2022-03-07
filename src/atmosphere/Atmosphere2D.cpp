@@ -424,6 +424,11 @@ void NCPA::Atmosphere2D::read_elevation_from_file( const std::string &filename )
 	generate_ground_elevation_spline_();
 }
 
+void NCPA::Atmosphere2D::finalize_elevation_from_profiles() {
+	override_profile_z0_ = false;
+	generate_ground_elevation_spline_();
+}
+
 void NCPA::Atmosphere2D::generate_ground_elevation_spline_() {
 
 	free_ground_elevation_spline_();
@@ -594,10 +599,9 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_profiles_() {
 		}
 		topo_ranges_[ pnum++ ] = (*it)->get( "_RANGE_" );
 	}
-	// topo_ground_heights_[ np+1 ] = topo_ground_heights_[ np ];
-	// topo_ranges_[ np+1 ] = 1.1 * max_valid_range_;
 	topo_ground_heights_[ pnum ] = topo_ground_heights_[ pnum-1 ];
-	topo_ranges_[ pnum ] = 1.1 * max_valid_range_;
+	topo_ranges_[ pnum ] = NCPA::Units::convert( 1000.0, UNITS_DISTANCE_METERS, range_units_ )
+		+ max_valid_range_;
 
 	gsl_spline_init( topo_spline_, topo_ranges_, topo_ground_heights_, np+2 );
 }

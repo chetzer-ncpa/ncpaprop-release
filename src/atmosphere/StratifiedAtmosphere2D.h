@@ -14,9 +14,9 @@ namespace NCPA {
 		//StratifiedAtmosphere2D( const StratifiedAtmosphere2D &atm );
 		~StratifiedAtmosphere2D();
 
-		virtual double get_interpolated_ground_elevation( double range );
-		virtual double get_interpolated_ground_elevation_first_derivative( double range );
-		virtual double get_interpolated_ground_elevation_second_derivative( double range );
+		// virtual double get_interpolated_ground_elevation( double range );
+		// virtual double get_interpolated_ground_elevation_first_derivative( double range );
+		// virtual double get_interpolated_ground_elevation_second_derivative( double range );
 	};
 }
 

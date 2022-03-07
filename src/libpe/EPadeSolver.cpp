@@ -224,41 +224,74 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 	//NCPA::Atmosphere1D *atm_profile_1d;
 	if (use_atm_1d) {
-		atm_profile_2d = new NCPA::StratifiedAtmosphere2D( param->getString( "atmosfile" ), param->getString("atmosheaderfile") );
-	// } else if (use_atm_toy) {
-	// 	NCPA::Atmosphere1D *tempatm = new NCPA::ToyAtmosphere1D();
-	// 	atm_profile_2d = new NCPA::StratifiedAtmosphere2D( tempatm );
-	// 	delete tempatm;
+		atm_profile_2d = new NCPA::StratifiedAtmosphere2D(
+			param->getString( "atmosfile" ),
+			param->getString("atmosheaderfile") );
 	} else if (use_atm_2d) {
-		atm_profile_2d = new NCPA::ProfileSeriesAtmosphere2D( param->getString( "atmosfile2d" ), param->getString( "atmosheaderfile" ) );
-		atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
-		if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
-			atm_profile_2d->set_maximum_valid_range( r_max );
-		}
+		atm_profile_2d = new NCPA::ProfileSeriesAtmosphere2D(
+			param->getString( "atmosfile2d" ),
+			param->getString( "atmosheaderfile" ) );
 	} else {
 		std::cerr << "Unknown atmosphere option selected" << std::endl;
 		exit(0);
 	}
-
-	z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
-	z_ground = z_min;
-	if (param->wasFound("groundheight_km")) {
-		z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
-		z_ground_specified = true;
-		
-		std::cout << "Overriding profile Z0 value with command-line value " << z_ground 
-		     << " m" << std::endl;
-		atm_profile_2d->remove_property("Z0");
-		atm_profile_2d->add_property( "Z0", z_ground, NCPA::Units::fromString("m") );
-	} else {
-		if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
-			atm_profile_2d->add_property("Z0",z_ground,atm_profile_2d->get_altitude_units(0.0));
-		}
+	atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
+	if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
+		atm_profile_2d->set_maximum_valid_range( r_max );
 	}
 
-	// set units
+	// altitude units
 	atm_profile_2d->convert_altitude_units( Units::fromString( "m" ) );
-	atm_profile_2d->convert_property_units( "Z0", Units::fromString( "m" ) );
+
+	// Ground height is treated differently depending on whether we're
+	// using topography or not
+	if (use_topo) {
+		// first, do we get topography from a file?
+		if ( topofile.size() > 0 ) {
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->read_elevation_from_file( topofile );
+			z_ground_specified = true;
+		} else if (param->wasFound("groundheight_km")) {
+			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
+			z_ground_specified = true;
+			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
+			    << " m" << std::endl;
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->add_property( "Z0", z_ground,
+				NCPA::Units::fromString("m") );
+			atm_profile_2d->finalize_elevation_from_profiles();
+		} else {
+			atm_profile_2d->finalize_elevation_from_profiles();
+		}
+		z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
+	} else {
+		// constant elevation
+		if (param->wasFound("groundheight_km")) {
+			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
+			z_ground_specified = true;
+
+			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
+			     << " m" << std::endl;
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->add_property( "Z0", z_ground, NCPA::Units::fromString("m") );
+		} else {
+			if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
+				z_ground = atm_profile_2d->get_minimum_altitude( 0.0 );
+				atm_profile_2d->add_property("Z0",z_ground,
+					atm_profile_2d->get_altitude_units(0.0));
+			}
+		}
+		atm_profile_2d->convert_property_units( "Z0", Units::fromString( "m" ) );
+		z_ground = atm_profile_2d->get( 0.0, "Z0" );
+	}
+
+	// z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
+	// z_ground = z_min;
+
+
+
+
+	// set units
 	if (atm_profile_2d->contains_vector(0,"U")) {
 		atm_profile_2d->convert_property_units( "U", Units::fromString( "m/s" ) );
 	}
@@ -274,7 +307,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	if (atm_profile_2d->contains_vector(0,"RHO")) {
 		atm_profile_2d->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
 	}
-	z_ground = atm_profile_2d->get( 0.0, "Z0" );
+	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 
 	// calculate derived quantities
 	double c0;
@@ -333,12 +366,8 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		}
 	}
 
-	if ( topofile.size() > 0 ) {
-		atm_profile_2d->read_elevation_from_file( topofile );
-	}
-
 	// calculate/check z resolution
-	dz = 				param->getFloat( "dz_m" );
+	dz = param->getFloat( "dz_m" );
 	double lambda0 = c0 / freq;
   	if (dz <= 0.0) {
   		dz = lambda0 / 20.0;
@@ -932,7 +961,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	/* @todo move this into constructor as much as possible */
 	z_bottom = -5000.0;    // make this eventually depend on frequency
 	z_bottom -= fmod( z_bottom, dz );
-	z_ground = atm_profile_2d->get( 0.0, "Z0" );
+	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
+	z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
 	NZ = ((int)std::floor((z_max - z_bottom) / dz)) + 1;
 	z = new double[ NZ ];
 	z_abs = new double[ NZ ];

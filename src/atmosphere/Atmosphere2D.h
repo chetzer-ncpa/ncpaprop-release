@@ -92,7 +92,7 @@ namespace NCPA {
 		void read_attenuation_from_file( const std::string &new_key,
 			const std::string &filename );    // apply universally
 		void read_elevation_from_file( const std::string &filename );
-
+		void finalize_elevation_from_profiles();
 		
 		std::vector< NCPA::Atmosphere1D * >::iterator first_profile();
 		std::vector< NCPA::Atmosphere1D * >::iterator last_profile();
