@@ -463,8 +463,9 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 						// chop off first two characters
 						line.erase(0,2);
 						line = NCPA::deblank( line );
+						delims += " ";
 						delimpos = line.find_last_of( delims );
-						std::string ustr = NCPA::deblank(line.substr( delimpos ));
+						std::string ustr = NCPA::deblank(line.substr( delimpos+1 ));
 						units_t tempunits = NCPA::Units::fromString( ustr );
 						if (tempunits == UNITS_NONE) {
 							std::cerr << "Unrecognized units " << ustr << ", ignoring"
