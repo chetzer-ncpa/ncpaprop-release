@@ -40,16 +40,12 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Options Control", "--printparams", "Print parameter summary to screen" );
 
 	// Atmosphere
-	// std::string atmosphere_types[ 3 ] = { "atmosfile", "atmosfile2d", "toy" };
 	std::string atmosphere_types[ 2 ] = { "atmosfile", "atmosfile2d" };
 	ps->addParameter( new NCPA::StringParameter( atmosphere_types[ 0 ] ) );
 	ps->addParameter( new NCPA::StringParameter( atmosphere_types[ 1 ] ) );
-	// ps->addParameter( new NCPA::FlagParameter( atmosphere_types[ 2 ] ) );
 	ps->addTest( new NCPA::RadioButtonTest( "atmosphere_type", 2, atmosphere_types ) );
 	ps->addParameterDescription( "Atmosphere", "--atmosfile", "1-D atmospheric profile filename" );
 	ps->addParameterDescription( "Atmosphere", "--atmosfile2d", "2-D atmospheric summary filename (see manual)" );
-	//ps->addParameterDescription( "Atmosphere", "--toy", "Use NCPA toy atmosphere" );
-
 
 	// Required parameters
 	ps->addParameter( new NCPA::FloatParameter( "freq" ) );
@@ -156,7 +152,7 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::FloatParameter( "ground_impedence_imag", 0.0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence_imag", "Imaginary part of ground impedence [rigid ground]" );
 	ps->addParameter( new NCPA::StringParameter( "topofile", "" ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--topofile", "File name containing topography [n/a]. Columns are #n# Range(km) Elevation(m)" );
+	ps->addParameterDescription( "Optional Parameters [default]", "--topofile", "File name containing topography [n/a]. Columns are #n# Range(km) Elevation(m) by default. #n# Units can be specified using header: #n#  #% r, km #n#  #% z, km" );
 	ps->addParameter( new NCPA::StringParameter( "starterfile", "" ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--starterfile", "File name containing starter [n/a]. Columns are #n# Height(km) RealPart ImaginaryPart" );
 	ps->addParameter( new NCPA::StringParameter( "attnfile", "" ) );
