@@ -179,6 +179,7 @@ namespace NCPA {
 		std::vector<double> f_vec, az_vec; // frequencies & azimuths
 		bool multiprop;                    // use multiple azimuths?
 		bool use_atm_1d, use_atm_2d;       // atmosphere flags
+		bool nodelay;					   // include propagation delay
 		NCPA::ScalarWithUnits *range;      // propagation distance
 		NCPA::ScalarWithUnits *z_source;   // source height
 		NCPA::ScalarWithUnits *z_receiver; // receiver height

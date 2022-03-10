@@ -119,6 +119,7 @@ NCPA::GFPESolver::GFPESolver( NCPA::ParameterSet *param ) {
 	set_default_values();
 
 	verbose = !(param->wasFound("quiet"));
+	nodelay = param->wasFound("no_delay");
 
 	// read from parameter set object
 	use_atm_1d = param->wasFound( "atmosfile" );
@@ -402,6 +403,7 @@ void NCPA::GFPESolver::set_default_values() {
 	use_atm_1d = false;
 	use_atm_2d = false;
 	use_suite_mode = false;
+	nodelay = false;
 	multiprop = false;
 	verbose = true;
 }
@@ -653,11 +655,21 @@ int NCPA::GFPESolver::solve() {
 
 				std::vector<double>::const_iterator r;
 				size_t step_num = 0;
+				std::complex<double> scaling = 0.0;
 				for (r = r_vec.cbegin(); r != r_vec.cend(); ++r) {
 
 					// first step?
-					std::complex<double> rinv(
-						1.0 / std::sqrt( *r ), 0.0 );
+					// std::complex<double> scaling(
+					// 	1.0 / std::sqrt( *r ), 0.0 );
+					scaling.real( 0.0 );
+					scaling.imag( 0.0 );
+					if (nodelay) {
+						scaling.real( std::pow( *r, -0.5 ) );
+					} else {
+						std::complex<double> tmpexp1( 0.0, (*r) * kzero );
+						std::complex<double> tmpexp2( std::pow( *r, -0.5 ) );
+						scaling = std::exp( tmpexp1 ) * tmpexp2;
+					}
 
 					if (r == r_vec.cbegin()) {
 						phase_factor( Ntrans, *r, vark, E3 );
@@ -673,7 +685,7 @@ int NCPA::GFPESolver::solve() {
 								if (use_turbulence) {
 									phi[i] *= std::exp(THETA[i] * I);
 								}
-								TL_mat->set( step_num, i, phi[i] * rinv );
+								TL_mat->set( step_num, i, phi[i] * scaling );
 							} else {
 								phi[i] = 0.0;
 							}
@@ -716,7 +728,7 @@ int NCPA::GFPESolver::solve() {
 								if (use_turbulence) {
 									phi[i] *= std::exp(dTHETA[i] * I);
 								}
-								TL_mat->set( step_num, i, phi[i] * rinv );
+								TL_mat->set( step_num, i, phi[i] * scaling );
 							} else {
 								phi[i] = 0.0;
 							}

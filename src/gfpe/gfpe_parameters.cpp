@@ -183,6 +183,8 @@ void NCPA::configure_gfpe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Flags", "--write_2d_tloss", "Output 2-D transfer function to tloss_2d.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "no_turbulence" ) );
 	ps->addParameterDescription( "Flags", "--no_turbulence", "Disable turbulence perturbation" );
+	ps->addParameter( new NCPA::FlagParameter( "no_delay" ) );
+	ps->addParameterDescription( "Flags", "--no_delay", "Do not apply propagation phase delay" );
 	ps->addParameter( new NCPA::FlagParameter( "quiet" ) );
 	ps->addParameterDescription( "Flags", "--quiet", "Suppress output" );
 
