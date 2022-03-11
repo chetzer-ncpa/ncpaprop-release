@@ -6,8 +6,10 @@
 #include <sstream>
 #include <cmath>
 #include <iostream>
+
 #include "gsl/gsl_errno.h"
 #include "gsl/gsl_spline.h"
+#include "gsl/gsl_version.h"
 
 
 NCPA::AtmosphericProperty1D::AtmosphericProperty1D() {
@@ -71,7 +73,11 @@ void NCPA::AtmosphericProperty1D::build_splines_() {
 	delete_splines_();
 	// construct spline
 	accel_ = gsl_interp_accel_alloc();
+#if GSL_MAJOR_VERSION > 1
+	spline_ = gsl_spline_alloc( gsl_interp_steffen, n_ );
+#else
 	spline_ = gsl_spline_alloc( gsl_interp_cspline, n_ );
+#endif
 	gsl_spline_init( spline_, z_, values_, n_ );
 }
 

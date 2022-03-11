@@ -17,6 +17,7 @@
 
 #include "gsl/gsl_errno.h"
 #include "gsl/gsl_spline.h"
+#include "gsl/gsl_version.h"
 
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
@@ -802,10 +803,18 @@ int NCPA::EPadeSolver::interpolate_starter(
 	}
 
 	accel_r_ = gsl_interp_accel_alloc();
+#if GSL_MAJOR_VERSION > 1
+	spline_r_ = gsl_spline_alloc( gsl_interp_steffen, z_orig.size() );
+#else
 	spline_r_ = gsl_spline_alloc( gsl_interp_cspline, z_orig.size() );
+#endif
 	gsl_spline_init( spline_r_, z_spline, r_spline, z_orig.size() );
 	accel_i_ = gsl_interp_accel_alloc();
+#if GSL_MAJOR_VERSION > 1
+	spline_i_ = gsl_spline_alloc( gsl_interp_steffen, z_orig.size() );
+#else
 	spline_i_ = gsl_spline_alloc( gsl_interp_cspline, z_orig.size() );
+#endif
 	gsl_spline_init( spline_i_, z_spline, i_spline, z_orig.size() );
 
 	ierr = VecCreate( PETSC_COMM_SELF, psi );CHKERRQ(ierr);
