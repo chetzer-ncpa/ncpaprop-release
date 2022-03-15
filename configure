@@ -721,6 +721,7 @@ enable_option_checking
 with_localpetsc
 with_localslepc
 with_localpetscdebug
+with_insecuressl
 enable_localpetscmpi
 enable_autodependencies
 enable_compilerwarnings
@@ -1394,6 +1395,7 @@ Optional Packages:
 
   --with-localpetscdebug  Build the debug version of PETSc/SLEPc instead of
                           the default optimized version
+  --with-insecuressl      Ignore SSL certificate errors when downloading SLEPc
   --with-blas=<lib>       use BLAS library <lib>
 
 Some influential environment variables:
@@ -2469,6 +2471,15 @@ if test "${with_localpetscdebug+set}" = set; then :
   withval=$with_localpetscdebug;
 else
   with_localpetscdebug=no
+
+fi
+
+
+# Check whether --with-insecuressl was given.
+if test "${with_insecuressl+set}" = set; then :
+  withval=$with_insecuressl;
+else
+  with_insecuressl=no
 
 fi
 
@@ -8532,6 +8543,19 @@ else
 				if test "x$downloader" = "xcurl"; then :
 
 					downloader_flags="--output ${slepc_tarfile}"
+
+fi
+				if test "x$with_insecuressl" = "xyes"; then :
+
+					if test "x$downloader" = "xwget"; then :
+
+						downloader_flags="${downloader_flags} --no-check-certificate"
+
+else
+
+						downloader_flags="${downloader_flags} --insecure"
+
+fi
 
 fi
 				echo "Downloading using command: ${downloader} ${slepc_url} ${downloader_flags}"

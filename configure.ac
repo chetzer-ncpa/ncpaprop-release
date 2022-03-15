@@ -40,6 +40,11 @@ AC_ARG_WITH([localpetscdebug],
 	[],
 	[with_localpetscdebug=no]
 )
+AC_ARG_WITH([insecuressl],
+	AS_HELP_STRING([--with-insecuressl],[Ignore SSL certificate errors when downloading SLEPc]),
+	[],
+	[with_insecuressl=no]
+)
 AC_ARG_ENABLE([localpetscmpi],
 	AS_HELP_STRING([--enable-localpetscmpi],[Build PETSc/SLEPc without MPI support]),
 	[],
@@ -556,6 +561,13 @@ AS_IF([test "x${with_localslepc}" = "xyes"],[
 				downloader_flags=""
 				AS_IF([test "x$downloader" = "xcurl"],[
 					downloader_flags="--output ${slepc_tarfile}"
+				])
+				AS_IF([test "x$with_insecuressl" = "xyes"],[
+					AS_IF([test "x$downloader" = "xwget"],[
+						downloader_flags="${downloader_flags} --no-check-certificate"
+					],[
+						downloader_flags="${downloader_flags} --insecure"
+					])
 				])
 				echo "Downloading using command: ${downloader} ${slepc_url} ${downloader_flags}"
 				$downloader ${slepc_url} ${downloader_flags}

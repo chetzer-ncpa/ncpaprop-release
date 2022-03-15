@@ -682,7 +682,7 @@ namespace NCPA {
 		size_t tmpind = 0;
 
 		for (size_t i = 0; i < NZ; i++) {
-			diff = std::abs( ((double)z[i]) - ((double)zs) );
+			diff = std::fabs( ((double)z[i]) - ((double)zs) );
 			if (diff < mindiff) {
 				tmpind = i;
 				mindiff = diff;

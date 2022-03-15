@@ -1,4 +1,3 @@
-//#include "Atmosphere.h"
 #include "Atmosphere1D.h"
 #include "AtmosphericProperty1D.h"
 #include "units.h"
@@ -13,6 +12,10 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+
+#include "gsl/gsl_version.h"
+#include "gsl/gsl_errno.h"
+#include "gsl/gsl_spline.h"
 
 // #ifndef GAMMA_FOR_C
 // #define GAMMA_FOR_C 1.4
@@ -380,7 +383,11 @@ void NCPA::Atmosphere1D::read_attenuation_from_file( const std::string &new_key,
 	std::memset( interp_attn, 0, this->nz() * sizeof( double ) );
 
 	gsl_interp_accel *aacc = gsl_interp_accel_alloc();
+#if GSL_MAJOR_VERSION > 1
+	gsl_spline *aspl = gsl_spline_alloc( gsl_interp_steffen, nlines );
+#else
 	gsl_spline *aspl = gsl_spline_alloc( gsl_interp_cspline, nlines );
+#endif
 	gsl_spline_init( aspl, z_a, attn, nlines );
 	for (i = 0; i < this->nz(); i++) {
 		interp_attn[ i ] = gsl_spline_eval( aspl, existing_z[ i ], aacc );

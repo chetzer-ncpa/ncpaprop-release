@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "gsl/gsl_version.h"
 #include "gsl/gsl_errno.h"
 #include "gsl/gsl_spline.h"
 
@@ -437,6 +438,11 @@ void NCPA::Atmosphere2D::read_elevation_from_file( const std::string &filename )
 	generate_ground_elevation_spline_();
 }
 
+void NCPA::Atmosphere2D::finalize_elevation_from_profiles() {
+	override_profile_z0_ = false;
+	generate_ground_elevation_spline_();
+}
+
 void NCPA::Atmosphere2D::generate_ground_elevation_spline_() {
 
 	free_ground_elevation_spline_();
@@ -459,7 +465,7 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 	units_t file_r_units = NCPA::Units::fromString( "km" );
 	units_t file_z_units = NCPA::Units::fromString( "m" );
 	std::string line;
-	std::string delims = ":,=";
+	std::string delims = ":,= ";
 	std::vector< double > rvec, zvec;
 
 	std::getline( topofile, line );
@@ -468,23 +474,22 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 		if (line.size() > 0) {
 			if (line[ 0 ] == '#') {
 				if (line.size() > 1 && line[ 1 ] == '%') {
-					size_t delimpos = line.find_last_of( delims );
-					if (delimpos == std::string::npos) {
+
+					line.erase(0,2);
+					line = NCPA::deblank( line );
+					std::vector<std::string> fields = NCPA::split(
+						line, delims );
+					if (fields.size() < 2) {
 						std::cerr << "Topographic file descriptive header line "
 								  << line << " has no delimiter characters ("
 								  << delims << "), ignoring" << std::endl;
 					} else {
-						// chop off first two characters
-						line.erase(0,2);
-						line = NCPA::deblank( line );
-						delimpos = line.find_last_of( delims );
-						std::string ustr = NCPA::deblank(line.substr( delimpos ));
-						units_t tempunits = NCPA::Units::fromString( ustr );
+						units_t tempunits = NCPA::Units::fromString( fields[1] );
 						if (tempunits == UNITS_NONE) {
-							std::cerr << "Unrecognized units " << ustr << ", ignoring"
-									  << std::endl;
+							std::cerr << "Unrecognized units " << fields[1]
+									  << ", ignoring" << std::endl;
 						} else {
-							switch (line[0]) {
+							switch ((fields[0])[0]) {
 								case 'r':
 								case 'R':
 									file_r_units = tempunits;
@@ -499,6 +504,40 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 							}
 						}
 					}
+
+
+					// size_t delimpos = line.find_last_of( delims );
+					// if (delimpos == std::string::npos) {
+					// 	std::cerr << "Topographic file descriptive header line "
+					// 			  << line << " has no delimiter characters ("
+					// 			  << delims << "), ignoring" << std::endl;
+					// } else {
+					// 	// chop off first two characters
+					// 	line.erase(0,2);
+					// 	line = NCPA::deblank( line );
+					// 	delims += " ";
+					// 	delimpos = line.find_last_of( delims );
+					// 	std::string ustr = NCPA::deblank(line.substr( delimpos+1 ));
+					// 	units_t tempunits = NCPA::Units::fromString( ustr );
+					// 	if (tempunits == UNITS_NONE) {
+					// 		std::cerr << "Unrecognized units " << ustr << ", ignoring"
+					// 				  << std::endl;
+					// 	} else {
+					// 		switch (line[0]) {
+					// 			case 'r':
+					// 			case 'R':
+					// 				file_r_units = tempunits;
+					// 				break;
+					// 			case 'z':
+					// 			case 'Z':
+					// 				file_z_units = tempunits;
+					// 				break;
+					// 			default:
+					// 				std::cerr << "Unrecognized parameter tag " << line[0]
+					// 						  << ", must be in [RrZz].  Ignoring" << std::endl;
+					// 		}
+					// 	}
+					// }
 				}
 			} else {
 				std::vector< std::string > parts = NCPA::split( line );
@@ -518,6 +557,10 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_file_() {
 #if GSL_MAJOR_VERSION > 1
 	topo_spline_ = gsl_spline_alloc( gsl_interp_steffen, np + 2 );
 #else
+	std::cout << "Version 1 of GSL does not include Steffen interpolation."
+			  << std::endl
+			  << "Defaulting to Cubic Spline interpolation for ground height."
+			  << std::endl;
 	topo_spline_ = gsl_spline_alloc( gsl_interp_cspline, np + 2 );
 #endif
 	topo_ground_heights_ = new double[ np + 2 ];
@@ -547,6 +590,10 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_profiles_() {
 #if GSL_MAJOR_VERSION > 1
 	topo_spline_ = gsl_spline_alloc( gsl_interp_steffen, np + 2 );
 #else
+	std::cout << "Version 1 of GSL does not include Steffen interpolation."
+			  << std::endl
+			  << "Defaulting to Cubic Spline interpolation for ground height."
+			  << std::endl;
 	topo_spline_ = gsl_spline_alloc( gsl_interp_cspline, np + 2 );
 #endif
 	topo_ground_heights_ = new double[ np + 2 ];
@@ -566,10 +613,9 @@ void NCPA::Atmosphere2D::setup_ground_elevation_spline_from_profiles_() {
 		}
 		topo_ranges_[ pnum++ ] = (*it)->get( "_RANGE_" );
 	}
-	// topo_ground_heights_[ np+1 ] = topo_ground_heights_[ np ];
-	// topo_ranges_[ np+1 ] = 1.1 * max_valid_range_;
 	topo_ground_heights_[ pnum ] = topo_ground_heights_[ pnum-1 ];
-	topo_ranges_[ pnum ] = 1.1 * max_valid_range_;
+	topo_ranges_[ pnum ] = NCPA::Units::convert( 1000.0, UNITS_DISTANCE_METERS, range_units_ )
+		+ max_valid_range_;
 
 	gsl_spline_init( topo_spline_, topo_ranges_, topo_ground_heights_, np+2 );
 }

@@ -17,6 +17,7 @@
 
 #include "gsl/gsl_errno.h"
 #include "gsl/gsl_spline.h"
+#include "gsl/gsl_version.h"
 
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
@@ -224,41 +225,74 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 	//NCPA::Atmosphere1D *atm_profile_1d;
 	if (use_atm_1d) {
-		atm_profile_2d = new NCPA::StratifiedAtmosphere2D( param->getString( "atmosfile" ), param->getString("atmosheaderfile") );
-	// } else if (use_atm_toy) {
-	// 	NCPA::Atmosphere1D *tempatm = new NCPA::ToyAtmosphere1D();
-	// 	atm_profile_2d = new NCPA::StratifiedAtmosphere2D( tempatm );
-	// 	delete tempatm;
+		atm_profile_2d = new NCPA::StratifiedAtmosphere2D(
+			param->getString( "atmosfile" ),
+			param->getString("atmosheaderfile") );
 	} else if (use_atm_2d) {
-		atm_profile_2d = new NCPA::ProfileSeriesAtmosphere2D( param->getString( "atmosfile2d" ), param->getString( "atmosheaderfile" ) );
-		atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
-		if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
-			atm_profile_2d->set_maximum_valid_range( r_max );
-		}
+		atm_profile_2d = new NCPA::ProfileSeriesAtmosphere2D(
+			param->getString( "atmosfile2d" ),
+			param->getString( "atmosheaderfile" ) );
 	} else {
 		std::cerr << "Unknown atmosphere option selected" << std::endl;
 		exit(0);
 	}
-
-	z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
-	z_ground = z_min;
-	if (param->wasFound("groundheight_km")) {
-		z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
-		z_ground_specified = true;
-		
-		std::cout << "Overriding profile Z0 value with command-line value " << z_ground 
-		     << " m" << std::endl;
-		atm_profile_2d->remove_property("Z0");
-		atm_profile_2d->add_property( "Z0", z_ground, NCPA::Units::fromString("m") );
-	} else {
-		if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
-			atm_profile_2d->add_property("Z0",z_ground,atm_profile_2d->get_altitude_units(0.0));
-		}
+	atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
+	if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
+		atm_profile_2d->set_maximum_valid_range( r_max );
 	}
 
-	// set units
+	// altitude units
 	atm_profile_2d->convert_altitude_units( Units::fromString( "m" ) );
-	atm_profile_2d->convert_property_units( "Z0", Units::fromString( "m" ) );
+
+	// Ground height is treated differently depending on whether we're
+	// using topography or not
+	if (use_topo) {
+		// first, do we get topography from a file?
+		if ( topofile.size() > 0 ) {
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->read_elevation_from_file( topofile );
+			z_ground_specified = true;
+		} else if (param->wasFound("groundheight_km")) {
+			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
+			z_ground_specified = true;
+			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
+			    << " m" << std::endl;
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->add_property( "Z0", z_ground,
+				NCPA::Units::fromString("m") );
+			atm_profile_2d->finalize_elevation_from_profiles();
+		} else {
+			atm_profile_2d->finalize_elevation_from_profiles();
+		}
+		z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
+	} else {
+		// constant elevation
+		if (param->wasFound("groundheight_km")) {
+			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
+			z_ground_specified = true;
+
+			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
+			     << " m" << std::endl;
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->add_property( "Z0", z_ground, NCPA::Units::fromString("m") );
+		} else {
+			if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
+				z_ground = atm_profile_2d->get_minimum_altitude( 0.0 );
+				atm_profile_2d->add_property("Z0",z_ground,
+					atm_profile_2d->get_altitude_units(0.0));
+			}
+		}
+		atm_profile_2d->convert_property_units( "Z0", Units::fromString( "m" ) );
+		z_ground = atm_profile_2d->get( 0.0, "Z0" );
+	}
+
+	// z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
+	// z_ground = z_min;
+
+
+
+
+	// set units
 	if (atm_profile_2d->contains_vector(0,"U")) {
 		atm_profile_2d->convert_property_units( "U", Units::fromString( "m/s" ) );
 	}
@@ -274,7 +308,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	if (atm_profile_2d->contains_vector(0,"RHO")) {
 		atm_profile_2d->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
 	}
-	z_ground = atm_profile_2d->get( 0.0, "Z0" );
+	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 
 	// calculate derived quantities
 	double c0;
@@ -333,12 +367,8 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		}
 	}
 
-	if ( topofile.size() > 0 ) {
-		atm_profile_2d->read_elevation_from_file( topofile );
-	}
-
 	// calculate/check z resolution
-	dz = 				param->getFloat( "dz_m" );
+	dz = param->getFloat( "dz_m" );
 	double lambda0 = c0 / freq;
   	if (dz <= 0.0) {
   		dz = lambda0 / 20.0;
@@ -417,10 +447,11 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	atm_profile_2d->get_minimum_altitude_limits( minlimit, z_min );
 	//z_min = atm_profile_2d->get_highest_minimum_altitude();
 	// if ( (!z_ground_specified) && atm_profile_2d->contains_scalar( 0.0, "Z0" )) {
-	if ( !z_ground_specified ) {
+	// if ( !z_ground_specified ) {
 		// z_ground = atm_profile_2d->get( 0.0, "Z0" );
-		z_ground = z_min;
-	}
+	// 	z_ground = z_min;
+	// }
+	// z_ground = atm_profile_2d->get(0.0,"Z0");
 	if (z_ground < z_min) {
 		std::cerr << "Supplied ground height is outside of atmospheric specification." << std::endl;
 		exit(0);
@@ -542,7 +573,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 					n, npade+1, 0, &q_starter );
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
 				get_starter_self( NZ, z, zs, ground_index, k0, qpowers_starter, npade, 
-					&psi_o );
+					false, &psi_o );
 				
 				ierr = MatDestroy( &q_starter );CHKERRQ(ierr);
 			} else if (starter == "gaussian") {
@@ -772,10 +803,18 @@ int NCPA::EPadeSolver::interpolate_starter(
 	}
 
 	accel_r_ = gsl_interp_accel_alloc();
+#if GSL_MAJOR_VERSION > 1
+	spline_r_ = gsl_spline_alloc( gsl_interp_steffen, z_orig.size() );
+#else
 	spline_r_ = gsl_spline_alloc( gsl_interp_cspline, z_orig.size() );
+#endif
 	gsl_spline_init( spline_r_, z_spline, r_spline, z_orig.size() );
 	accel_i_ = gsl_interp_accel_alloc();
+#if GSL_MAJOR_VERSION > 1
+	spline_i_ = gsl_spline_alloc( gsl_interp_steffen, z_orig.size() );
+#else
 	spline_i_ = gsl_spline_alloc( gsl_interp_cspline, z_orig.size() );
+#endif
 	gsl_spline_init( spline_i_, z_spline, i_spline, z_orig.size() );
 
 	ierr = VecCreate( PETSC_COMM_SELF, psi );CHKERRQ(ierr);
@@ -875,7 +914,7 @@ double NCPA::EPadeSolver::check_ground_height_coincidence_with_grid( double *z,
 	size_t NZ, double tolerance, double z_ground ) {
 
 	int closest_source_grid_point = (int)(NCPA::find_closest_index( z, NZ, z_ground ));
-	if (fabs(z_ground - z[ closest_source_grid_point ]) < tolerance) {
+	if (std::fabs(z_ground - z[ closest_source_grid_point ]) < tolerance) {
 		if (z_ground - z[ closest_source_grid_point ] <= 0) {
 			return z_ground - tolerance;
 		} else {
@@ -931,7 +970,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	/* @todo move this into constructor as much as possible */
 	z_bottom = -5000.0;    // make this eventually depend on frequency
 	z_bottom -= fmod( z_bottom, dz );
-	z_ground = atm_profile_2d->get( 0.0, "Z0" );
+	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
+	z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
 	NZ = ((int)std::floor((z_max - z_bottom) / dz)) + 1;
 	z = new double[ NZ ];
 	z_abs = new double[ NZ ];
@@ -1023,7 +1063,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 		  	// Check ground elevation for coincidence with grid points
 		  	z_ground = check_ground_height_coincidence_with_grid( z, NZ, 
-		  		grid_tolerance, atm_profile_2d->get( 0.0, "Z0" ) );
+		  		grid_tolerance,
+		  		atm_profile_2d->get_interpolated_ground_elevation( 0.0 ) );
 
 		  	// set up transmission loss matrix
 			tl = NCPA::cmatrix( NZ, NR-1 );
@@ -1071,7 +1112,6 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					z_starter[ ii ] = z[ ii + ground_index ];
 				}
 
-				// std::memcpy( z_starter, z+ground_index, NZ_starter * sizeof(double) );
 				calculate_atmosphere_parameters( atm_profile_2d, NZ_starter, z_starter,
 					0.0, z_ground, lossless, top_layer, freq, false, k0_starter, 
 					c0_starter, c_starter, a_starter, k_starter, n_starter );
@@ -1082,8 +1122,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					k0_starter, h2, ground_impedence_factor, n_starter, npade+1, 0, 
 					&q_starter );
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
-				get_starter_self( NZ_starter, z_starter, zs, 0, k0_starter, 
-					qpowers_starter, npade, &psi_o );
+				get_starter_self( NZ_starter, z_starter, zs, 0, k0_starter,
+					qpowers_starter, npade, true, &psi_o );
 
 				// now interpolate calculated starter to actual Z vector
 				std::deque< double > z_spline, r_spline, i_spline;
@@ -1163,9 +1203,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 				double rr = r[ ir ];
 				z_ground = check_ground_height_coincidence_with_grid( z, NZ, 
-		  			grid_tolerance, atm_profile_2d->get_interpolated_ground_elevation( rr ) );
-				calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground, lossless, 
-					top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
+		  			grid_tolerance,
+		  			atm_profile_2d->get_interpolated_ground_elevation( rr ) );
+				calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground,
+					lossless, top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
 				Mat last_q;
 				ierr = MatConvert( qpowers[0], MATSAME, MAT_INITIAL_MATRIX, &last_q );CHKERRQ(ierr);
 				delete_matrix_polynomial( npade+1, &qpowers );
@@ -1191,6 +1232,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					tl[ i ][ ir ] = contents[ i ] * hank;
 				}
 
+				// make sure the receiver height is above ground
 				double z0g = z_ground;
 				z0g = NCPA::max( z0g, zr );
 				zgi_r[ ir ] = (int)(NCPA::find_closest_index( z, NZ, z0g ));
@@ -1252,7 +1294,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		}
 
 		if (write_topo) {
-			write_topography( tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY),
+			write_topography(
+				tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY),
 				calc_az, r_max, 1000.0 );
 		}
 		
@@ -1943,7 +1986,7 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z, double zs, do
 
 
 int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nzground, 
-	double k0, Mat *qpowers, size_t npade, Vec *psi ) {
+	double k0, Mat *qpowers, size_t npade, bool absolute, Vec *psi ) {
 
 	Vec rhs, ksi, Bksi, tempvec;
 	Mat /*A, AA,*/ B, C;
@@ -1958,15 +2001,20 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nz
 	ierr = VecSetFromOptions( rhs );CHKERRQ(ierr);
 	ierr = VecSet( rhs, 0.0 );CHKERRQ(ierr);
 	
-	// find closest index to zs. Make sure the picked point is above the ground surface
-	PetscInt nzsrc = (PetscInt)(find_closest_index( z, NZ, zs ));
-	while (z[nzsrc] < z_ground) {
-		nzsrc++;
+	// find closest index to zs. Make sure the picked point is above
+	// the ground surface if we're working in absolute elevation.  If
+	// we're in relative elevation, the ground is at 0 by definition
+	size_t nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
+	if (absolute) {
+		while (z[nzsrc] < z_ground) {
+			nzsrc++;
+		}
 	}
 
 	double h = z[1] - z[0];
 	PetscScalar hinv = 1.0 / h;
-	ierr = VecSetValues( rhs, 1, &nzsrc, &hinv, INSERT_VALUES );CHKERRQ(ierr);
+	PetscInt ps_nzsrc = nzsrc;
+	ierr = VecSetValues( rhs, 1, &ps_nzsrc, &hinv, INSERT_VALUES );CHKERRQ(ierr);
 	
 	// solve first part (Eq. 26)
 	ierr = VecDuplicate( rhs, &ksi );CHKERRQ(ierr);
@@ -2393,8 +2441,8 @@ int NCPA::EPadeSolver::zero_below_ground( Mat *q, int NZ, PetscInt ground_index 
 	return 1;
 }
 
-void NCPA::EPadeSolver::write_topography( std::string filename, double azimuth, 
-	double r_max, double dr ) {
+void NCPA::EPadeSolver::write_topography( std::string filename,
+	double azimuth, double r_max, double dr ) {
 
 	double r;
 	std::ofstream outfile( filename, std::ofstream::out | std::ofstream::app );
