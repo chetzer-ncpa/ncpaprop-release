@@ -1,9 +1,12 @@
 #ifndef NCPAPROP_ATMOSPHERICPROPERTY3D_H_INCLUDED
 #define NCPAPROP_ATMOSPHERICPROPERTY3D_H_INCLUDED
 
-#include "LANLInterpolation.h"
-#include "AtmosphericProperty1D.h"
+#include <cstdlib>
+#include "util.h"
 #include "units.h"
+#include "AtmosphericProperty1D.h"
+#include "LANLInterpolation.h"
+
 #include <vector>
 
 typedef enum deriv_t : size_t {

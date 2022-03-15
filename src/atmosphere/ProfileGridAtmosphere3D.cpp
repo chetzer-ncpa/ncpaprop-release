@@ -130,7 +130,7 @@ void NCPA::ProfileGridAtmosphere3D::read_atmosphere_from_file( const std::string
 	}
 
 	// Create matrix of 1-D profiles
-	NCPA::Atmosphere1D ***profilemat = NCPA::matrix<NCPA::Atmosphere1D *>( nx, ny );
+	NCPA::Atmosphere1D ***profilemat = NCPA::allocate_matrix<NCPA::Atmosphere1D *>( nx, ny );
 	// for (cstr = lines.cbegin(); cstr != lines.cend(); ++cstr ) {
 		// std::vector<std::string> fields = NCPA::split( line );
 		// i = find_closest_index( x, nx, std::stod( fields[ 0 ] ) );
@@ -163,7 +163,7 @@ void NCPA::ProfileGridAtmosphere3D::read_atmosphere_from_file( const std::string
 	// vectors first
 	keys = profilemat[ 0 ][ 0 ]->get_vector_keys();
 	NCPA::AtmosphericProperty1D ***propmat =
-			NCPA::matrix<NCPA::AtmosphericProperty1D *>( nx, ny );
+			NCPA::allocate_matrix<NCPA::AtmosphericProperty1D *>( nx, ny );
 	for (cstr = keys.cbegin(); cstr != keys.cend(); ++cstr) {
 		for (i = 0; i < nx; i++) {
 			for (j = 0; j < ny; j++) {
@@ -181,7 +181,7 @@ void NCPA::ProfileGridAtmosphere3D::read_atmosphere_from_file( const std::string
 	// now scalars
 	keys = profilemat[ 0 ][ 0 ]->get_scalar_keys();
 	NCPA::ScalarWithUnits ***spropmat =
-			NCPA::matrix<NCPA::ScalarWithUnits *>( nx, ny );
+			NCPA::allocate_matrix<NCPA::ScalarWithUnits *>( nx, ny );
 	for (cstr = keys.cbegin(); cstr != keys.cend(); ++cstr) {
 		for (i = 0; i < nx; i++) {
 			for (j = 0; j < ny; j++) {
@@ -834,7 +834,7 @@ void NCPA::ProfileGridAtmosphere3D::get_property_template( const std::string &ba
 	x_units = propptr->get_range_units();
 	propptr->y_vector( ny, y );
 	y_units = x_units;
-	prop = NCPA::matrix<double>( nx, ny );
+	prop = NCPA::allocate_matrix<double>( nx, ny );
 }
 
 void NCPA::ProfileGridAtmosphere3D::get_property_template( const std::string &basis,

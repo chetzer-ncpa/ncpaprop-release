@@ -655,6 +655,17 @@ bool NCPA::ParameterSet::wasFound( std::string key ) const {
 }
 
 
+void NCPA::ParameterSet::removeParameter( std::string key ) {
+	for ( std::vector< NCPA::GenericParameter * >::iterator it
+		= _params.begin(); it != _params.end(); ++it ) {
+
+		if ((*it)->getKey() == key) {
+			_params.erase( it );
+		}
+	}
+}
+
+
 NCPA::ParameterTest * NCPA::ParameterSet::addTest( const std::string& option,
 		NCPA::PARAMETER_TEST_TYPE test_type ) {
 			

@@ -82,6 +82,10 @@ namespace NCPA {
 		void calculate_attenuation( const std::string &new_key,
 			const std::string &temperature_key, const std::string &pressure_key,
 			const std::string &density_key, double freq, double tweak_factor = 1.0 );
+		void calculate_attenuation( const std::string &new_key,
+			const std::string &temperature_key, const std::string &pressure_key,
+			const std::string &density_key, const std::string &humidity_key,
+			double freq, double tweak_factor = 1.0 );
 		void calculate_wind_component( const std::string &new_key,
 			const std::string &wind_speed_key, const std::string &wind_direction_key,
 			double azimuth );

@@ -36,19 +36,10 @@ NCPA::Atmosphere1D::Atmosphere1D() {
 }
 
 NCPA::Atmosphere1D::Atmosphere1D( size_t n_altitude_points, double *altitude_points, units_t altitude_units ) {
-	contents_.clear();
-	scalar_contents_.clear();
-	z_ = new NCPA::VectorWithUnits( n_altitude_points, altitude_points, altitude_units );
-
-	//nz_ = n_altitude_points;
-	//z_ = new double[ nz_ ];
-	//std::memcpy( z_, altitude_points, nz_ * sizeof(double) );
-	//z_units_.push( altitude_units );
+	z_ = NULL;
+	set_altitude_vector( n_altitude_points, altitude_points,
+		altitude_units );
 }
-
-// NCPA::Atmosphere1D::Atmosphere1D( std::istream& in ) {
-// 	read_from_stream( in );
-// }
 
 NCPA::Atmosphere1D::Atmosphere1D( const std::string &filename,
 	const std::string &headerfilename ) {
@@ -81,6 +72,15 @@ NCPA::Atmosphere1D::Atmosphere1D( const Atmosphere1D &source ) {
 		scalar_contents_[ it->first ] = new_scalar;
 	}
 }
+
+
+void NCPA::Atmosphere1D::set_altitude_vector( size_t n_altitude_points,
+			double *altitude_points, units_t altitude_units ) {
+	contents_.clear();
+	scalar_contents_.clear();
+	z_ = new NCPA::VectorWithUnits( n_altitude_points, altitude_points, altitude_units );
+}
+
 
 void NCPA::Atmosphere1D::read_header_from_stream( std::istream& in ) {
 
@@ -271,16 +271,22 @@ void NCPA::Atmosphere1D::read_values_from_stream( std::istream& in ) {
 
 
 NCPA::Atmosphere1D::~Atmosphere1D() {
+	cleanup();
+}
+
+void NCPA::Atmosphere1D::cleanup() {
 	for (std::map< std::string, NCPA::AtmosphericProperty1D * >::iterator it=contents_.begin(); it != contents_.end(); ++it) {
 		delete it->second;
 	}
-	for (std::map< std::string, NCPA::ScalarWithUnits * >::iterator it=scalar_contents_.begin(); 
+	for (std::map< std::string, NCPA::ScalarWithUnits * >::iterator it=scalar_contents_.begin();
 			it != scalar_contents_.end(); ++it) {
 		delete it->second;
 	}
 	contents_.clear();
 	scalar_contents_.clear();
-	delete z_;
+	if (z_ != NULL) {
+		delete z_;
+	}
 }
 
 void NCPA::Atmosphere1D::read_attenuation_from_file( const std::string &new_key,
@@ -732,6 +738,7 @@ void NCPA::Atmosphere1D::calculate_sound_speed_from_temperature(
 
 	NCPA::Units::convert( c, nz_, NCPA::UNITS_SPEED_METERS_PER_SECOND, wind_units, c );
 	add_property( new_key, nz_, c, wind_units );
+	delete [] c;
 }
 
 void NCPA::Atmosphere1D::calculate_sound_speed_from_pressure_and_density(
@@ -936,6 +943,58 @@ void NCPA::Atmosphere1D::remove_property( const std::string &key ) {
 
 void NCPA::Atmosphere1D::calculate_attenuation( const std::string &new_key,
 		const std::string &temperature_key, const std::string &pressure_key,
+		const std::string &density_key, const std::string &humidity_key,
+		double freq, double tweak ) {
+
+	if (contains_key( new_key )) {
+		throw std::runtime_error( "Requested key " + new_key + " already exists in atmosphere" );
+	}
+
+	// are we using density or humidity?
+	if (density_key.size() > 0 && contains_vector( density_key )) {
+		return calculate_attenuation( new_key, temperature_key,
+			pressure_key, density_key, freq, tweak );
+	} else if (humidity_key.size() > 0 && contains_vector( humidity_key )) {
+
+		size_t nz = this->nz();
+		double *Z = new double[ nz ];
+		double *T = new double[ nz ];
+		double *P = new double[ nz ];
+		double *H = new double[ nz ];
+		double *A = new double[ nz ];
+		NCPA::units_t old_z_units, old_t_units, old_p_units;
+		get_altitude_vector( Z, &old_z_units );
+		get_property_vector( temperature_key, 	T, &old_t_units );
+		get_property_vector( pressure_key, 		P, &old_p_units );
+		get_property_vector( humidity_key,      H );
+		// get_property_vector( density_key, 		D, &old_d_units );
+
+		// we do the units conversion in-place on the raw vectors so we don't have to change them back later
+		NCPA::Units::convert( Z, nz, old_z_units, NCPA::Units::fromString( "km" ), Z );
+		NCPA::Units::convert( T, nz, old_t_units, NCPA::Units::fromString( "K" ), T );
+		NCPA::Units::convert( P, nz, old_p_units, NCPA::Units::fromString( "Pa" ), P );
+		// NCPA::Units::convert( D, nz, old_d_units, NCPA::Units::fromString( "kg/m3" ), D );
+
+		for ( size_t ii = 0; ii < nz; ii++ ) {
+			A[ii] = NCPA::AtmosphericModel::attenuation_from_temperature_pressure_humidity(
+				Z[ii], T[ii], P[ii], H[ii], freq ) * tweak;
+		}
+
+		add_property( new_key, nz, A, NCPA::Units::fromString( "" ) );
+
+		delete [] Z;
+		delete [] T;
+		delete [] P;
+		delete [] H;
+		delete [] A;
+	} else {
+		throw std::runtime_error( "No valid density or humidity vector found!" );
+	}
+}
+
+
+void NCPA::Atmosphere1D::calculate_attenuation( const std::string &new_key,
+		const std::string &temperature_key, const std::string &pressure_key,
 		const std::string &density_key, double freq, double tweak ) {
 
 	if (contains_key( new_key )) {
@@ -960,23 +1019,6 @@ void NCPA::Atmosphere1D::calculate_attenuation( const std::string &new_key,
 	NCPA::Units::convert( P, nz, old_p_units, NCPA::Units::fromString( "Pa" ), P );
 	NCPA::Units::convert( D, nz, old_d_units, NCPA::Units::fromString( "kg/m3" ), D );
 
-	// set up constants for attenuation calculation
-	// double mu_o  		= 18.192E-6;    		// Reference viscosity [kg/(m*s)]
-	// // double T_o   		= T[0];         		// Reference temperature [K]
-	// double T_o   		= 293.15;         		// Reference temperature [K]
-	// // double P_o   		= P[0];        			// Reference pressure [Pa]
-	// double P_o   		= 101325;        		// Reference pressure [Pa]
-	// double S     		= 117.0;	     		// Sutherland constant [K]
-
-	// // heat capacity|volume for O2, N2, CO2, and O3
-	// double Cv_R[] = { 5.0/2.0, 5.0/2.0, 3.0, 3.0 };
-
-	// // heat capacity|pressure for O2, N2, CO2, and O3
-	// double Cp_R[] = { 7.0/2.0, 7.0/2.0, 4.0, 4.0 };
-
-	// // characteristic temperature for O2, N2, CO2, and O3
-	// double theta[] = { 2239.1, 3352.0, 915.0, 1037.0 };
-
 	for ( size_t ii = 0; ii < nz; ii++ ) {
 		A[ii] = NCPA::AtmosphericModel::attenuation_sutherland_bass(
 			Z[ii], T[ii], P[ii], D[ii], freq ) * tweak;
@@ -989,130 +1031,4 @@ void NCPA::Atmosphere1D::calculate_attenuation( const std::string &new_key,
 	delete [] P;
 	delete [] D;
 	delete [] A;
-		// double z       = Z[ii];	// km	AGL
-		// double T_z     = T[ii];	// K
-		// double P_z     = P[ii];	// Pa;
-		// double D_z		= D[ii];	// kg/m3
-		// double c_snd_z = std::sqrt( GAMMA_FOR_C * P_z / D_z );  // m/s
-		// double mu      = mu_o * std::sqrt( T_z/T_o ) * ( (1.0 + S/T_o) / (1.0 + S/T_z) ); // Viscosity [kg/(m*s)]
-		// double nu      = ( 8.0 * PI * freq * mu ) / ( 3 * P_z );                   // Nondimensional frequency
-
-		// // Gas fractions
-		// double X[7];
-
-		// //-------- Gas fraction polynomial fits -----------------------------------
-		// if (z > 90.0) {                                         // O2 profile
-		// 	X[0] = std::pow( 10,
-		// 				49.296 - (1.5524*z) + (1.8714E-2*std::pow(z,2))
-		// 		   		- (1.1069E-4*std::pow(z,3)) + (3.199E-7*std::pow(z,4))
-		// 		   		- (3.6211E-10*std::pow(z,5))
-		// 		);
-		// } else {
-		// 	X[0] = std::pow(10,-0.67887);
-		// }
-
-		// if (z > 76.0) {                                        // N2 profile
-		// 	X[1] = std::pow(10,(1.3972E-1)-(5.6269E-3*z) + (3.9407E-5*std::pow(z,2) )
-		// 		   - (1.0737E-7*std::pow(z,3)));
-		// } else {
-		// 	X[1] = std::pow(10,-0.10744);
-		// }
-
-		// X[2] = std::pow(10,-3.3979);                              // CO2 profile
-
-		// if (z > 80.0) {                                        // O3 profile
-		// 	X[3] = std::pow(10,-4.234-(3.0975E-2*z));
-		// } else {
-		// 	X[3] = std::pow(10,-19.027+(1.3093*z) - (4.6496E-2*std::pow(z,2))
-		// 		   + (7.8543E-4*std::pow(z,3)) - (6.5169E-6*std::pow(z,4))
-		// 		   + (2.1343E-8*std::pow(z,5)));
-		// }
-
-		// if (z > 95.0 ) {                                       // O profile
-		// 	X[4] = std::pow(10,-3.2456+(4.6642E-2*z)-(2.6894E-4*std::pow(z,2))+(5.264E-7*std::pow(z,3)));
-		// } else {
-		// 	X[4] = std::pow(10,-11.195+(1.5408E-1*z)-(1.4348E-3*std::pow(z,2))+(1.0166E-5*std::pow(z,3)));
-		// }
-
-		// // N profile
-		// X[5]  = std::pow(10,-53.746+(1.5439*z)-(1.8824E-2*std::pow(z,2))+(1.1587E-4*std::pow(z,3))
-		// 	    -(3.5399E-7*std::pow(z,4))+(4.2609E-10*std::pow(z,5)));
-
-		// if (z > 30.0 ) {                                        // H2O profile
-		// 	X[6] = std::pow(10,-4.2563+(7.6245E-2*z)-(2.1824E-3*std::pow(z,2))-(2.3010E-6*std::pow(z,3))
-		// 		   +(2.4265E-7*std::pow(z,4))-(1.2500E-09*std::pow(z,5)));
-		// } else {
-		// 	if (z > 100.) {
-		// 		X[6] = std::pow(10,-0.62534-(8.3665E-2*z));
-		// 	} else {
-		// 		X[6] = std::pow(10,-1.7491+(4.4986E-2*z)-(6.8549E-2*std::pow(z,2))
-		// 			   +(5.4639E-3*std::pow(z,3))-(1.5539E-4*std::pow(z,4))
-		// 			   +(1.5063E-06*std::pow(z,5)));
-		// 	}
-		// }
-		// double X_ON = (X[0] + X[1])/0.9903;
-
-		// //-------- Rotational collision number-------------------------------------
-		// double Z_rot_0 = 54.1*std::exp(-17.3*(std::pow(T_z,-1.0/3.0)));   // O2
-		// double Z_rot_1 = 63.3*std::exp(-16.7*(std::pow(T_z,-1.0/3.0)));   // N2
-		// double Z_rot_   = 1.0 / ( (X[1] / Z_rot_1) + (X[0] / Z_rot_0) );
-
-		// //-------- Nondimensional atmospheric quantities---------------------------
-		// double sigma = 5.0 / std::sqrt(21.0);
-		// double nn    = (4.0/5.0) * std::sqrt(3.0/7.0) * Z_rot_;
-		// double chi   = 3.0 * nn * nu / 4.0;
-		// double cchi  = 2.36 * chi;
-
-		// //---------Classical + rotational loss/dispersion--------------------------
-		// double a_cl    = (2 * PI * freq / c_snd_z)
-		// 					* std::sqrt( 0.5 * (std::sqrt(1+std::pow(nu,2))-1) * (1+std::pow(cchi,2))
-		// 					/ ((1+std::pow(nu,2))*(1+std::pow(sigma*cchi,2))) );
-		// double a_rot   = (2*PI*freq/c_snd_z) * X_ON
-		// 					* ((pow(sigma,2)-1)*chi/(2*sigma))
-		// 					* sqrt(0.5*(sqrt(1+pow(nu,2))+1)/((1+pow(nu,2))*(1+pow(cchi,2))));
-		// double a_diff  = 0.003*a_cl;
-
-		// //---------Vibrational relaxation-------------------------------------------
-		// double Tr = std::pow( T_z/T_o ,-1.0/3.0 ) - 1.0;
-		// double A1 = (X[0]+X[1]) * 24.0 * std::exp(-9.16*Tr);
-		// double A2 = (X[4]+X[5]) * 2400.0;
-		// double B  = 40400.0 * std::exp( 10.0*Tr );
-		// double C  = 0.02 * std::exp( -11.2*Tr );
-		// double D  = 0.391 * std::exp( 8.41*Tr );
-		// double E  = 9.0 * std::exp( -19.9*Tr );
-		// double F  = 60000.0;
-		// double G  = 28000.0 * std::exp( -4.17*Tr );
-		// double H  = 22000.0 * std::exp( -7.68*Tr );
-		// double I  = 15100.0 * std::exp( -10.4*Tr );
-		// double J  = 11500.0 * std::exp( -9.17*Tr );
-		// double K  = (8.48E08) * std::exp( 9.17*Tr );
-		// double L  = std::exp( -7.72*Tr );
-		// double ZZ = H*X[2] + I*(X[0] + 0.5*X[4]) + J*(X[1] + 0.5*X[5] ) + K*(X[6] + X[3]);
-		// double hu = 100.0 * (X[3] + X[6]);
-		// double f_vib[ 4 ], a_vib_c[ 4 ];
-		// f_vib[0] = (P_z/P_o) * (mu_o/mu) * (A1 + A2 + B*hu*(C+hu)*(D+hu));
-		// f_vib[1] = (P_z/P_o) * (mu_o/mu) * (E + F*X[3] + G*X[6]);
-		// f_vib[2] = (P_z/P_o) * (mu_o/mu) * ZZ;
-		// f_vib[3] = (P_z/P_o) * (mu_o/mu) * (1.2E5)*L;
-
-		// double a_vib = 0.0;
-		// for (size_t m=0; m<4; m++)
-		// {
-		// 	double C_R        = ((std::pow(theta[m]/T_z,2))*std::exp(-theta[m]/T_z))/(std::pow(1-std::exp(-theta[m]/T_z),2));
-		// 	double A_max      = (X[m]*(PI/2)*C_R)/(Cp_R[m]*(Cv_R[m]+C_R));
-		// 	       A_max      = (X[m]*(PI/2)*C_R)/(Cp_R[m]*(Cv_R[m]+C_R));
-		// 	a_vib_c[m] = (A_max/c_snd_z)*((2*(pow(freq,2))/f_vib[m])/(1+pow(freq/f_vib[m],2)));
-		// 	a_vib      = a_vib + a_vib_c[m];
-		// }
-
-		// A[ii] = (a_cl + a_rot + a_diff + a_vib) * tweak;
-	// }
-
-	// add_property( new_key, nz, A, NCPA::Units::fromString( "" ) );
-
-	// delete [] Z;
-	// delete [] T;
-	// delete [] P;
-	// delete [] D;
-	// delete [] A;
 }

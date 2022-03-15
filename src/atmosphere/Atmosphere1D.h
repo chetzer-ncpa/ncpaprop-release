@@ -66,6 +66,13 @@ namespace NCPA {
 		~Atmosphere1D();
 
 		/**
+		Initializes the altitude (independent) vector.  Calls cleanup()
+		first.
+		*/
+		void set_altitude_vector( size_t n_altitude_points,
+			double *altitude_points, units_t altitude_units );
+
+		/**
 		Reads a formatted profile from an input stream, normally a std::ifstream representing a file.
 		@brief Read a formatted atmospheric profile from a stream.
 		@param in The input stream to read the profile from.  Should already be open.
@@ -152,9 +159,15 @@ namespace NCPA {
 		void calculate_wind_direction( const std::string &new_key,
 			const std::string &we_wind_speed_key, const std::string &sn_wind_speed_key,
 			units_t direction_units = NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
+
+		// old version, no humidity option
 		void calculate_attenuation( const std::string &new_key,
 			const std::string &temperature_key, const std::string &pressure_key,
 			const std::string &density_key, double freq, double tweak_factor = 1.0 );
+		void calculate_attenuation( const std::string &new_key,
+			const std::string &temperature_key, const std::string &pressure_key,
+			const std::string &density_key, const std::string &humidity_key,
+			double freq, double tweak_factor = 1.0 );
 		void calculate_wind_component( const std::string &new_key,
 			const std::string &wind_speed_key, const std::string &wind_direction_key,
 			double azimuth );
@@ -193,6 +206,7 @@ namespace NCPA {
 		NCPA::VectorWithUnits *z_;
 		std::vector< std::string > headerlines;
 
+		void cleanup();
 		void do_units_conversion_( size_t n_points, double *inplace, 
 			NCPA::units_t fromUnits, NCPA::units_t toUnits );
 

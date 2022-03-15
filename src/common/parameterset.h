@@ -646,7 +646,7 @@ namespace NCPA {
 		std::string getString( std::string key ) const;
 		bool getBool( std::string key ) const;     // returns bool version of parameter
 		bool wasFound( std::string key ) const;    // returns true if the value was specified, not left default
-
+		void removeParameter( std::string key );
 		
 	protected:
 		ParameterVector _params;

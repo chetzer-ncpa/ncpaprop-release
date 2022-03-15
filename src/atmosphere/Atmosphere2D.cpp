@@ -285,13 +285,27 @@ void NCPA::Atmosphere2D::calculate_wind_direction( const std::string &new_key, c
 	}
 }
 
-void NCPA::Atmosphere2D::calculate_attenuation( const std::string &new_key, const std::string &temperature_key, const std::string &pressure_key,
+void NCPA::Atmosphere2D::calculate_attenuation( const std::string &new_key,
+		const std::string &temperature_key, const std::string &pressure_key,
 		const std::string &density_key, double freq, double tweak_factor ) {
 	for ( std::vector< NCPA::Atmosphere1D * >::iterator it = profiles_.begin();
 		  it != profiles_.end(); ++it ) {
-		(*it)->calculate_attenuation( new_key, temperature_key, pressure_key, density_key, freq, tweak_factor );
+		(*it)->calculate_attenuation( new_key, temperature_key,
+			pressure_key, density_key, freq, tweak_factor );
 	}
 }
+
+void NCPA::Atmosphere2D::calculate_attenuation( const std::string &new_key,
+		const std::string &temperature_key, const std::string &pressure_key,
+		const std::string &density_key, const std::string &humidity_key,
+		double freq, double tweak_factor ) {
+	for ( std::vector< NCPA::Atmosphere1D * >::iterator it = profiles_.begin();
+		  it != profiles_.end(); ++it ) {
+		(*it)->calculate_attenuation( new_key, temperature_key,
+			pressure_key, density_key, humidity_key, freq, tweak_factor );
+	}
+}
+
 
 void NCPA::Atmosphere2D::read_attenuation_from_file( const std::string &new_key, const std::string &filename ) {
 	for ( std::vector< NCPA::Atmosphere1D * >::iterator it = profiles_.begin();

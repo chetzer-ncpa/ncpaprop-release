@@ -31,6 +31,15 @@ Modified for use in NCPAprop 2.0 by Claus Hetzer, NCPA University of Mississippi
 #ifndef NCPAPROP_LANLINTERPOLATION_H_INCLUDED
 #define NCPAPROP_LANLINTERPOLATION_H_INCLUDED
 
+#include <cstdlib>
+
+namespace NCPA {
+    void extrapolating_spline( size_t old_n, double *old_x, double *old_f,
+        size_t new_n, double *new_x, double *&new_f );
+}
+
+
+
 namespace LANL {
     //----------------------------------------//
     //------------Common Functions------------//
@@ -50,6 +59,7 @@ namespace LANL {
         double* f_vals;     // 1D array of f(x) values, f_vals[i] = f(x[i])
         double* slopes;     // Slopes used to generate natural cubic spline solution
     };
+    typedef struct linear_spline_1D Spline1DLinear;
 
     void prep(struct linear_spline_1D &, int);   // Build arrays for an interpolation to get started
     void set(struct linear_spline_1D &);         // Calculate slopes to set interpolation for evaluation
@@ -69,6 +79,7 @@ namespace LANL {
         double* f_vals;     // 1D array of f(x) values, f_vals[i] = f(x[i])
         double* slopes;     // Slopes used to generate natural cubic spline solution
     };
+    typedef struct natural_cubic_spline_1D Spline1DNatural;
 
     void prep(struct natural_cubic_spline_1D &, int);   // Build arrays for an interpolation to get started
     void set(struct natural_cubic_spline_1D &);         // Calculate slopes to set interpolation for evaluation
@@ -214,4 +225,5 @@ namespace LANL {
     void eval_all(double, double, double, struct hybrid_spline_3D &, double &, double [], double []);
 
 }  // end namespace LANL
+
 #endif /* NCPAPROP_LANLINTERPOLATION_H_INCLUDED */

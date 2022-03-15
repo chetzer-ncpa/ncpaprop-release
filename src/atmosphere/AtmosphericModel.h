@@ -6,6 +6,13 @@
 
 namespace NCPA {
 
+	typedef enum atmospheric_stability_t : unsigned int {
+		ATMOSPHERE_STABILITY_INVALID = 0,
+		ATMOSPHERE_STABILITY_UNSTABLE,
+		ATMOSPHERE_STABILITY_NEUTRAL,
+		ATMOSPHERE_STABILITY_STABLE
+	} atmospheric_stability_t;
+
 	class AtmosphericModel {
 	public:
 		// t in K, returns in m/s
@@ -16,7 +23,13 @@ namespace NCPA {
 
 		// z in km, t in K, p in Pa, d in kg/m3, freq in Hz
 		static double attenuation_sutherland_bass(
-			double z, double t, double p, double d, double freq );
+			double z_km, double t_K, double p_Pa, double d_kgpm3, double freq );
+		static double attenuation_from_temperature_pressure_density(
+			double z_km, double t_K, double p_Pa, double d_kgpm3, double freq );
+		static double attenuation_from_temperature_pressure_humidity(
+			double z_km, double t_K, double p_Pa, double humidity_dec, double freq );
+
+		static atmospheric_stability_t get_stability_type( std::string s );
 
 		virtual ~AtmosphericModel() = default;
 		virtual void calculate_sound_speed_from_temperature( const std::string &new_key,

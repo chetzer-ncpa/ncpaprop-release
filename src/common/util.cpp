@@ -10,114 +10,13 @@
 #include <vector>
 #include <sstream>
 #include <cfloat>
+#include <random>
 #include "util.h"
 
 #ifndef PI
 #define PI 3.141592653589793
 #endif
 
-// template<typename T> T NCPA::min( T a, T b ) {
-// 	return a < b ? a : b;
-// }
-
-// template<typename T> T NCPA::max( T a, T b ) {
-// 	return a > b ? a : b;
-// }
-
-// template<typename T> T NCPA::min( const T *vals, size_t size ) {
-// 	T maxval = vals[ 0 ];
-// 	for (size_t i = 1; i < size; i++) {
-// 		maxval = NCPA::max( vals[i], maxval );
-// 	}
-// 	return maxval;
-// }
-
-// template<typename T> T NCPA::max( const T *vals, size_t size ) {
-// 	T minval = vals[ 0 ];
-// 	for (size_t i = 1; i < size; i++) {
-// 		minval = NCPA::min( vals[ i ], minval );
-// 	}
-// 	return minval;
-// }
-
-// double NCPA::min( double a, double b ) {
-// 	return a < b ? a : b;
-// }
-
-// double NCPA::max( double a, double b ) {
-// 	return a > b ? a : b;
-// }
-
-// float NCPA::min( float a, float b ) {
-// 	return a < b ? a : b;
-// }
-
-// float NCPA::max( float a, float b ) {
-// 	return a > b ? a : b;
-// }
-
-// int NCPA::min( int a, int b ) {
-// 	return a < b ? a : b;
-// }
-
-// int NCPA::max( int a, int b ) {
-// 	return a > b ? a : b;
-// }
-
-
-// float NCPA::max( const float *vals, int size ) {
-
-// 	float maxval = vals[ 0 ];
-// 	for (int i = 1; i < size; i++) {
-// 		maxval = vals[i] > maxval ? vals[ i ] : maxval;
-// 	}
-// 	return maxval;
-// }
-
-// float NCPA::min( const float *vals, int size ) {
-
-// 	float minval = vals[ 0 ];
-// 	for (int i = 1; i < size; i++) {
-// 		minval = vals[i] < minval ? vals[ i ] : minval;
-// 	}
-// 	return minval;
-// }
-
-// double NCPA::max( const double *vals, int size ) {
-
-// 	double maxval = vals[ 0 ];
-// 	for (int i = 1; i < size; i++) {
-// 		maxval = vals[i] > maxval ? vals[ i ] : maxval;
-// 	}
-// 	return maxval;
-// }
-
-// double NCPA::min( const double *vals, int size ) {
-
-// 	double minval = vals[ 0 ];
-// 	for (int i = 1; i < size; i++) {
-// 		minval = vals[i] < minval ? vals[ i ] : minval;
-// 	}
-// 	return minval;
-// }
-
-// int NCPA::max( const int *vals, int size ) {
-
-// 	int maxval = vals[ 0 ];
-// 	for (int i = 1; i < size; i++) {
-// 		maxval = vals[i] > maxval ? vals[ i ] : maxval;
-// 	}
-// 	return maxval;
-// }
-
-// int NCPA::min( const int *vals, int size ) {
-
-// 	int minval = vals[ 0 ];
-// 	for (int i = 1; i < size; i++) {
-// 		minval = vals[i] < minval ? vals[ i ] : minval;
-// 	}
-// 	return minval;
-// }
 
 std::string NCPA::timeAsString(double d) {
     time_t temptime = (time_t)d;
@@ -140,25 +39,6 @@ bool NCPA::fexists( const char *filename ) {
 	ifile.close();
 	return tf;
 }
-
-/*
-std::string NCPA::deblank( const std::string orig ) {
-        int index = orig.length();
-        while (orig[(int)--index] == ' ') ;
-        std::string temp = orig.substr(0,index+1);
-        index = -1;
-        while (temp[++index] == ' ') ;
-        return temp.substr(index);
-}
-*/
-
-// double NCPA::deg2rad( double d ) {
-// 	return d * PI / 180.0;
-// }
-
-// double NCPA::rad2deg( double d ) {
-// 	return d * 180.0 / PI;
-// }
 
 // Acts like std::getline, but checks for all three permutations of EOL characters
 std::istream &NCPA::safe_getline( std::istream &is, std::string &s ) {
@@ -245,10 +125,10 @@ std::vector< std::string > NCPA::split( std::string input, std::string delimiter
 
 }
 
-bool NCPA::checkAzimuthLimits( double toCheck, double target, double tolerance ) {
+// bool NCPA::checkAzimuthLimits( double toCheck, double target, double tolerance ) {
 
-	return ( std::cos(target - toCheck) >= std::cos( tolerance ) );
-}
+// 	return ( std::cos(target - toCheck) >= std::cos( tolerance ) );
+// }
 
 // double NCPA::normalizeAzimuth( double in ) {
 // 	double out = in;
@@ -368,7 +248,7 @@ void NCPA::free_c3Darray(std::complex<double> ***data, size_t xlen, size_t ylen)
 }
 
 std::string NCPA::deblank( const std::string& str ) {
-	return NCPA::deblank( str, " \t\n" );
+	return NCPA::deblank( str, " \t\n\r" );
 }
 
 std::string NCPA::deblank( const std::string& str, const std::string& whitespace ) {
@@ -409,21 +289,6 @@ double NCPA::mean( double *vec, size_t n ) {
 	return running / ((double)n);
 }
 
-// size_t NCPA::find_closest_index( double *z, size_t NZ, double zs ) {
-// 	double diff = 0.0, mindiff = DBL_MAX;
-// 	size_t tmpind;
-
-// 	for (size_t i = 0; i < NZ; i++) {
-// 		diff = abs( z[i] - zs );
-// 		if (diff < mindiff) {
-// 			tmpind = i;
-// 			mindiff = diff;
-// 		}
-// 	}
-
-// 	return tmpind;
-// }
-
 void NCPA::pol2cart( double r, double theta_rad, double &x, double &y ) {
 	x = r * std::cos( theta_rad );
 	y = r * std::sin( theta_rad );
@@ -445,7 +310,7 @@ void NCPA::read_matrix_from_file( const std::string &filename, double **&content
 	nrows = textcontents[0].size();
 
 	// allocate the memory
-	contents = NCPA::matrix<double>( ncols, nrows );
+	contents = NCPA::allocate_matrix<double>( ncols, nrows );
 
 	for (size_t colind = 0; colind < ncols; colind++) {
 		std::vector< std::string > *vecPtr = &(textcontents[colind]);
@@ -488,4 +353,43 @@ void NCPA::read_text_columns_from_file( const std::string &filename,
 		}
 	}
 	infile.close();
+}
+
+// void NCPA::linspace( double a, double b, size_t k, double *&ls ) {
+// 	double d = (b - a) / ((double)(k - 1));
+// 	for (size_t i = 0; i < k; i++) {
+// 		ls[ i ] = a + ((double)i) * d;
+// 	}
+// }
+
+// void NCPA::logspace( double a, double b, size_t k, double *&ls ) {
+// 		double la = std::log10(a);
+// 		double lb = std::log10(b);
+// 		NCPA::linspace( la, lb, k, ls );
+// 		for (size_t i = 0; i < k; i++) {
+// 			ls[ i ] = std::pow( 10.0, ls[ i ] );
+// 		}
+// 	}
+
+std::vector<double> NCPA::random_numbers( size_t N_, double scale ) {
+	std::vector<double> randn;
+	randn.reserve( N_ );
+	std::random_device rd;
+	std::mt19937 generator(rd());
+	std::uniform_real_distribution<> distribution(0.0, scale);
+	for (size_t i = 0; i < N_; i++) {
+		double r = distribution( generator );
+		randn.push_back( r );
+	}
+	return randn;
+}
+
+// @todo Start the count at floor(log2(v)) and test
+size_t NCPA::nextpow2( size_t v ) {
+	size_t p = 0;
+	double dv = (double)v;
+	while (std::exp2(p) < dv) {
+		p++;
+	}
+	return p;
 }

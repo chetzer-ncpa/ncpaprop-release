@@ -28,6 +28,52 @@ double NCPA::AtmosphericModel::soundspeed_from_pressure_density( double p, doubl
 double NCPA::AtmosphericModel::attenuation_sutherland_bass(
 	double z, double T_z, double P_z, double D_z, double freq ) {
 
+	return NCPA::AtmosphericModel::attenuation_from_temperature_pressure_density(
+		z, T_z, P_z, D_z, freq );
+}
+
+// z in km, t in K, p in Pa, h in decimal
+double NCPA::AtmosphericModel::attenuation_from_temperature_pressure_humidity(
+	double z, double T, double P, double rel_humidity, double freq ) {
+
+	double To1 = 273.15;      // triple point
+	double To  = 293.15;      // reference Temperature
+	// double Pso = 1.0;                // reference static pressure
+
+	double Ps = P * 0.00000986923;    // pressure into atm
+	double F = freq / Ps;                // frequency per atm
+
+	// calculate saturation pressure
+	double Psat = std::pow( 10.0,
+		(10.79586*(1-(To1/T)) - 5.02808*std::log10(T/To1)
+			+ 1.50474e-4*(1.0 - std::pow(10.0, -8.29692*((T/To1)-1)))
+			-  4.2873e-4*(1.0 - std::pow(10.0, -4.76955*((To1/T)-1)))
+			- 2.2195983) );
+
+	// absolute humidity
+	double h = rel_humidity * Psat / Ps;
+
+	// scaled relaxation frequency for nitrogen
+	double FrN = std::sqrt(To/T)
+		* (9.0 + 280.0*h*std::exp(-4.17*(std::pow(To/T,1.0/3.0)-1.0)));
+
+	// scaled relaxation frequency for oxygen
+	double FrO = 24.0 + 4.04e4 * h * (h+0.02)/(h+0.391);
+
+	// attenuation coefficient in nepers/m
+	double term1 = Ps*F*F*(1.84e-11*std::sqrt(T/To));
+	double term2 = std::pow(T/To,-2.5)
+		* (1.275e-2 * std::exp(-2239.1/T) / (FrO + F*F/FrO));
+	double term3 = 1.068e-1 * std::exp(-3352.0 / T) / (FrN + F*F/FrN);
+	double alpha = term1 + term2 + term3;
+
+	return alpha;
+}
+
+// z in km, t in K, p in Pa, d in kg/m3
+double NCPA::AtmosphericModel::attenuation_from_temperature_pressure_density(
+	double z, double T_z, double P_z, double D_z, double freq ) {
+
 	// set up const variables
 	const double mu_o  		= 18.192E-6;    		// Reference viscosity [kg/(m*s)]
 	const double T_o   		= 293.15;         		// Reference temperature [K]
@@ -158,4 +204,20 @@ double NCPA::AtmosphericModel::attenuation_sutherland_bass(
 	}
 
 	return a_cl + a_rot + a_diff + a_vib;
+}
+
+
+NCPA::atmospheric_stability_t
+	NCPA::AtmosphericModel::get_stability_type( std::string s ) {
+
+	std::string ls = NCPA::toLowerCase( s );
+	if (ls == "unstable") {
+		return ATMOSPHERE_STABILITY_UNSTABLE;
+	} else if (ls == "neutral") {
+		return ATMOSPHERE_STABILITY_NEUTRAL;
+	} else if (ls == "stable") {
+		return ATMOSPHERE_STABILITY_STABLE;
+	} else {
+		return ATMOSPHERE_STABILITY_INVALID;
+	}
 }

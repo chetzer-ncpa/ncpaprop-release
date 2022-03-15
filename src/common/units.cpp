@@ -1,6 +1,7 @@
 #include "units.h"
 #include "util.h"
 #include <map>
+#include <vector>
 #include <utility>
 #include <stdexcept>
 #include <cstring>
@@ -31,6 +32,16 @@ void NCPA::Units::list_recognized_strings( std::ostream& os ) {
 	for ( i = NCPA::Units::string_to_enum_map_.cbegin(); i != NCPA::Units::string_to_enum_map_.cend(); ++i ) {
 		os << std::setw( maxwidth ) << std::right << (*i).first << " | " << NCPA::Units::toString( (*i).second ) << std::endl;
 	}
+}
+
+std::vector<std::string> NCPA::Units::get_recognized_strings() {
+	std::vector<std::string> names( NCPA::Units::string_to_enum_map_.size() );
+	string_to_units_map_t::const_iterator i;
+	for ( i = NCPA::Units::string_to_enum_map_.cbegin();
+			i != NCPA::Units::string_to_enum_map_.cend(); ++i ) {
+		names.push_back( i->first );
+	}
+	return names;
 }
 
 NCPA::units_t NCPA::Units::fromString( std::string s ) {
@@ -134,6 +145,12 @@ void NCPA::Units::initialize_() {
 		{ get_unit_pair_( UNITS_PRESSURE_MILLIBARS, UNITS_PRESSURE_HECTOPASCALS ), []( double in ) { return in; } },
 		{ get_unit_pair_( UNITS_PRESSURE_HECTOPASCALS, UNITS_PRESSURE_PASCALS ), []( double in ) { return in * 100; } },
 		{ get_unit_pair_( UNITS_PRESSURE_HECTOPASCALS, UNITS_PRESSURE_MILLIBARS ), []( double in ) { return in; } },
+		{ get_unit_pair_( UNITS_PRESSURE_ATMOSPHERES, UNITS_PRESSURE_HECTOPASCALS ), []( double in ) { return in * 1013.25; } },
+		{ get_unit_pair_( UNITS_PRESSURE_ATMOSPHERES, UNITS_PRESSURE_PASCALS ), []( double in ) { return in * 101325.0; } },
+		{ get_unit_pair_( UNITS_PRESSURE_ATMOSPHERES, UNITS_PRESSURE_MILLIBARS ), []( double in ) { return in * 1013.25; } },
+		{ get_unit_pair_( UNITS_PRESSURE_HECTOPASCALS, UNITS_PRESSURE_ATMOSPHERES ), []( double in ) { return in * 0.000986923; } },
+		{ get_unit_pair_( UNITS_PRESSURE_PASCALS, UNITS_PRESSURE_ATMOSPHERES ), []( double in ) { return in * 0.00000986923; } },
+		{ get_unit_pair_( UNITS_PRESSURE_MILLIBARS, UNITS_PRESSURE_ATMOSPHERES ), []( double in ) { return in * 0.000986923; } },
 		{ get_unit_pair_( UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER, UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER ), []( double in ) { return in * 0.001; } },
 		{ get_unit_pair_( UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER, UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER ), []( double in ) { return in * 1000.0; } },
 		{ get_unit_pair_( UNITS_ANGLE_RADIANS, UNITS_ANGLE_DEGREES ), []( double in ) { return in * 180.0 / PI; } },
@@ -175,6 +192,7 @@ void NCPA::Units::initialize_() {
 		{ UNITS_PRESSURE_PASCALS, "Pascals" },
 		{ UNITS_PRESSURE_MILLIBARS, "millibars" },
 		{ UNITS_PRESSURE_HECTOPASCALS, "hectopascals" },
+		{ UNITS_PRESSURE_ATMOSPHERES, "atmospheres" },
 		{ UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER, "kilograms per cubic meter" },
 		{ UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER, "grams per cubic centimeter" },
 		{ UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH, "degrees clockwise from North" },
@@ -195,6 +213,7 @@ void NCPA::Units::initialize_() {
 		{ UNITS_PRESSURE_PASCALS, "Pa" },
 		{ UNITS_PRESSURE_MILLIBARS, "mbar" },
 		{ UNITS_PRESSURE_HECTOPASCALS, "hPa" },
+		{ UNITS_PRESSURE_ATMOSPHERES, "atm" },
 		{ UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER, "kg/m3" },
 		{ UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER, "g/cm3" },
 		{ UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH, "deg CW from N" },
@@ -244,6 +263,8 @@ void NCPA::Units::initialize_() {
 		{ "MILLIBARS", UNITS_PRESSURE_MILLIBARS },
 		{ "HECTOPASCALS", UNITS_PRESSURE_HECTOPASCALS },
 		{ "HPA", UNITS_PRESSURE_HECTOPASCALS },
+		{ "ATMOSPHERES", UNITS_PRESSURE_ATMOSPHERES },
+		{ "ATM", UNITS_PRESSURE_ATMOSPHERES },
 		{ "KG/M3", UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER },
 		{ "KGPM3", UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER },
 		{ "KILOGRAMS PER CUBIC METER", UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER },
@@ -381,6 +402,20 @@ void NCPA::ScalarWithUnits::do_units_conversion_( NCPA::units_t fromUnits, NCPA:
 double NCPA::ScalarWithUnits::get() const {
 	return value_;
 }
+
+void NCPA::ScalarWithUnits::set_value( double newval ) {
+	value_ = newval;
+}
+
+void NCPA::ScalarWithUnits::set_units( NCPA::units_t new_units ) {
+	units_ = new_units;
+}
+
+void NCPA::ScalarWithUnits::set( double newval, NCPA::units_t new_units ) {
+	set_value( newval );
+	set_units( new_units );
+}
+
 
 std::ostream &NCPA::operator<<( std::ostream &output, const NCPA::ScalarWithUnits &D ) { 
 	output << D.get() << " " << NCPA::Units::toStr( D.get_units() );
