@@ -28,6 +28,7 @@ namespace NCPA {
 			double z_km, double t_K, double p_Pa, double d_kgpm3, double freq );
 		static double attenuation_from_temperature_pressure_humidity(
 			double z_km, double t_K, double p_Pa, double humidity_dec, double freq );
+		static double density_from_temperature_pressure( double t, double p );
 
 		static atmospheric_stability_t get_stability_type( std::string s );
 

@@ -154,6 +154,9 @@ namespace NCPA {
 		void calculate_sound_speed_from_pressure_and_density( const std::string &new_key,
 			const std::string &pressure_key, const std::string &density_key,
 			units_t wind_units );
+		void calculate_density_from_temperature_and_pressure(
+			const std::string &new_key, const std::string &temperature_key,
+			const std::string &pressure_key, units_t density_units );
 		void calculate_wind_speed( const std::string &new_key,
 			const std::string &we_wind_speed_key, const std::string &sn_wind_speed_key );
 		void calculate_wind_direction( const std::string &new_key,

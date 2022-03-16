@@ -305,8 +305,21 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	if (atm_profile_2d->contains_vector(0,"P")) {
 		atm_profile_2d->convert_property_units( "P", Units::fromString( "Pa" ) );
 	}
+
+	// need density
 	if (atm_profile_2d->contains_vector(0,"RHO")) {
 		atm_profile_2d->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
+	} else {
+		std::cout << "No density provided, calculating from temperature and pressure" << std::endl;
+		for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
+			it != atm_profile_2d->last_profile(); ++it) {
+			if ( (*it)->contains_vector("T") && (*it)->contains_vector("P") ) {
+				(*it)->calculate_density_from_temperature_and_pressure(
+					"RHO", "T", "P", Units::fromString( "kg/m3" ) );
+			} else {
+				throw std::runtime_error( "No RHO provided, and at least one of T and P is missing." );
+			}
+		}
 	}
 	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 

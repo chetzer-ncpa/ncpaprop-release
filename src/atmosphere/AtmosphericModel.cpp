@@ -10,6 +10,10 @@
 #define R_FOR_C 287.0
 #endif
 
+#ifndef R_FOR_RHO
+#define R_FOR_RHO 0.167226
+#endif
+
 #ifndef PI
 #define PI 3.14159
 #endif
@@ -20,8 +24,15 @@ double NCPA::AtmosphericModel::soundspeed_from_temperature( double t ) {
 }
 
 // p in Pa, d in kg/m3, returns in m/s
-double NCPA::AtmosphericModel::soundspeed_from_pressure_density( double p, double d ) {
+double NCPA::AtmosphericModel::soundspeed_from_pressure_density(
+	double p, double d ) {
 	return std::sqrt( GAMMA_FOR_C * p / d );
+}
+
+// p in Pa, t in K, returns in kg/m3
+double NCPA::AtmosphericModel::density_from_temperature_pressure(
+	double t, double p ) {
+	return p / (t * R_FOR_RHO);
 }
 
 // z in km, t in K, p in Pa, d in kg/m3

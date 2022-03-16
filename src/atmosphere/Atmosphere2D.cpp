@@ -254,6 +254,16 @@ bool NCPA::Atmosphere2D::contains_key( double range, const std::string &key ) {
 	return profiles_.at( ind )->contains_key( key );
 }
 
+void NCPA::Atmosphere2D::calculate_density_from_temperature_and_pressure(
+		const std::string &new_key, const std::string &temperature_key,
+		const std::string &pressure_key, units_t density_units ) {
+	for ( std::vector< NCPA::Atmosphere1D * >::iterator it = profiles_.begin();
+		  it != profiles_.end(); ++it ) {
+		(*it)->calculate_density_from_temperature_and_pressure(
+			new_key, temperature_key, pressure_key, density_units );
+	}
+}
+
 void NCPA::Atmosphere2D::calculate_sound_speed_from_temperature( const std::string &new_key, const std::string &temperature_key,
 		units_t wind_units ) {
 	for ( std::vector< NCPA::Atmosphere1D * >::iterator it = profiles_.begin();

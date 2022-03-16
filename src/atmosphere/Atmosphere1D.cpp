@@ -716,6 +716,37 @@ double NCPA::Atmosphere1D::get_second_derivative( const std::string &key,
 }
 
 
+void NCPA::Atmosphere1D::calculate_density_from_temperature_and_pressure(
+	const std::string &new_key, const std::string &temperature_key,
+	const std::string &pressure_key, NCPA::units_t density_units ) {
+
+	if (contains_key( new_key )) {
+		throw std::runtime_error( "Requested key " + new_key + " already exists in atmosphere" );
+	}
+
+	NCPA::AtmosphericProperty1D *t_prop = contents_.at( temperature_key );
+	NCPA::units_t old_t_units = t_prop->get_units();
+	t_prop->convert_units( NCPA::UNITS_TEMPERATURE_KELVIN );
+	NCPA::AtmosphericProperty1D *p_prop = contents_.at( pressure_key );
+	NCPA::units_t old_p_units = p_prop->get_units();
+	p_prop->convert_units( NCPA::UNITS_PRESSURE_PASCALS );
+	size_t nz_ = get_basis_length();
+	double *rho = new double[ nz_ ];
+	for (size_t i = 0; i < nz_; i++) {
+		rho[ i ] = NCPA::AtmosphericModel::density_from_temperature_pressure(
+			t_prop->get( (*z_)[i] ), p_prop->get( (*z_)[i] ) );
+	}
+	t_prop->convert_units( old_t_units );
+	p_prop->convert_units( old_p_units );
+
+	NCPA::Units::convert( rho, nz_,
+		NCPA::UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER,
+		density_units, rho );
+	add_property( new_key, nz_, rho, density_units );
+	delete [] rho;
+}
+
+
 void NCPA::Atmosphere1D::calculate_sound_speed_from_temperature(
 	const std::string &new_key, const std::string &temperature_key,
 	NCPA::units_t wind_units ) {

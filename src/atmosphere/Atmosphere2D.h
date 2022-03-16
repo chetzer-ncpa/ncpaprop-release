@@ -69,6 +69,9 @@ namespace NCPA {
 		//double get_overall_maximum_altitude() const;
 
 		// bulk calculations
+		void calculate_density_from_temperature_and_pressure(
+			const std::string &new_key, const std::string &temperature_key,
+			const std::string &pressure_key, units_t density_units );
 		void calculate_sound_speed_from_temperature( const std::string &new_key,
 			const std::string &temperature_key, units_t wind_units );
 		void calculate_sound_speed_from_pressure_and_density( const std::string &new_key,
