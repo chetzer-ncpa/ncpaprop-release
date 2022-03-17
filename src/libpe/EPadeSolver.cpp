@@ -532,6 +532,9 @@ int NCPA::EPadeSolver::solve_without_topography() {
 		  		NR = NR_requested;
 		  		dr = r_max / NR;
 		  	}
+
+		  	std::cout << "Setting dr to " << dr << " meters." << std::endl;
+
 		  	r = new double[ NR ];
 		  	std::memset( r, 0, NR * sizeof(double) );
 		  	zgi_r = new int[ NR ];

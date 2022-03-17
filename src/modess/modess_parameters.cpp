@@ -223,7 +223,7 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addFooterTextVerbatim("                               freq, (# of modes), rho(z_src), rho(z_rcv)");
 	ps->addFooterTextVerbatim("                               followed for each mode 'i' by quadruples:");
 	ps->addFooterTextVerbatim("                               real(k(i)), imag(k(i)), Mode(i)(z_src), Mode(i)(z_rcv)");
-	ps->addFooterTextVerbatim("  atm_profile.nm               z,u,v,w,t,d,p,c,c_eff");
+	ps->addFooterTextVerbatim("  atm_profile.nm               z,u,v,t,d,p,c,c_eff");
 	ps->addBlankFooterLine();
 	ps->addFooterText("Examples (run from 'samples' directory):");
 	ps->setFooterIndent( 4 );

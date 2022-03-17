@@ -875,7 +875,8 @@ std::vector< std::string > NCPA::Atmosphere1D::get_keys() const {
 	return allkeys;
 }
 
-void NCPA::Atmosphere1D::print_atmosphere( const std::vector< std::string >& columnorder,
+void NCPA::Atmosphere1D::print_atmosphere(
+	const std::vector< std::string >& columnorder,
 	const std::string &altitude_key, std::ostream& os ) {
 
 	// check columnorder variable for key validity

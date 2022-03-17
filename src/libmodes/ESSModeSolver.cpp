@@ -45,6 +45,7 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
   	Nrng_steps 			= param->getInteger( "Nrng_steps" );
   	Lamb_wave_BC 		= param->getBool( "Lamb_wave_BC" );
   	write_2D_TLoss  	= param->getBool( "write_2d_tloss" );
+  	write_atmosphere    = param->getBool( "write_atm_profile" );
   	write_phase_speeds 	= param->getBool( "write_phase_speeds" );
   	write_speeds 		= param->getBool( "write_speeds" );
   	write_modes 		= param->getBool( "write_modes" );
@@ -579,6 +580,22 @@ int NCPA::ESSModeSolver::solve() {
 						freq,k_pert,v_s, rho);
 					fclose(dispersionfile);
 				}
+
+				if (write_atmosphere) {
+					std::cout << "Writing atmosphere to "
+						<< tag_filename("atm_profile.nm") << std::endl;
+					std::vector<std::string> keylist;
+					keylist.push_back( "U" );
+					keylist.push_back( "V" );
+					keylist.push_back( "T" );
+					keylist.push_back( "RHO" );
+					keylist.push_back( "P" );
+					keylist.push_back( "_C0_" );
+					keylist.push_back( "_CE_" );
+					std::ofstream atmout( tag_filename( "atm_profile.nm" ) );
+					atm_profile->print_atmosphere( keylist, "Z", atmout );
+					atmout.close();
+				}
 			}
 	    
 			// Clean up azimuth-specific atmospheric properties before starting next run
@@ -656,12 +673,14 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 	diag[0] = bnd_cnd + diag[0]; 
   
 	// use WKB trick for ground to ground propagation.
+	bool used_WKB = false;
 	if ((fabs(sourceheight)<1.0e-3) && (fabs(receiverheight)<1.0e-3) && (!turnoff_WKB)) {
 		//
 		// WKB trick for ground to ground propagation. 
 		// Cut off lower phasespeed (highest wavenumber) where tunneling 
 		// is insignificant (freq. dependent)
 		//
+		used_WKB = true;
 		k_max_full = omega/ceffmin; 
 		k_gnd      = omega/ceff_grnd;
 		dkk        = (pow(k_max_full,2) - pow(k_gnd,2)) / 100.0;
@@ -707,6 +726,13 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 	windz   = p->get( "_WC_", Hgt[ top+1 ] );
 	cefftop = p->get( "_CE_", Hgt[ top+1 ] );
 	*k_min  = omega/cefftop;
+
+	if (used_WKB && (*k_max < *k_min)) {
+		std::cout << "Calculated k_max less than k_min, turning off WKB"
+				  << std::endl;
+		turnoff_WKB = true;
+		*k_max = omega/ceffmin;
+	}
 
 	// optional save ceff
 	// @todo add flag to turn on/off

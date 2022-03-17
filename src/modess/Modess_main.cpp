@@ -92,11 +92,11 @@ int main( int argc, char **argv ) {
 	a->printParams();
 
 	// save atm. profile if requested
-	if (param->getBool( "write_atm_profile" ) ) {
-		ofstream ofs( "atm_profile.nm" );
-		atm_profile->print_atmosphere( "Z", ofs );
-		ofs.close();
-	}
+	// if (param->getBool( "write_atm_profile" ) ) {
+	// 	ofstream ofs( "atm_profile.nm" );
+	// 	atm_profile->print_atmosphere( "Z", ofs );
+	// 	ofs.close();
+	// }
   
   	// clean up dynamic memory
 	delete a;	 

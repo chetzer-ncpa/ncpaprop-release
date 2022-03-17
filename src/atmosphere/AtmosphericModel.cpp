@@ -10,10 +10,6 @@
 #define R_FOR_C 287.0
 #endif
 
-#ifndef R_FOR_RHO
-#define R_FOR_RHO 0.167226
-#endif
-
 #ifndef PI
 #define PI 3.14159
 #endif
@@ -32,7 +28,7 @@ double NCPA::AtmosphericModel::soundspeed_from_pressure_density(
 // p in Pa, t in K, returns in kg/m3
 double NCPA::AtmosphericModel::density_from_temperature_pressure(
 	double t, double p ) {
-	return p / (t * R_FOR_RHO);
+	return p / (t * R_FOR_C);
 }
 
 // z in km, t in K, p in Pa, d in kg/m3

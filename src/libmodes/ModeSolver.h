@@ -82,6 +82,7 @@ namespace NCPA {
 		bool   wvnum_filter_flg;
 		bool   z_min_specified;
 		bool   append_dispersion_file;
+		bool   write_atmosphere;
           
 		int    Nz_grid;
 		int    Nrng_steps;
