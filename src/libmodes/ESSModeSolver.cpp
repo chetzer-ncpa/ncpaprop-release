@@ -170,13 +170,16 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 	// @todo make fill_vector( zvec ) methods in AtmosphericProfile()
 	// @todo add underscores to internally calculated parameter keys
 	if (atm_profile->contains_vector( "C0" ) ) {
+		std::cout << "Using user-supplied static sound speed" << std::endl;
 		atm_profile->copy_vector_property( "C0", "_C0_" );
 		atm_profile->convert_property_units( "_C0_", Units::fromString( "m/s" ) );
 	} else {
 		if (atm_profile->contains_vector( "P" ) && atm_profile->contains_vector("RHO")) {
+			std::cout << "Calculating sound speed from pressure and density." << std::endl;
 			atm_profile->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
 				Units::fromString( "m/s" ) );
 		} else {
+			std::cout << "Calculating sound speed from temperature" << std::endl;
 			atm_profile->calculate_sound_speed_from_temperature( "_C0_", "T", 
 				Units::fromString( "m/s" ) );
 		}
