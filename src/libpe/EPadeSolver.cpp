@@ -94,7 +94,7 @@ void NCPA::EPadeSolver::set_default_values() {
 	z_ground_specified = false; lossless = false;
 	multiprop = false; write2d = false;
 	broadband = false; write_starter = false; write_topo = false;
-	user_ground_impedence_found = false;
+	user_ground_impedence_found = false; write_atmosphere = false;
 
 	// string
 	starter = ""; attnfile = ""; user_starter_file = ""; topofile = "";
@@ -138,6 +138,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	write_starter       = param->wasFound( "write_starter" );
 	multiprop 			= param->wasFound( "multiprop" );
 	write_topo 		 	= param->wasFound( "write_topography" );
+	write_atmosphere 	= param->wasFound( "write_atm_profile" );
 
 	// Handle differences based on single vs multiprop
 	double min_az, max_az, step_az;
@@ -688,6 +689,22 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				write_broadband_results(
 					tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
 					calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
+			}
+
+			if (write_atmosphere) {
+				std::cout << "Writing source atmosphere to "
+						<< tag_filename("atm_profile.pe") << std::endl;
+				std::vector<std::string> keylist;
+				keylist.push_back( "U" );
+				keylist.push_back( "V" );
+				keylist.push_back( "T" );
+				keylist.push_back( "RHO" );
+				keylist.push_back( "P" );
+				keylist.push_back( "_C0_" );
+				keylist.push_back( "_CEFF_" );
+				std::ofstream atmout( tag_filename( "atm_profile.pe" ) );
+				atm_profile_2d->print_atmosphere( keylist, 0.0, "Z", atmout );
+				atmout.close();
 			}
 			
 			std::cout << std::endl;

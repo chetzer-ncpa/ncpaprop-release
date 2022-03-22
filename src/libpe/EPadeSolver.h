@@ -129,6 +129,7 @@ namespace NCPA {
 		bool z_ground_specified = false, lossless = false, top_layer = true;
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
+		bool write_atmosphere = false;
 		double r_max;    // range limits
 		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double zs, zr;  // source height, receiver height
