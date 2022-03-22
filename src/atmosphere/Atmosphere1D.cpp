@@ -890,7 +890,7 @@ void NCPA::Atmosphere1D::print_atmosphere(
 	// first we do the header.  That contains column descriptions as well as scalar values
 	// scalars first
 	for (auto mit = scalar_contents_.cbegin(); mit != scalar_contents_.cend(); ++mit ) {
-		os  << "#% 0, " << (*mit).first << ", " 
+		os  << "#% 0, " << remove_underscores( (*mit).first ) << ", "
 			<< NCPA::Units::toStr( (*mit).second->get_units() ) << ", "
 			<< (*mit).second->get() << std::endl;
 	}
@@ -901,7 +901,7 @@ void NCPA::Atmosphere1D::print_atmosphere(
 	unsigned int column = 2;
 	for ( vit = columnorder.cbegin(); vit != columnorder.cend(); ++vit ) {
 		os  << "#% " << column << ", "
-			<< *vit << ", "
+			<< remove_underscores( *vit ) << ", "
 			<< NCPA::Units::toStr( get_property_units( *vit ) ) << std::endl;
 		column++;
 	}

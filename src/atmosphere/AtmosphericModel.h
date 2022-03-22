@@ -39,6 +39,9 @@ namespace NCPA {
 			const std::string &new_key,
 			const std::string &pressure_key, const std::string &density_key,
 			NCPA::units_t speed_units ) = 0;
+
+	protected:
+		std::string remove_underscores( const std::string &input ) const;
 	};
 
 }

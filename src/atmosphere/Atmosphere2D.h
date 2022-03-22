@@ -100,6 +100,10 @@ namespace NCPA {
 			const std::string &filename );    // apply universally
 		void read_elevation_from_file( const std::string &filename );
 		void finalize_elevation_from_profiles();
+		void print_atmosphere(
+			const std::vector< std::string >& columnorder,
+			double range = 0.0, const std::string &altitude_key = "Z",
+			std::ostream& os = std::cout );
 		
 		std::vector< NCPA::Atmosphere1D * >::iterator first_profile();
 		std::vector< NCPA::Atmosphere1D * >::iterator last_profile();

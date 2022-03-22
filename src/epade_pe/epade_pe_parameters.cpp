@@ -170,6 +170,8 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Flags", "--write_starter", "Output starter to starter.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_topography" ) );
 	ps->addParameterDescription( "Flags", "--write_topography", "Output interpolated topography to topography.pe" );
+	ps->addParameter( new NCPA::FlagParameter( "write_atm_profile" ) );
+	ps->addParameterDescription( "Flags", "--write_atm_profile", "Output atmospheric profile at the source to atm_profile.nm" );
 	ps->addParameter( new NCPA::FlagParameter( "lossless" ) );
 	ps->addParameterDescription( "Flags", "--lossless", "Ignore atmospheric attenuation" );
 	ps->addParameter( new NCPA::FlagParameter( "topo" ) );

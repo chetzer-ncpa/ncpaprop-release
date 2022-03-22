@@ -228,3 +228,17 @@ NCPA::atmospheric_stability_t
 		return ATMOSPHERE_STABILITY_INVALID;
 	}
 }
+
+std::string NCPA::AtmosphericModel::remove_underscores(
+	const std::string &input ) const {
+
+	std::string output( input );
+	if (output.front() == '_') {
+		output.erase( output.begin() );
+	}
+	if (output.back() == '_') {
+		output.erase( output.end() - 1 );
+	}
+
+	return output;
+}

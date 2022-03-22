@@ -669,3 +669,51 @@ double NCPA::Atmosphere2D::get_interpolated_ground_elevation_second_derivative( 
 	}
 	return gsl_spline_eval_deriv2( topo_spline_, range, topo_accel_ );
 }
+
+
+void NCPA::Atmosphere2D::print_atmosphere(
+			const std::vector< std::string >& columnorder,
+			double range, const std::string &altitude_key,
+			std::ostream& os ) {
+
+	// check columnorder variable for key validity
+	std::vector< std::string >::const_iterator vit;
+	for (vit = columnorder.cbegin(); vit != columnorder.cend(); ++vit) {
+		if (! contains_vector( range, *vit ) ) {
+			throw std::invalid_argument( "No vector quantity exists with key " + *vit );
+		}
+	}
+
+	// Now column descriptors.  Altitude first
+	NCPA::units_t z_units;
+	size_t nz_ = nz( range );
+	double *z_ = NCPA::zeros<double>( nz_ );
+	get_altitude_vector( range, z_, &z_units );
+	os  << "#% 1, " << altitude_key << ", "
+		<< NCPA::Units::toStr( z_units ) << std::endl;
+	unsigned int column = 2;
+	for ( vit = columnorder.cbegin(); vit != columnorder.cend(); ++vit ) {
+		os  << "#% " << column << ", "
+			<< remove_underscores( *vit ) << ", "
+			<< NCPA::Units::toStr( get_property_units( range, *vit ) )
+			<< std::endl;
+		column++;
+	}
+
+	// Now columns
+	os.setf( std::ios::scientific, 	std::ios::floatfield );
+	os.setf( std::ios::right, 		std::ios::adjustfield );
+	os.precision( 6 );
+	os.width( 9 );
+	os.fill( ' ' );
+	for ( size_t i = 0; i < nz_; i++) {
+		os << z_[ i ];
+		for (vit = columnorder.cbegin(); vit != columnorder.cend(); ++vit ) {
+			os << " " << get( range, *vit, z_[ i ] );
+		}
+		os << std::endl;
+	}
+	os.flush();
+
+	delete [] z_;
+}
