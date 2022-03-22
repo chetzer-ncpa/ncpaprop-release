@@ -307,8 +307,8 @@ int NCPA::WModeSolver::solve() {
 
       //atm_profile->setPropagationAzimuth(azi);
       atm_profile->calculate_wind_component("_WC_", "_WS_", "_WD_", azi );
-      atm_profile->calculate_effective_sound_speed( "_CE_", "_C0_", "_WC_" );
-      atm_profile->get_property_vector( "_CE_", c_eff );
+      atm_profile->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
+      atm_profile->get_property_vector( "_CEFF_", c_eff );
       atm_profile->add_property( "_AZ_", azi, NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
 
       // compute absorption
@@ -644,7 +644,7 @@ int NCPA::WModeSolver::solve() {
       // ierr = VecDestroy(&xi); CHKERRQ(ierr); 
       
       atm_profile->remove_property( "_WC_" );
-      atm_profile->remove_property( "_CE_" );
+      atm_profile->remove_property( "_CEFF_" );
       atm_profile->remove_property( "_AZ_" );
     
     } // end loop by azimuths  
@@ -717,13 +717,13 @@ int NCPA::WModeSolver::getModalTrace(int nz, double z_min, double sourceheight, 
   z_km      = z_min_km; 
   cz        = p->get( "_C0_", z_min );
   windz     = p->get( "_WC_", z_min );
-  ceff_grnd = p->get( "_CE_", z_min );
+  ceff_grnd = p->get( "_CEFF_", z_min );
   ceffmin   = ceff_grnd;  // in m/s; initialize ceffmin
   ceffmax   = ceffmin;    // initialize ceffmax   
 
   for (i=0; i<nz; i++) {
      cz         = p->get( "_C0_", Hgt[ i ] );
-	    ceffz[ i ] = p->get( "_CE_", Hgt[ i ] );
+	    ceffz[ i ] = p->get( "_CEFF_", Hgt[ i ] );
       windz      = p->get( "_WC_", Hgt[ i ] );
 
 	    // we neglect rho_factor - it does not make sense to have in this approximation
@@ -798,7 +798,7 @@ int NCPA::WModeSolver::getModalTrace(int nz, double z_min, double sourceheight, 
   z_km    = z_min_km + (top+1)*dz_km;  
   cz      = p->get( "_C0_", Hgt[ top+1 ] );
   windz   = p->get( "_WC_", Hgt[ top+1 ] );
-  cefftop = p->get( "_CE_", Hgt[ top+1 ] );
+  cefftop = p->get( "_CEFF_", Hgt[ top+1 ] );
   //cz      = sqrt(gamma*Pr[top+1]/rho[top+1]); // in m/s
   //windz   = zw[top+1]*sin(azi_rad) + mw[top+1]*cos(azi_rad); 
   //cefftop = cz + windz;
