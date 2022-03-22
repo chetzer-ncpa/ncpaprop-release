@@ -472,8 +472,8 @@ int NCPA::ESSModeSolver::solve() {
 				 << Naz << ")" << endl;
 
 			atm_profile->calculate_wind_component("_WC_", "_WS_", "_WD_", azi );
-			atm_profile->calculate_effective_sound_speed( "_CE_", "_C0_", "_WC_" );
-			atm_profile->get_property_vector( "_CE_", c_eff );
+			atm_profile->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
+			atm_profile->get_property_vector( "_CEFF_", c_eff );
 			atm_profile->add_property( "_AZ_", azi, NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
 
 			//
@@ -594,7 +594,7 @@ int NCPA::ESSModeSolver::solve() {
 					keylist.push_back( "RHO" );
 					keylist.push_back( "P" );
 					keylist.push_back( "_C0_" );
-					keylist.push_back( "_CE_" );
+					keylist.push_back( "_CEFF_" );
 					std::ofstream atmout( tag_filename( "atm_profile.nm" ) );
 					atm_profile->print_atmosphere( keylist, "Z", atmout );
 					atmout.close();
@@ -603,7 +603,7 @@ int NCPA::ESSModeSolver::solve() {
 	    
 			// Clean up azimuth-specific atmospheric properties before starting next run
 			atm_profile->remove_property( "_WC_" );
-			atm_profile->remove_property( "_CE_" );
+			atm_profile->remove_property( "_CEFF_" );
 			atm_profile->remove_property( "_AZ_" );
 			
 	  
@@ -655,11 +655,11 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 	
 	cz        = p->get( "_C0_", z_min );
 	windz     = p->get( "_WC_", z_min );
-	ceff_grnd = p->get( "_CE_", z_min );
+	ceff_grnd = p->get( "_CEFF_", z_min );
 	ceffmin   = ceff_grnd;  // in m/s; initialize ceffmin
 	ceffmax   = ceffmin;    // initialize ceffmax   
 	for (i=0; i<nz; i++) {	     
-		ceffz[ i ] = p->get( "_CE_", Hgt[ i ] );
+		ceffz[ i ] = p->get( "_CEFF_", Hgt[ i ] );
 		// we neglect rho_factor - it does not make sense to have in this approximation
 		//rho_factor is 1/2*rho_0"/rho_0 - 3/4*(rho_0')^2/rho_0^2
 		diag[i] = pow( omega / ceffz[ i ], 2 );
@@ -727,7 +727,7 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 	z_km    = z_min_km + (top+1)*dz_km;  
 	cz      = p->get( "_C0_", Hgt[ top+1 ] );
 	windz   = p->get( "_WC_", Hgt[ top+1 ] );
-	cefftop = p->get( "_CE_", Hgt[ top+1 ] );
+	cefftop = p->get( "_CEFF_", Hgt[ top+1 ] );
 	*k_min  = omega/cefftop;
 
 	if (used_WKB && (*k_max < *k_min)) {
@@ -744,7 +744,7 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 		size_t nz = p->nz();
 		target = new double[ nz ];
 		zvec   = new double[ nz ];
-		p->get_property_vector( "_CE_", target );
+		p->get_property_vector( "_CEFF_", target );
 		p->get_altitude_vector( zvec );
 		
 		FILE *fp = fopen("ceff.nm", "w");    
