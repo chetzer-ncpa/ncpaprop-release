@@ -160,7 +160,7 @@ void NCPA::configure_gfpe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Optional Parameters [default]", "--k_max", "Wavenumber filter maximum [0.9]" );
 
 	ps->addParameter( new NCPA::FloatParameter( "ground_impedence", 200000.0 ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence", "Ground impedence factor [200000]" );
+	ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence", "Flow resistivity for ground impedence calculation [200000]" );
 
 	ps->addParameter( new NCPA::IntegerParameter( "nz", -1 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--nz", "Minimum number of vertical points [internal]" );
