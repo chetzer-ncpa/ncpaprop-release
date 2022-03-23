@@ -1001,7 +1001,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	}
 
 	/* @todo move this into constructor as much as possible */
-	z_bottom = -5000.0;    // make this eventually depend on frequency
+	z_bottom = -NCPAPROP_EPADE_PE_BASEMENT_THICKNESS;    // make this eventually depend on frequency
 	z_bottom -= fmod( z_bottom, dz );
 	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 	z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
