@@ -948,10 +948,12 @@ double NCPA::EPadeSolver::check_ground_height_coincidence_with_grid( double *z,
 
 	int closest_source_grid_point = (int)(NCPA::find_closest_index( z, NZ, z_ground ));
 	if (std::fabs(z_ground - z[ closest_source_grid_point ]) < tolerance) {
-		if (z_ground - z[ closest_source_grid_point ] <= 0) {
-			return z_ground - tolerance;
+		if (z_ground <= z[ closest_source_grid_point ]) {
+			// ground is below grid point, move further down
+			return z[ closest_source_grid_point ] - tolerance;
 		} else {
-			return z_ground + tolerance;
+			// ground is above grid point, move further up
+			return z[ closest_source_grid_point ] + tolerance;
 		}
 	} else {
 		return z_ground;
@@ -1017,8 +1019,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		z_abs[ i ] = z[ i ];
 		indices[ i ] = i;
 	}
-	double grid_tolerance = dz * 0.05;
-	z_ground = check_ground_height_coincidence_with_grid( z, NZ, grid_tolerance, z_ground );
+	double grid_tolerance =
+		dz * NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR;
+	z_ground = check_ground_height_coincidence_with_grid(
+		z, NZ, grid_tolerance, z_ground );
 	zs = NCPA::max( zs, z_ground );
 
 	// define ground_index, which is J in @notes
