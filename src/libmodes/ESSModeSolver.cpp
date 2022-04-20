@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <iomanip>
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
@@ -584,21 +585,22 @@ int NCPA::ESSModeSolver::solve() {
 					fclose(dispersionfile);
 				}
 
-				if (write_atmosphere) {
-					std::cout << "Writing atmosphere to "
-						<< tag_filename("atm_profile.nm") << std::endl;
-					std::vector<std::string> keylist;
-					keylist.push_back( "U" );
-					keylist.push_back( "V" );
-					keylist.push_back( "T" );
-					keylist.push_back( "RHO" );
-					keylist.push_back( "P" );
-					keylist.push_back( "_C0_" );
-					keylist.push_back( "_CEFF_" );
-					std::ofstream atmout( tag_filename( "atm_profile.nm" ) );
-					atm_profile->print_atmosphere( keylist, "Z", atmout );
-					atmout.close();
-				}
+				if (write_atmosphere && (fi == 0)) {
+		            std::string atm_output_filename = tag_filename("atm_profile.nm");
+		            std::cout << "Writing atmosphere to "
+		              << atm_output_filename << std::endl;
+		            std::vector<std::string> keylist;
+		            keylist.push_back( "U" );
+		            keylist.push_back( "V" );
+		            keylist.push_back( "T" );
+		            keylist.push_back( "RHO" );
+		            keylist.push_back( "P" );
+		            keylist.push_back( "_C0_" );
+		            keylist.push_back( "_CEFF_" );
+		            std::ofstream atmout( atm_output_filename );
+		            atm_profile->print_atmosphere( keylist, "Z", atmout );
+		            atmout.close();
+		          }
 			}
 	    
 			// Clean up azimuth-specific atmospheric properties before starting next run

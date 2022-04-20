@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <cstring>
+#include <iomanip>
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
@@ -636,9 +637,10 @@ int NCPA::WModeSolver::solve() {
             fclose(dispersionfile);
           }
 
-          if (write_atmosphere) {
+          if (write_atmosphere && (fi == 0)) {
+            std::string atm_output_filename = tag_filename("atm_profile.nm");
             std::cout << "Writing atmosphere to "
-              << tag_filename("atm_profile.nm") << std::endl;
+              << atm_output_filename << std::endl;
             std::vector<std::string> keylist;
             keylist.push_back( "U" );
             keylist.push_back( "V" );
@@ -647,7 +649,7 @@ int NCPA::WModeSolver::solve() {
             keylist.push_back( "P" );
             keylist.push_back( "_C0_" );
             keylist.push_back( "_CEFF_" );
-            std::ofstream atmout( tag_filename( "atm_profile.nm" ) );
+            std::ofstream atmout( atm_output_filename );
             atm_profile->print_atmosphere( keylist, "Z", atmout );
             atmout.close();
           }
