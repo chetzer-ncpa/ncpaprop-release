@@ -45,6 +45,7 @@ void NCPA::WModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere1D
 	Lamb_wave_BC 		= param->getBool( "Lamb_wave_BC" );
 	write_2D_TLoss  	= param->getBool( "write_2d_tloss" );
 	write_phase_speeds 	= param->getBool( "write_phase_speeds" );
+  write_atmosphere    = param->getBool( "write_atm_profile" );
 	write_modes 		= param->getBool( "write_modes" );
 	//write_dispersion 	= param->getBool( "write_dispersion" );
   dispersion_file = param->getString( "dispersion_file" );
@@ -633,6 +634,22 @@ int NCPA::WModeSolver::solve() {
             writeDispersion(dispersionfile,select_modes,dz,sourceheight,receiverheight,
               freq,k_pert,v_s, rho);
             fclose(dispersionfile);
+          }
+
+          if (write_atmosphere) {
+            std::cout << "Writing atmosphere to "
+              << tag_filename("atm_profile.nm") << std::endl;
+            std::vector<std::string> keylist;
+            keylist.push_back( "U" );
+            keylist.push_back( "V" );
+            keylist.push_back( "T" );
+            keylist.push_back( "RHO" );
+            keylist.push_back( "P" );
+            keylist.push_back( "_C0_" );
+            keylist.push_back( "_CEFF_" );
+            std::ofstream atmout( tag_filename( "atm_profile.nm" ) );
+            atm_profile->print_atmosphere( keylist, "Z", atmout );
+            atmout.close();
           }
       }
       
