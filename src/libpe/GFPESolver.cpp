@@ -864,6 +864,7 @@ void NCPA::GFPESolver::compute_starter( size_t Ntrans, double deltak,
 void NCPA::GFPESolver::refract_fluctuations( size_t nz,
 		double k_a, double r, double *z, double *&Gamma ) const {
 
+	// Calculates Eq. J.27 from Salomons.
 	size_t i, j, nt;
 	nt = turbulence->size();
 
