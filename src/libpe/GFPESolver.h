@@ -167,7 +167,7 @@ namespace NCPA {
 		std::complex<double> ground_impedence( double f );
 		void phase_factor( size_t nz, double deltax,
 			std::complex<double> *vark, std::complex<double> *&pf );
-		void refract_fluctuations( size_t nz,
+		void apply_turbulence( size_t nz,
 			double k_a, double r, double *z, double *&Gamma ) const;
 		void compute_starter( size_t Ntrans, double deltak,
 			double k0, double *kprime, std::complex<double> *E3, double *F,

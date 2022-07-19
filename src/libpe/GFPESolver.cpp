@@ -676,7 +676,7 @@ int NCPA::GFPESolver::solve() {
 						compute_starter( Ntrans, deltak, kzero, kprime, E3, F,
 							z, z_source->get(), Zg, *r, phi );
 						if (use_turbulence) {
-							refract_fluctuations( Ntrans, kzero, *r, z, THETA );
+							apply_turbulence( Ntrans, kzero, *r, z, THETA );
 							std::memcpy( GAMMA, THETA, Ntrans * sizeof(double) );
 						}
 						phi[ 0 ] *= 0.5;
@@ -718,7 +718,7 @@ int NCPA::GFPESolver::solve() {
 						NCPA::vector_scale( Ntrans, phi,
 							(double)Ntrans * deltak / (2.0*PI), phi );
 						if (use_turbulence) {
-							refract_fluctuations( Ntrans, kzero, *r, z, THETA );
+							apply_turbulence( Ntrans, kzero, *r, z, THETA );
 							NCPA::vector_subtract( Ntrans, THETA, GAMMA, dTHETA );
 							std::memcpy( GAMMA, THETA, Ntrans * sizeof(double) );
 						}
@@ -861,7 +861,7 @@ void NCPA::GFPESolver::compute_starter( size_t Ntrans, double deltak,
 }
 
 
-void NCPA::GFPESolver::refract_fluctuations( size_t nz,
+void NCPA::GFPESolver::apply_turbulence( size_t nz,
 		double k_a, double r, double *z, double *&Gamma ) const {
 
 	// Calculates Eq. J.27 from Salomons.
