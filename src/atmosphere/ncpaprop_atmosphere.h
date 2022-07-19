@@ -17,5 +17,6 @@
 #include "StratifiedAtmosphere3D.h"
 #include "ProfileGridAtmosphere3D.h"
 
+#include "Turbulence.h"
 
 #endif

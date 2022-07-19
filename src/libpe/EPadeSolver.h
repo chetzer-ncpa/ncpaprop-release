@@ -146,6 +146,10 @@ namespace NCPA {
 			unsigned int precision_factor );
 		void write_topography( std::string filename, double az, double r_max, double dr );
 
+		// turbulence
+		void calculate_turbulence( double r, size_t nz, double *z,
+			double k_a, double *&mu ) const;
+
 		std::string tag_filename( std::string basename );
 
 		double *z = NULL, *z_abs = NULL, *r = NULL, *f = NULL, calc_az;
@@ -174,6 +178,15 @@ namespace NCPA {
 		std::string user_starter_file;
 		std::string topofile;
 		std::string user_tag = "";
+
+		// turbulence parameters
+		NCPA::Turbulence *turbulence;
+		// turbulence parameters
+		bool use_turbulence, random_turbulence;
+		double turbulence_k1, turbulence_k2, Lt,
+			temperature_factor, velocity_factor;
+		size_t turbulence_size;
+		std::string turbulence_file;
 
 		std::vector< double > zt;
 		std::vector< int > zti;

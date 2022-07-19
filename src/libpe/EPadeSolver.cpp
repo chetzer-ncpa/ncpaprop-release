@@ -98,6 +98,16 @@ void NCPA::EPadeSolver::set_default_values() {
 
 	// string
 	starter = ""; attnfile = ""; user_starter_file = ""; topofile = "";
+
+	// turbulence
+	use_turbulence = false;
+	random_turbulence = true;
+	turbulence_k1 = 0.1;
+	turbulence_k2 = 20.0;
+	turbulence_size = 20;
+	Lt = 100.0;
+	temperature_factor = 1.0e-10;
+	velocity_factor    = 1.0e-8;
 }
 
 std::string NCPA::EPadeSolver::tag_filename( std::string basename ) {
@@ -403,6 +413,17 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
   		user_ground_impedence.imag( param->getFloat( "ground_impedence_imag" ) );
   		user_ground_impedence_found = true;
   	}
+
+  	// create turbulence
+	use_turbulence = param->wasFound( "turbulence" );
+	turbulence_size = (size_t)(param->getInteger( "n_turbulence" ));
+	random_turbulence = !(param->wasFound("turbulence_file"));
+	if (!random_turbulence)
+		turbulence_file = param->getString("turbulence_file");
+	// T0 = param->getFloat( "turbulence_ref_temp" );
+	Lt = param->getFloat( "turbulence_scale_m" );
+	temperature_factor = param->getFloat( "turbulence_t_factor" );
+	velocity_factor    = param->getFloat( "turbulence_v_factor" );
 }
 
 NCPA::EPadeSolver::~EPadeSolver() {
@@ -432,6 +453,11 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	Mat *qpowers = PETSC_NULL, *qpowers_starter = PETSC_NULL;
 	Vec psi_o, Bpsi_o; //, psi_temp;
 	KSP ksp;
+
+	// for turbulence, if needed
+	double *mu_r, *mu_rpdr;
+	std::vector<double> rand1, rand2;
+
 	// PC pc;
 
 	// set up z grid for flat ground.  When we add terrain we will need to move this inside
@@ -486,6 +512,36 @@ int NCPA::EPadeSolver::solve_without_topography() {
 		indices[ i ] = i;
 	}
 	zs = NCPA::max( zs-z_ground+dz, dz );
+
+	if (use_turbulence) {
+		if (!random_turbulence) {
+			// if (verbose) {
+				std::cout << "Reading " << 2*turbulence_size
+						  << " values from " << turbulence_file
+						  << std::endl;
+			// }
+			std::ifstream rand_in( turbulence_file );
+			if (!rand_in.good()) {
+				throw std::runtime_error(
+					"Error opening " + turbulence_file);
+			}
+			rand1.reserve( turbulence_size );
+			for (i = 0; i < turbulence_size; i++) {
+				rand_in >> rand1[ i ];
+				if (!rand_in.good()) {
+					std::ostringstream oss;
+					oss << "Error reading turbulence numbers from "
+						<< turbulence_file;
+					throw std::runtime_error(oss.str());
+				}
+			}
+			rand2.reserve( turbulence_size );
+			for (i = 0; i < turbulence_size; i++) {
+				rand_in >> rand2[ i ];
+			}
+			rand_in.close();
+		}
+	}
 	
 	// constants for now
 	double h = dz;
@@ -565,6 +621,26 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, lossless, 
 				top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
 
+			// calculate turbulence
+			if (use_turbulence) {
+				mu_r = NCPA::zeros<double>( NZ );
+				mu_rpdr = NCPA::zeros<double>( NZ );
+
+				if (random_turbulence) {
+					rand1 = NCPA::random_numbers( turbulence_size );
+					rand2 = NCPA::random_numbers( turbulence_size );
+				} // otherwise they're already precalculated
+				turbulence = new NCPA::Turbulence( turbulence_size );
+				turbulence->set_turbulence_scale( Lt );
+				// turbulence->set_reference_temperature( T0 );
+				turbulence->set_temperature_factor( temperature_factor );
+				turbulence->set_velocity_factor( velocity_factor );
+				turbulence->set_wavenumbers_log( turbulence_k1,
+					turbulence_k2 );
+				turbulence->compute_phases( rand1 );
+				turbulence->compute();
+				turbulence->set_alpha( rand2 );
+			}
 
 			// calculate q matrices
 			Mat q;
@@ -646,8 +722,36 @@ int NCPA::EPadeSolver::solve_without_topography() {
 						<< " at range = " << rr/1000.0 << " km" << std::endl;
 				}
 
+				// get values for current step
+				ierr = VecGetValues( psi_o, NZ, indices, contents );CHKERRQ(ierr);
+
+				// apply turbulence
+				if (use_turbulence) {
+					if (ir == 0) {
+						// calculate first step
+						calculate_turbulence( rr, NZ, z, k0, mu_r );
+					} else {
+						std::memcpy( mu_r, mu_rpdr, NZ*sizeof(double) );
+					}
+					calculate_turbulence( rr + dr, NZ, z, k0, mu_rpdr );
+
+					// apply the turbulent fluctionations.  Do this inside
+					// the if() because we need to keep these modifications
+					// to psi_o, as opposed to the scaling by the Hankel
+					// function below
+					for (i = 0; i < NZ; i++) {
+						contents[ i ] *= std::exp( I * k0 * dr * 0.5 *
+							(mu_r[ i ] + mu_rpdr[ i ]) );
+					}
+
+					// store the modified field
+					ierr = VecSetValues( psi_o, NZ, indices, contents,
+						INSERT_VALUES );CHKERRQ(ierr);
+					ierr = VecAssemblyBegin( psi_o );CHKERRQ(ierr);
+					ierr = VecAssemblyEnd( psi_o );CHKERRQ(ierr);
+				}
+
 				hank = sqrt( 2.0 / ( PI * k0 * rr ) ) * exp( I * ( k0 * rr - PI/4.0 ) );
-				ierr = VecGetValues( psi_o, NZ, indices, contents );
 				for (i = 0; i < NZ; i++) {
 					tl[ i ][ ir ] = contents[ i ] * hank;
 				}
@@ -708,6 +812,13 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			}
 			
 			std::cout << std::endl;
+
+			// clean up
+			if (use_turbulence) {
+				delete [] mu_r;
+				delete [] mu_rpdr;
+				delete turbulence;
+			}
 
 			delete_matrix_polynomial( npade+1, &qpowers );
 
@@ -2522,4 +2633,39 @@ void NCPA::EPadeSolver::calculate_effective_sound_speed(
 
 		throw std::runtime_error( oss.str() );
 	}
+}
+
+void NCPA::EPadeSolver::calculate_turbulence( double r,
+		size_t nz, double *z, double k_a, double *&mu ) const {
+
+	// Calculates Eq. J.24 from Salomons.
+	size_t i, j, nt;
+	nt = turbulence->size();
+
+	// build matrices
+	NCPA::Matrix<double> *vec1, *mat1, *mat_mu;
+
+	vec1 = new NCPA::DenseMatrix<double>( 1, nt );
+	mat1 = new NCPA::DenseMatrix<double>( nt, nz );
+
+	// fill vector and matrix
+	for (i = 0; i < nt; i++) {
+		vec1->set( 0, i, turbulence->get_G( i ) );
+		for (j = 0; j < nz; j++) {
+			double temp = r * turbulence->get_k( i ).real()
+						+ turbulence->get_alpha( i )
+						+ turbulence->get_k( i ).imag() * z[ j ];
+			mat1->set( i, j, std::cos( temp ) );
+		}
+	}
+
+	mat_mu = vec1->multiply( mat1 );
+
+	for (j = 0; j < nz; j++) {
+		mu[ j ] = mat_mu->get( 0, j );
+	}
+
+	delete vec1;
+	delete mat1;
+	delete mat_mu;
 }
