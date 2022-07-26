@@ -18,6 +18,7 @@
 #include "gsl/gsl_errno.h"
 #include "gsl/gsl_spline.h"
 #include "gsl/gsl_version.h"
+#include "gsl/gsl_blas.h"
 
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
@@ -29,7 +30,7 @@
 
 #define RHO_B 5000.0
 
-void NCPA::EPadeSolver::outputVec( Vec &v, double *z, int n, std::string filename ) {
+void NCPA::EPadeSolver::outputVec( Vec &v, double *z, int n, std::string filename ) const {
 	PetscScalar *array;
 	std::ofstream out( filename );
 	out.precision( 12 );
@@ -45,7 +46,7 @@ void NCPA::EPadeSolver::outputVec( Vec &v, double *z, int n, std::string filenam
 }
 
 void NCPA::EPadeSolver::outputSparseMat( Mat &m, size_t nrows,
-	const std::string &filename ) {
+	const std::string &filename ) const {
 	PetscInt ncols;
 	const PetscInt *cols;
 	const PetscScalar *vals;
@@ -108,6 +109,7 @@ void NCPA::EPadeSolver::set_default_values() {
 	Lt = 100.0;
 	temperature_factor = 1.0e-10;
 	velocity_factor    = 1.0e-8;
+	// turbulence_vec1 = PETSC_NULL;
 }
 
 std::string NCPA::EPadeSolver::tag_filename( std::string basename ) {
@@ -625,21 +627,21 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			if (use_turbulence) {
 				mu_r = NCPA::zeros<double>( NZ );
 				mu_rpdr = NCPA::zeros<double>( NZ );
-
-				if (random_turbulence) {
-					rand1 = NCPA::random_numbers( turbulence_size );
-					rand2 = NCPA::random_numbers( turbulence_size );
-				} // otherwise they're already precalculated
-				turbulence = new NCPA::Turbulence( turbulence_size );
-				turbulence->set_turbulence_scale( Lt );
-				// turbulence->set_reference_temperature( T0 );
-				turbulence->set_temperature_factor( temperature_factor );
-				turbulence->set_velocity_factor( velocity_factor );
-				turbulence->set_wavenumbers_log( turbulence_k1,
-					turbulence_k2 );
-				turbulence->compute_phases( rand1 );
-				turbulence->compute();
-				turbulence->set_alpha( rand2 );
+				setup_turbulence(rand1, rand2);
+				// if (random_turbulence) {
+				// 	rand1 = NCPA::random_numbers( turbulence_size );
+				// 	rand2 = NCPA::random_numbers( turbulence_size );
+				// } // otherwise they're already precalculated
+				// turbulence = new NCPA::Turbulence( turbulence_size );
+				// turbulence->set_turbulence_scale( Lt );
+				// // turbulence->set_reference_temperature( T0 );
+				// turbulence->set_temperature_factor( temperature_factor );
+				// turbulence->set_velocity_factor( velocity_factor );
+				// turbulence->set_wavenumbers_log( turbulence_k1,
+				// 	turbulence_k2 );
+				// turbulence->compute_phases( rand1 );
+				// turbulence->compute();
+				// turbulence->set_alpha( rand2 );
 			}
 
 			// calculate q matrices
@@ -730,12 +732,23 @@ int NCPA::EPadeSolver::solve_without_topography() {
 					if (ir == 0) {
 						// calculate first step
 						calculate_turbulence( rr, NZ, z, k0, mu_r );
+						// std::ofstream turbfs( "turb_new.dat" );
+						// for (size_t ti = 0; ti < NZ; ti++) {
+						// 	turbfs << mu_r[ ti ] << std::endl;
+						// }
+						// turbfs.close();
+						// calculate_turbulence_orig( rr, NZ, z, k0, mu_r );
+						// turbfs.open( "turb_orig.dat" );
+						// for (size_t ti = 0; ti < NZ; ti++) {
+						// 	turbfs << mu_r[ ti ] << std::endl;
+						// }
+						// turbfs.close();
 					} else {
 						std::memcpy( mu_r, mu_rpdr, NZ*sizeof(double) );
 					}
 					calculate_turbulence( rr + dr, NZ, z, k0, mu_rpdr );
 
-					// apply the turbulent fluctionations.  Do this inside
+					// apply the turbulent fluctuations.  Do this inside
 					// the if() because we need to keep these modifications
 					// to psi_o, as opposed to the scaling by the Hankel
 					// function below
@@ -817,7 +830,9 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			if (use_turbulence) {
 				delete [] mu_r;
 				delete [] mu_rpdr;
-				delete turbulence;
+				cleanup_turbulence();
+
+				// ierr = VecDestroy( turbulence_vec1 );CHKERRQ(ierr);
 			}
 
 			delete_matrix_polynomial( npade+1, &qpowers );
@@ -2635,10 +2650,10 @@ void NCPA::EPadeSolver::calculate_effective_sound_speed(
 	}
 }
 
-void NCPA::EPadeSolver::calculate_turbulence( double r,
-		size_t nz, double *z, double k_a, double *&mu ) const {
+void NCPA::EPadeSolver::calculate_turbulence_orig( double r,
+		size_t nz, double *z, double k_a,
+		double *&mu ) const {
 
-	// Calculates Eq. J.24 from Salomons.
 	size_t i, j, nt;
 	nt = turbulence->size();
 
@@ -2648,6 +2663,8 @@ void NCPA::EPadeSolver::calculate_turbulence( double r,
 	vec1 = new NCPA::DenseMatrix<double>( 1, nt );
 	mat1 = new NCPA::DenseMatrix<double>( nt, nz );
 
+	// std::ofstream ofs( "mat1_orig.dat" );
+
 	// fill vector and matrix
 	for (i = 0; i < nt; i++) {
 		vec1->set( 0, i, turbulence->get_G( i ) );
@@ -2656,11 +2673,17 @@ void NCPA::EPadeSolver::calculate_turbulence( double r,
 						+ turbulence->get_alpha( i )
 						+ turbulence->get_k( i ).imag() * z[ j ];
 			mat1->set( i, j, std::cos( temp ) );
+			// ofs << i << " " << j << " " << mat1->get( i, j ) << std::endl;
 		}
 	}
 
-	mat_mu = vec1->multiply( mat1 );
+	// std::ofstream ofs( "vec1_orig.dat" );
+	// for (i = 0; i < nt; i++) {
+	// 	ofs << vec1->get( 0, i ) << std::endl;
+	// }
+	// ofs.close();
 
+	mat_mu = vec1->multiply( mat1 );
 	for (j = 0; j < nz; j++) {
 		mu[ j ] = mat_mu->get( 0, j );
 	}
@@ -2668,4 +2691,140 @@ void NCPA::EPadeSolver::calculate_turbulence( double r,
 	delete vec1;
 	delete mat1;
 	delete mat_mu;
+}
+
+
+void NCPA::EPadeSolver::calculate_turbulence( double r,
+		size_t nz, double *z, double k_a,
+		double *&mu ) const {
+
+	size_t i, j, nt;
+	nt = turbulence->size();
+
+	gsl_vector_set_zero( t_vec1 );
+	gsl_vector_set_zero( t_vec_mu );
+	gsl_matrix_set_zero( t_mat1 );
+
+	for (i = 0; i < nt; i++) {
+		// vec1->set( 0, i, turbulence->get_G( i ) );
+		gsl_vector_set( t_vec1, i, turbulence->get_G( i ) );
+		for (j = 0; j < nz; j++) {
+			double temp = r * turbulence->get_k( i ).real()
+						+ turbulence->get_alpha( i )
+						+ turbulence->get_k( i ).imag() * z[ j ];
+			gsl_matrix_set( t_mat1, j, i, std::cos( temp ) );
+			// mat1->set( i, j, std::cos( temp ) );
+			// ofs << i << " " << j << " " << mat1->get( i, j ) << std::endl;
+		}
+	}
+
+	gsl_blas_dgemv( CblasNoTrans, 1.0, t_mat1, t_vec1, 0.0, t_vec_mu );
+	for (j = 0; j < nz; j++) {
+		mu[ j ] = gsl_vector_get( t_vec_mu, j );
+	}
+}
+
+// int NCPA::EPadeSolver::calculate_turbulence( double r,
+// 		size_t nz, double *z, double k_a,
+// 		double *&mu ) const {
+
+// 	// Calculates Eq. J.24 from Salomons.
+// 	PetscInt i, j, nt;
+// 	nt = turbulence->size();
+
+// 	Mat mat1;
+// 	Vec vec_mu, vec1;
+// 	PetscErrorCode ierr;
+
+// 	// set up vector and matrix objects
+// 	ierr = MatCreateSeqDense( PETSC_COMM_SELF, nz, nt, NULL, &mat1 );CHKERRQ(ierr);
+// 	ierr = MatSetFromOptions( mat1 );CHKERRQ(ierr);
+// 	ierr = VecCreate( PETSC_COMM_SELF, &vec1 );CHKERRQ(ierr);
+// 	ierr = VecSetSizes( vec1, PETSC_DECIDE, nt );CHKERRQ(ierr);
+// 	ierr = VecSetFromOptions( vec1 );CHKERRQ(ierr);
+// 	ierr = VecSet( vec1, 0.0 );CHKERRQ(ierr);
+
+
+// 	ierr = VecCreate( PETSC_COMM_SELF, &vec_mu );CHKERRQ(ierr);
+// 	ierr = VecSetSizes( vec_mu, PETSC_DECIDE, nz );CHKERRQ(ierr);
+// 	ierr = VecSetFromOptions( vec_mu );CHKERRQ(ierr);
+// 	ierr = VecSet( vec_mu, 0.0 );CHKERRQ(ierr);
+
+// 	// fill vector and matrix
+// 	for (i = 0; i < nt; i++) {
+// 		PetscScalar tmpG = turbulence->get_G( i );
+// 		ierr = VecSetValues( vec1, 1, &i, &tmpG, INSERT_VALUES );CHKERRQ(ierr);
+// 		for (j = 0; j < (PetscInt)nz; j++) {
+// 			std::complex<double> temp( std::cos(
+// 						r * turbulence->get_k( i ).real()
+// 						+ turbulence->get_alpha( i )
+// 						+ turbulence->get_k( i ).imag() * z[ j ] ),
+// 						0.0 );
+// 			ierr = MatSetValues( mat1, 1, &j, 1, &i, &temp, INSERT_VALUES );CHKERRQ(ierr);
+// 		}
+// 	}
+// 	// outputVec( vec1, NULL, nt, "vec1_new.dat" );
+// 	ierr = MatAssemblyBegin( mat1, MAT_FINAL_ASSEMBLY );CHKERRQ(ierr);
+// 	ierr = MatAssemblyEnd( mat1, MAT_FINAL_ASSEMBLY );CHKERRQ(ierr);
+// 	// if (first_time) {
+// 		ierr = VecAssemblyBegin( vec1 );CHKERRQ(ierr);
+// 		ierr = VecAssemblyEnd( vec1 );CHKERRQ(ierr);
+// 	// }
+// 	ierr = VecAssemblyBegin( vec_mu );CHKERRQ(ierr);
+// 	ierr = VecAssemblyEnd( vec_mu );CHKERRQ(ierr);
+
+// 	// mat_mu = vec1->multiply( mat1 );
+// 	ierr = MatMult( mat1, vec1, vec_mu );CHKERRQ(ierr);
+// 	PetscInt *indices = NCPA::index_vector<PetscInt>( nz );
+// 	std::complex<double> *cmu = NCPA::zeros<std::complex<double>>( nz );
+// 	ierr = VecGetValues( vec_mu, nz, indices, cmu );CHKERRQ(ierr);
+
+// 	for (j = 0; j < (PetscInt)nz; j++) {
+// 		mu[ j ] = cmu[ j ].real();
+// 	}
+
+// 	delete [] cmu;
+// 	ierr = VecDestroy( &vec_mu );CHKERRQ(ierr);
+// 	ierr = VecDestroy( &vec1 );CHKERRQ(ierr);
+// 	ierr = MatDestroy( &mat1 );CHKERRQ(ierr);
+
+// 	return 1;
+// }
+
+void NCPA::EPadeSolver::setup_turbulence(std::vector<double> &rand1,
+		std::vector<double> &rand2 ) {
+	if (random_turbulence) {
+		rand1 = NCPA::random_numbers( turbulence_size );
+		rand2 = NCPA::random_numbers( turbulence_size );
+	} // otherwise they're already precalculated
+	turbulence = new NCPA::Turbulence( turbulence_size );
+	turbulence->set_turbulence_scale( Lt );
+	// turbulence->set_reference_temperature( T0 );
+	turbulence->set_temperature_factor( temperature_factor );
+	turbulence->set_velocity_factor( velocity_factor );
+	turbulence->set_wavenumbers_log( turbulence_k1,
+		turbulence_k2 );
+	turbulence->compute_phases( rand1 );
+	turbulence->compute();
+	turbulence->set_alpha( rand2 );
+
+	t_vec1   = gsl_vector_alloc( turbulence_size );
+	t_vec_mu = gsl_vector_alloc( NZ );
+	t_mat1   = gsl_matrix_alloc( NZ, turbulence_size );
+
+
+
+	// if (turbulence_vec1 != PETSC_NULL) {
+	// 	PetscErrorCode ierr = VecDestroy( turbulence_vec1 );CHKERRQ(ierr);
+	// 	turbulence_vec1 = PETSC_NULL;
+	// }
+
+}
+
+void NCPA::EPadeSolver::cleanup_turbulence() {
+	delete turbulence;
+
+	gsl_vector_free( t_vec1 );
+	gsl_vector_free( t_vec_mu );
+	gsl_matrix_free( t_mat1 );
 }

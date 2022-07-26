@@ -6,6 +6,10 @@
 
 #include "petscksp.h"
 
+#include "gsl/gsl_errno.h"
+#include "gsl/gsl_version.h"
+#include "gsl/gsl_blas.h"
+
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
 
@@ -66,8 +70,10 @@ namespace NCPA {
 
 		void set_default_values();
 
-		void outputVec( Vec &v, double *z, int n, std::string filename );
-		void outputSparseMat( Mat &m, size_t nrows, const std::string &filename );
+		void outputVec( Vec &v, double *z, int n,
+			std::string filename ) const;
+		void outputSparseMat( Mat &m, size_t nrows,
+			const std::string &filename ) const;
 
 		// solve using the appropriate method
 		virtual int solve_with_topography();
@@ -149,6 +155,11 @@ namespace NCPA {
 		// turbulence
 		void calculate_turbulence( double r, size_t nz, double *z,
 			double k_a, double *&mu ) const;
+		void calculate_turbulence_orig( double r, size_t nz, double *z,
+			double k_a, double *&mu ) const;
+		void setup_turbulence( std::vector<double> &rand1,
+			std::vector<double> &rand2 );
+		void cleanup_turbulence();
 
 		std::string tag_filename( std::string basename );
 
@@ -187,6 +198,10 @@ namespace NCPA {
 			temperature_factor, velocity_factor;
 		size_t turbulence_size;
 		std::string turbulence_file;
+		gsl_matrix *t_mat1;
+		gsl_vector *t_vec1, *t_vec_mu;
+		// Vec *turbulence_vec1;
+
 
 		std::vector< double > zt;
 		std::vector< int > zti;
