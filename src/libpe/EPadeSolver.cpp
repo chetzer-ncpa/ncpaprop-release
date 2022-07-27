@@ -628,20 +628,6 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				mu_r = NCPA::zeros<double>( NZ );
 				mu_rpdr = NCPA::zeros<double>( NZ );
 				setup_turbulence(rand1, rand2);
-				// if (random_turbulence) {
-				// 	rand1 = NCPA::random_numbers( turbulence_size );
-				// 	rand2 = NCPA::random_numbers( turbulence_size );
-				// } // otherwise they're already precalculated
-				// turbulence = new NCPA::Turbulence( turbulence_size );
-				// turbulence->set_turbulence_scale( Lt );
-				// // turbulence->set_reference_temperature( T0 );
-				// turbulence->set_temperature_factor( temperature_factor );
-				// turbulence->set_velocity_factor( velocity_factor );
-				// turbulence->set_wavenumbers_log( turbulence_k1,
-				// 	turbulence_k2 );
-				// turbulence->compute_phases( rand1 );
-				// turbulence->compute();
-				// turbulence->set_alpha( rand2 );
 			}
 
 			// calculate q matrices
@@ -732,17 +718,6 @@ int NCPA::EPadeSolver::solve_without_topography() {
 					if (ir == 0) {
 						// calculate first step
 						calculate_turbulence( rr, NZ, z, k0, mu_r );
-						// std::ofstream turbfs( "turb_new.dat" );
-						// for (size_t ti = 0; ti < NZ; ti++) {
-						// 	turbfs << mu_r[ ti ] << std::endl;
-						// }
-						// turbfs.close();
-						// calculate_turbulence_orig( rr, NZ, z, k0, mu_r );
-						// turbfs.open( "turb_orig.dat" );
-						// for (size_t ti = 0; ti < NZ; ti++) {
-						// 	turbfs << mu_r[ ti ] << std::endl;
-						// }
-						// turbfs.close();
 					} else {
 						std::memcpy( mu_r, mu_rpdr, NZ*sizeof(double) );
 					}
@@ -831,8 +806,6 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				delete [] mu_r;
 				delete [] mu_rpdr;
 				cleanup_turbulence();
-
-				// ierr = VecDestroy( turbulence_vec1 );CHKERRQ(ierr);
 			}
 
 			delete_matrix_polynomial( npade+1, &qpowers );
@@ -1098,6 +1071,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	KSP ksp;
 	// PC pc;
 
+	// for turbulence, if needed
+	double *mu_r, *mu_rpdr;
+	std::vector<double> rand1, rand2;
+
 	// set up z grid for flat ground.  When we add terrain we will need to move this inside
 	// the range loop
 	int profile_index;
@@ -1163,6 +1140,36 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		zs = z[ closest_source_grid_point ] + grid_tolerance;
 		std::cout << "Adjusting source height to " << zs 
 			<< " m to avoid grid point singularity" << std::endl;
+	}
+
+	if (use_turbulence) {
+		if (!random_turbulence) {
+			// if (verbose) {
+				std::cout << "Reading " << 2*turbulence_size
+						  << " values from " << turbulence_file
+						  << std::endl;
+			// }
+			std::ifstream rand_in( turbulence_file );
+			if (!rand_in.good()) {
+				throw std::runtime_error(
+					"Error opening " + turbulence_file);
+			}
+			rand1.reserve( turbulence_size );
+			for (i = 0; i < turbulence_size; i++) {
+				rand_in >> rand1[ i ];
+				if (!rand_in.good()) {
+					std::ostringstream oss;
+					oss << "Error reading turbulence numbers from "
+						<< turbulence_file;
+					throw std::runtime_error(oss.str());
+				}
+			}
+			rand2.reserve( turbulence_size );
+			for (i = 0; i < turbulence_size; i++) {
+				rand_in >> rand2[ i ];
+			}
+			rand_in.close();
+		}
 	}
 	
 	// constants for now
@@ -1248,6 +1255,13 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, lossless, 
 				top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
 			
+			// calculate turbulence
+			if (use_turbulence) {
+				mu_r = NCPA::zeros<double>( NZ );
+				mu_rpdr = NCPA::zeros<double>( NZ );
+				setup_turbulence(rand1, rand2);
+			}
+
 			// build appropriate starter
 			if (starter == "self") {
 
@@ -1388,6 +1402,31 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				ierr = MatZeroEntries( C );CHKERRQ(ierr);
 				generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
 				
+				// apply turbulence
+				if (use_turbulence) {
+					if (ir == 0) {
+						// calculate first step
+						calculate_turbulence( rr, NZ, z, k0, mu_r );
+					} else {
+						std::memcpy( mu_r, mu_rpdr, NZ*sizeof(double) );
+					}
+					calculate_turbulence( rr + dr, NZ, z, k0, mu_rpdr );
+
+					// apply the turbulent fluctuations.  Do this inside
+					// the if() because we need to keep these modifications
+					// to psi_o, as opposed to the scaling by the Hankel
+					// function below
+					for (i = 0; i < NZ; i++) {
+						contents[ i ] *= std::exp( I * k0 * dr * 0.5 *
+							(mu_r[ i ] + mu_rpdr[ i ]) );
+					}
+
+					// store the modified field
+					ierr = VecSetValues( psi_o, NZ, indices, contents,
+						INSERT_VALUES );CHKERRQ(ierr);
+					ierr = VecAssemblyBegin( psi_o );CHKERRQ(ierr);
+					ierr = VecAssemblyEnd( psi_o );CHKERRQ(ierr);
+				}
 
 				hank = sqrt( 2.0 / ( PI * k0 * rr ) ) * exp( I * ( k0 * rr - PI/4.0 ) );
 				ierr = VecGetValues( psi_o, NZ, indices, contents );
@@ -1440,6 +1479,28 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			if (broadband) {
 				write_broadband_results( tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
 					calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
+			}
+
+			if (write_atmosphere) {
+				std::cout << "Writing source atmosphere to "
+						<< tag_filename("atm_profile.pe") << std::endl;
+				std::vector<std::string> keylist;
+				keylist.push_back( "U" );
+				keylist.push_back( "V" );
+				keylist.push_back( "T" );
+				keylist.push_back( "RHO" );
+				keylist.push_back( "P" );
+				keylist.push_back( "_C0_" );
+				keylist.push_back( "_CEFF_" );
+				std::ofstream atmout( tag_filename( "atm_profile.pe" ) );
+				atm_profile_2d->print_atmosphere( keylist, 0.0, "Z", atmout );
+				atmout.close();
+			}
+
+			if (use_turbulence) {
+				delete [] mu_r;
+				delete [] mu_rpdr;
+				cleanup_turbulence();
 			}
 			
 			std::cout << std::endl;
