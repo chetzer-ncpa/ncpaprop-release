@@ -171,7 +171,7 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 			std::cout << "Calculating sound speed from pressure and density." << std::endl;
 			atm_profile->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
 				Units::fromString( "m/s" ) );
-		} else {
+		} else if (atm_profile->contains_vector( "T" )) {
 			std::cout << "Calculating sound speed from temperature" << std::endl;
 			atm_profile->calculate_sound_speed_from_temperature( "_C0_", "T", 
 				Units::fromString( "m/s" ) );
