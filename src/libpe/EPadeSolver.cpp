@@ -2718,48 +2718,48 @@ void NCPA::EPadeSolver::calculate_effective_sound_speed(
 	}
 }
 
-void NCPA::EPadeSolver::calculate_turbulence_orig( double r,
-		size_t nz, double *z, double k_a,
-		double *&mu ) const {
+// void NCPA::EPadeSolver::calculate_turbulence_orig( double r,
+// 		size_t nz, double *z, double k_a,
+// 		double *&mu ) const {
 
-	size_t i, j, nt;
-	nt = turbulence->size();
+// 	size_t i, j, nt;
+// 	nt = turbulence->size();
 
-	// build matrices
-	NCPA::Matrix<double> *vec1, *mat1, *mat_mu;
+// 	// build matrices
+// 	NCPA::Matrix<double> *vec1, *mat1, *mat_mu;
 
-	vec1 = new NCPA::DenseMatrix<double>( 1, nt );
-	mat1 = new NCPA::DenseMatrix<double>( nt, nz );
+// 	vec1 = new NCPA::DenseMatrix<double>( 1, nt );
+// 	mat1 = new NCPA::DenseMatrix<double>( nt, nz );
 
-	// std::ofstream ofs( "mat1_orig.dat" );
+// 	// std::ofstream ofs( "mat1_orig.dat" );
 
-	// fill vector and matrix
-	for (i = 0; i < nt; i++) {
-		vec1->set( 0, i, turbulence->get_G( i ) );
-		for (j = 0; j < nz; j++) {
-			double temp = r * turbulence->get_k( i ).real()
-						+ turbulence->get_alpha( i )
-						+ turbulence->get_k( i ).imag() * z[ j ];
-			mat1->set( i, j, std::cos( temp ) );
-			// ofs << i << " " << j << " " << mat1->get( i, j ) << std::endl;
-		}
-	}
+// 	// fill vector and matrix
+// 	for (i = 0; i < nt; i++) {
+// 		vec1->set( 0, i, turbulence->get_G( i ) );
+// 		for (j = 0; j < nz; j++) {
+// 			double temp = r * turbulence->get_k( i ).real()
+// 						+ turbulence->get_alpha( i )
+// 						+ turbulence->get_k( i ).imag() * z[ j ];
+// 			mat1->set( i, j, std::cos( temp ) );
+// 			// ofs << i << " " << j << " " << mat1->get( i, j ) << std::endl;
+// 		}
+// 	}
 
-	// std::ofstream ofs( "vec1_orig.dat" );
-	// for (i = 0; i < nt; i++) {
-	// 	ofs << vec1->get( 0, i ) << std::endl;
-	// }
-	// ofs.close();
+// 	// std::ofstream ofs( "vec1_orig.dat" );
+// 	// for (i = 0; i < nt; i++) {
+// 	// 	ofs << vec1->get( 0, i ) << std::endl;
+// 	// }
+// 	// ofs.close();
 
-	mat_mu = vec1->multiply( mat1 );
-	for (j = 0; j < nz; j++) {
-		mu[ j ] = mat_mu->get( 0, j );
-	}
+// 	mat_mu = vec1->multiply( mat1 );
+// 	for (j = 0; j < nz; j++) {
+// 		mu[ j ] = mat_mu->get( 0, j );
+// 	}
 
-	delete vec1;
-	delete mat1;
-	delete mat_mu;
-}
+// 	delete vec1;
+// 	delete mat1;
+// 	delete mat_mu;
+// }
 
 
 // void NCPA::EPadeSolver::calculate_turbulence( double r,
