@@ -717,11 +717,11 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				if (use_turbulence) {
 					if (ir == 0) {
 						// calculate first step
-						calculate_turbulence( rr, NZ, z, k0, mu_r );
+						calculate_turbulence( rr, NZ, z, k0, 0, mu_r );
 					} else {
 						std::memcpy( mu_r, mu_rpdr, NZ*sizeof(double) );
 					}
-					calculate_turbulence( rr + dr, NZ, z, k0, mu_rpdr );
+					calculate_turbulence( rr + dr, NZ, z, k0, 0, mu_rpdr );
 
 					// apply the turbulent fluctuations.  Do this inside
 					// the if() because we need to keep these modifications
@@ -1403,14 +1403,22 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
 				
 				// apply turbulence
+				ierr = VecGetValues( psi_o, NZ, indices, contents );
 				if (use_turbulence) {
+					// update ground index
+					ground_index = (int)(NCPA::find_closest_index( z, NZ, z_ground ));
+					if ( z[ ground_index ] < z_ground ) {
+						ground_index++;
+					}
 					if (ir == 0) {
 						// calculate first step
-						calculate_turbulence( rr, NZ, z, k0, mu_r );
+						calculate_turbulence( rr, NZ, z, k0, ground_index,
+							mu_r );
 					} else {
 						std::memcpy( mu_r, mu_rpdr, NZ*sizeof(double) );
 					}
-					calculate_turbulence( rr + dr, NZ, z, k0, mu_rpdr );
+					calculate_turbulence( rr + dr, NZ, z, k0, ground_index,
+						mu_rpdr );
 
 					// apply the turbulent fluctuations.  Do this inside
 					// the if() because we need to keep these modifications
@@ -1429,7 +1437,6 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 
 				hank = sqrt( 2.0 / ( PI * k0 * rr ) ) * exp( I * ( k0 * rr - PI/4.0 ) );
-				ierr = VecGetValues( psi_o, NZ, indices, contents );
 				for (i = 0; i < NZ; i++) {
 					tl[ i ][ ir ] = contents[ i ] * hank;
 				}
@@ -2755,8 +2762,38 @@ void NCPA::EPadeSolver::calculate_turbulence_orig( double r,
 }
 
 
+// void NCPA::EPadeSolver::calculate_turbulence( double r,
+// 		size_t nz, double *z, double k_a,
+// 		double *&mu ) const {
+
+// 	size_t i, j, nt;
+// 	nt = turbulence->size();
+
+// 	gsl_vector_set_zero( t_vec1 );
+// 	gsl_vector_set_zero( t_vec_mu );
+// 	gsl_matrix_set_zero( t_mat1 );
+
+// 	for (i = 0; i < nt; i++) {
+// 		// vec1->set( 0, i, turbulence->get_G( i ) );
+// 		gsl_vector_set( t_vec1, i, turbulence->get_G( i ) );
+// 		for (j = 0; j < nz; j++) {
+// 			double temp = r * turbulence->get_k( i ).real()
+// 						+ turbulence->get_alpha( i )
+// 						+ turbulence->get_k( i ).imag() * z[ j ];
+// 			gsl_matrix_set( t_mat1, j, i, std::cos( temp ) );
+// 			// mat1->set( i, j, std::cos( temp ) );
+// 			// ofs << i << " " << j << " " << mat1->get( i, j ) << std::endl;
+// 		}
+// 	}
+
+// 	gsl_blas_dgemv( CblasNoTrans, 1.0, t_mat1, t_vec1, 0.0, t_vec_mu );
+// 	for (j = 0; j < nz; j++) {
+// 		mu[ j ] = gsl_vector_get( t_vec_mu, j );
+// 	}
+// }
+
 void NCPA::EPadeSolver::calculate_turbulence( double r,
-		size_t nz, double *z, double k_a,
+		size_t nz, double *z, double k_a, size_t ground_index,
 		double *&mu ) const {
 
 	size_t i, j, nt;
@@ -2781,7 +2818,11 @@ void NCPA::EPadeSolver::calculate_turbulence( double r,
 
 	gsl_blas_dgemv( CblasNoTrans, 1.0, t_mat1, t_vec1, 0.0, t_vec_mu );
 	for (j = 0; j < nz; j++) {
-		mu[ j ] = gsl_vector_get( t_vec_mu, j );
+		if (j >= ground_index) {
+			mu[ j ] = gsl_vector_get( t_vec_mu, j );
+		} else {
+			mu[ j ] = 0.0;
+		}
 	}
 }
 
