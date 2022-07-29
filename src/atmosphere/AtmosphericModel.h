@@ -18,6 +18,9 @@ namespace NCPA {
 		// t in K, returns in m/s
 		static double soundspeed_from_temperature( double t );
 
+		// c in m/s, returns in K
+		static double temperature_from_soundspeed( double c );
+
 		// p in Pa, d in kg/m3, returns in m/s
 		static double soundspeed_from_pressure_density( double p, double d );
 

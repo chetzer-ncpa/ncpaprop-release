@@ -151,6 +151,8 @@ namespace NCPA {
 		// derived quantities
 		void calculate_sound_speed_from_temperature( const std::string &new_key,
 			const std::string &temperature_key, units_t wind_units );
+		void calculate_temperature_from_sound_speed( const std::string &new_key,
+			const std::string &speed_key, units_t speed_units );
 		void calculate_sound_speed_from_pressure_and_density( const std::string &new_key,
 			const std::string &pressure_key, const std::string &density_key,
 			units_t wind_units );

@@ -19,6 +19,11 @@ double NCPA::AtmosphericModel::soundspeed_from_temperature( double t ) {
 	return std::sqrt( GAMMA_FOR_C * R_FOR_C * t );
 }
 
+// sound speed in m/s, returns in K
+double NCPA::AtmosphericModel::temperature_from_soundspeed( double c ) {
+	return c * c / GAMMA_FOR_C / R_FOR_C;
+}
+
 // p in Pa, d in kg/m3, returns in m/s
 double NCPA::AtmosphericModel::soundspeed_from_pressure_density(
 	double p, double d ) {

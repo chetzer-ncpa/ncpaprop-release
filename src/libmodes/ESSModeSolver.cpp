@@ -130,23 +130,7 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 	c_eff = new double [Nz_grid]; // to be filled in getModalTrace(), depends on azimuth
 	alpha = new double [Nz_grid];
 
-	// Set up units of atmospheric profile object
-	atm_profile->convert_altitude_units( Units::fromString( "m" ) );
-	atm_profile->convert_property_units( "U", Units::fromString( "m/s" ) );
-	atm_profile->convert_property_units( "V", Units::fromString( "m/s" ) );
-	atm_profile->convert_property_units( "T", Units::fromString( "K" ) );
-	atm_profile->convert_property_units( "P", Units::fromString( "Pa" ) );
-	atm_profile->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
-	if (atm_profile->contains_scalar("Z0")) {
-		atm_profile->convert_property_units( "Z0", Units::fromString( "m" ) );
-		double profile_z0 = atm_profile->get( "Z0" );
-		if (z_min < profile_z0) {
-			std::cout << "Adjusting minimum altitude to profile ground height of "
-			          << profile_z0 << " m" << std::endl;
-			z_min = profile_z0;
-		}
-	}
-  
+
 	//
 	// !!! ensure maxheight is less than the max height covered by the provided atm profile
 	// may avoid some errors asociated with the code thinking that it goes above 
@@ -174,17 +158,65 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 		std::cout << "Using user-supplied static sound speed" << std::endl;
 		atm_profile->copy_vector_property( "C0", "_C0_" );
 		atm_profile->convert_property_units( "_C0_", Units::fromString( "m/s" ) );
+
+		// do we need to calculate temperature?
+		if (!atm_profile->contains_vector("T" )) {
+			std::cout << "No temperature provided, calculating from sound speed"
+					  << std::endl;
+			atm_profile->calculate_temperature_from_sound_speed( "T", "_C0_",
+				Units::fromString( "K" ) );
+		}
 	} else {
 		if (atm_profile->contains_vector( "P" ) && atm_profile->contains_vector("RHO")) {
 			std::cout << "Calculating sound speed from pressure and density." << std::endl;
 			atm_profile->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
 				Units::fromString( "m/s" ) );
-		} else {
+		} else if (atm_profile->contains_vector( "T" )) {
 			std::cout << "Calculating sound speed from temperature" << std::endl;
 			atm_profile->calculate_sound_speed_from_temperature( "_C0_", "T", 
 				Units::fromString( "m/s" ) );
+		} else {
+			throw std::runtime_error( "Can't calculate static sound speed, either temperature T or pressure P and density RHO missing" );
 		}
 	}
+
+	// Set up units of atmospheric profile object
+	atm_profile->convert_altitude_units( Units::fromString( "m" ) );
+	if (atm_profile->contains_vector("U")) {
+		atm_profile->convert_property_units( "U", Units::fromString( "m/s" ) );
+	} else {
+		throw std::runtime_error( "U wind vector not found in atmosphere file" );
+	}
+	if (atm_profile->contains_vector("V")) {
+		atm_profile->convert_property_units( "V", Units::fromString( "m/s" ) );
+	} else {
+		throw std::runtime_error( "V wind vector not found in atmosphere file" );
+	}
+	if (atm_profile->contains_vector("T")) {
+		atm_profile->convert_property_units( "T", Units::fromString( "K" ) );
+	} else {
+		throw std::runtime_error( "T temperature vector not found in atmosphere file" );
+	}
+	if (atm_profile->contains_vector("P")) {
+		atm_profile->convert_property_units( "P", Units::fromString( "Pa" ) );
+	} else {
+		throw std::runtime_error( "P pressure vector not found in atmosphere file" );
+	}
+	if (atm_profile->contains_vector("RHO")) {
+		atm_profile->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
+	} else {
+		throw std::runtime_error( "RHO density vector not found in atmosphere file" );
+	}
+	if (atm_profile->contains_scalar("Z0")) {
+		atm_profile->convert_property_units( "Z0", Units::fromString( "m" ) );
+		double profile_z0 = atm_profile->get( "Z0" );
+		if (z_min < profile_z0) {
+			std::cout << "Adjusting minimum altitude to profile ground height of "
+			          << profile_z0 << " m" << std::endl;
+			z_min = profile_z0;
+		}
+	}
+
 	atm_profile->calculate_wind_speed( "_WS_", "U", "V" );
 	atm_profile->calculate_wind_direction( "_WD_", "U", "V" );
 	if (usrattfile.empty()) {
@@ -252,186 +284,8 @@ void NCPA::ESSModeSolver::printParams() {
 	}
 }
 
-// int NCPA::ESSModeSolver::doESSSLEPcCalculation( double *diag, double dz, double *k_min, 
-// 	double *k_max, PetscInt *nconv, double *k2, double **v ) {
-
-// 	//
-// 	// Declarations related to Slepc computations
-// 	//
-// 	Mat            A;           // problem matrix
-// 	EPS            eps;         // eigenproblem solver context
-// 	ST             stx;
-// 	KSP            kspx;
-// 	PC             pcx;
-// 	EPSType        type;        // CHH 191022: removed const qualifier
-// 	PetscReal      re, im;
-// 	PetscScalar    kr, ki, *xr_;
-// 	Vec            xr, xi;
-// 	PetscInt       Istart, Iend, col[3], its, maxit;
-// 	PetscBool      FirstBlock=PETSC_FALSE, LastBlock=PETSC_FALSE;
-// 	PetscScalar    value[3];	
-// 	PetscErrorCode ierr;
-// 	PetscMPIInt    rank, size;
-// 	int i, j, nev;
-// 	double h2 = dz * dz;
-
-
-// 	// Initialize Slepc
-// 	ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&rank); CHKERRQ(ierr);
-// 	ierr = MPI_Comm_size(PETSC_COMM_WORLD,&size); CHKERRQ(ierr);  
-
-// 	// Create the matrix A to use in the eigensystem problem: Ak=kx
-// 	ierr = MatCreate(PETSC_COMM_WORLD,&A); CHKERRQ(ierr);
-// 	ierr = MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,Nz_grid,Nz_grid); CHKERRQ(ierr);
-// 	ierr = MatSetFromOptions(A); CHKERRQ(ierr);
-
-// 	// the following Preallocation call is needed in PETSc version 3.3
-// 	ierr = MatSeqAIJSetPreallocation(A, 3, PETSC_NULL); CHKERRQ(ierr);
-// 	// or use: ierr = MatSetUp(A); 
-
-// 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-// 	Compute the operator matrix that defines the eigensystem, Ax=kx
-// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-// 	// Make matrix A 
-// 	ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
-// 	if (Istart==0) 
-// 		FirstBlock=PETSC_TRUE;
-// 	if (Iend==Nz_grid) 		/* @todo check if should be Nz_grid-1 */
-// 		LastBlock=PETSC_TRUE;    
-
-// 	value[0]=1.0/h2; 
-// 	value[2]=1.0/h2;
-// 	for( i=(FirstBlock? Istart+1: Istart); i<(LastBlock? Iend-1: Iend); i++ ) {
-// 		value[1] = -2.0/h2 + diag[i];
-// 		col[0]=i-1; 
-// 		col[1]=i; 
-// 		col[2]=i+1;
-// 		ierr = MatSetValues(A,1,&i,3,col,value,INSERT_VALUES); CHKERRQ(ierr);
-// 	}
-// 	if (LastBlock) {
-// 		i=Nz_grid-1; 
-// 		col[0]=Nz_grid-2; 
-// 		col[1]=Nz_grid-1;
-// 		ierr = MatSetValues(A,1,&i,2,col,value,INSERT_VALUES); CHKERRQ(ierr);
-// 	}
-// 	if (FirstBlock) {
-// 		i=0; 
-// 		col[0]=0; 
-// 		col[1]=1; 
-// 		value[0]=-2.0/h2 + diag[0]; 
-// 		value[1]=1.0/h2;
-// 		ierr = MatSetValues(A,1,&i,2,col,value,INSERT_VALUES); CHKERRQ(ierr);
-// 	}
-
-// 	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-// 	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-// 	// CHH 191022: MatGetVecs() is deprecated, changed to MatCreateVecs()
-// 	ierr = MatCreateVecs(A,PETSC_NULL,&xr); CHKERRQ(ierr);
-// 	ierr = MatCreateVecs(A,PETSC_NULL,&xi); CHKERRQ(ierr);
-
-// 	 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-// 	Create the eigensolver and set various options
-// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-// 	/* 
-// 	Create eigensolver context
-// 	*/
-// 	ierr = EPSCreate(PETSC_COMM_WORLD,&eps); CHKERRQ(ierr);
-
-// 	/* 
-// 	Set operators. In this case, it is a standard eigenvalue problem
-// 	*/
-// 	ierr = EPSSetOperators(eps,A,PETSC_NULL); CHKERRQ(ierr);
-// 	ierr = EPSSetProblemType(eps,EPS_HEP); CHKERRQ(ierr);
-
-// 	/*
-// 	Set solver parameters at runtime
-// 	*/
-// 	ierr = EPSSetFromOptions(eps);CHKERRQ(ierr);
-// 	ierr = EPSSetType(eps,"krylovschur"); CHKERRQ(ierr);
-// 	ierr = EPSSetDimensions(eps,10,PETSC_DECIDE,PETSC_DECIDE); CHKERRQ(ierr); // leaving this line in speeds up the code; better if this is computed in chunks of 10? - consult Slepc manual
-// 	ierr = EPSSetTolerances(eps,tol,PETSC_DECIDE); CHKERRQ(ierr);
-
-// 	ierr = EPSGetST(eps,&stx); CHKERRQ(ierr);
-// 	ierr = STGetKSP(stx,&kspx); CHKERRQ(ierr);
-// 	ierr = KSPGetPC(kspx,&pcx); CHKERRQ(ierr);
-// 	ierr = STSetType(stx,"sinvert"); CHKERRQ(ierr);
-// 	ierr = KSPSetType(kspx,"preonly");
-// 	ierr = PCSetType(pcx,"cholesky");
-// 	ierr = EPSSetInterval(eps,pow(*k_min,2),pow(*k_max,2)); CHKERRQ(ierr);
-// 	ierr = EPSSetWhichEigenpairs(eps,EPS_ALL); CHKERRQ(ierr);
-	
-// 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-// 	Solve the eigensystem
-// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-// 	ierr = EPSSolve(eps);CHKERRQ(ierr);
-// 	/*
-// 	Optional: Get some information from the solver and display it
-// 	*/
-// 	ierr = EPSGetIterationNumber(eps,&its);CHKERRQ(ierr);
-// 	ierr = EPSGetType(eps,&type);CHKERRQ(ierr);
-// 	ierr = EPSGetDimensions(eps,&nev,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
-// 	ierr = EPSGetTolerances(eps,&tol,&maxit);CHKERRQ(ierr);
-	
-// 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-// 	Display solution and clean up
-// 	- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-// 	/* 
-// 	Get number of converged approximate eigenpairs
-// 	*/
-// 	ierr = EPSGetConverged(eps,nconv);CHKERRQ(ierr);
-	
-// 	if ((*nconv)>0) {
-// 		for (i=0;i<(*nconv);i++) {
-// 			ierr = EPSGetEigenpair(eps,i,&kr,&ki,xr,xi);CHKERRQ(ierr);
-// #if defined(PETSC_USE_COMPLEX)
-// 			re = PetscRealPart(kr);
-// 			im = PetscImaginaryPart(kr);
-// #else
-// 			re = kr;
-// 			im = ki;
-// #endif 
-// 			k2[(*nconv)-i-1] = re; // proper count of modes
-// 			ierr = VecGetArray(xr,&xr_);CHKERRQ(ierr);
-// 			for (j = 0; j < Nz_grid; j++) {
-// 				v[j][(*nconv)-i-1] = xr_[j]/sqrt(dz); //per Slepc the 2-norm of xr_ is=1; we need sum(v^2)*dz=1 hence the scaling xr_/sqrt(dz)
-// 			}
-// 			ierr = VecRestoreArray(xr,&xr_);CHKERRQ(ierr);
-// 		}
-// 	}
-
-// 	ierr = EPSDestroy(&eps);CHKERRQ(ierr);
-// 	ierr = MatDestroy(&A);  CHKERRQ(ierr);
-// 	ierr = VecDestroy(&xr); CHKERRQ(ierr);
-// 	ierr = VecDestroy(&xi); CHKERRQ(ierr); 
-
-	
-
-// 	return 0;
-// }
-
-
 
 int NCPA::ESSModeSolver::solve() {
-	//
-	// Declarations related to Slepc computations
-	//
-	/*
-	Mat            A;           // problem matrix
-	EPS            eps;         // eigenproblem solver context
-	ST             stx;
-	KSP            kspx;
-	PC             pcx;
-	EPSType        type;        // CHH 191022: removed const qualifier
-	PetscReal      re, im;
-	PetscScalar    kr, ki, *xr_;
-	Vec            xr, xi;
-	PetscInt       Istart, Iend, col[3], its, maxit, nconv;
-	PetscBool      FirstBlock=PETSC_FALSE, LastBlock=PETSC_FALSE;
-	PetscScalar    value[3];	
-	PetscErrorCode ierr;
-	PetscMPIInt    rank, size;
-	*/
 	PetscInt nconv;
 	PetscErrorCode ierr;
 

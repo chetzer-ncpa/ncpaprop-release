@@ -151,6 +151,16 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence_real", "Real part of ground impedence [rigid ground]" );
 	ps->addParameter( new NCPA::FloatParameter( "ground_impedence_imag", 0.0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence_imag", "Imaginary part of ground impedence [rigid ground]" );
+	ps->addParameter( new NCPA::IntegerParameter( "n_turbulence", 20 ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--n_turbulence", "Number of random turbulence phases to compute [20]" );
+	ps->addParameter( new NCPA::StringParameter( "turbulence_file" ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_file", "File containing 2*n_turbulence numbers in [0,1) range [randomize]" );
+	ps->addParameter( new NCPA::FloatParameter( "turbulence_scale_m", 100.0 ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_scale_m", "Turbulence scale (m) [100]" );
+	ps->addParameter( new NCPA::FloatParameter( "turbulence_t_factor", 1.0e-10 ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_t_factor", "Temperature factor for turbulence spectrum (m^-(2/3)) [1.0e-10]" );
+	ps->addParameter( new NCPA::FloatParameter( "turbulence_v_factor", 1.0e-8 ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_v_factor", "Wind velocity factor for turbulence spectrum (m^-(2/3)) [1.0e-8]" );
 	ps->addParameter( new NCPA::StringParameter( "topofile", "" ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--topofile", "File name containing topography [n/a]. Columns are #n# Range(km) Elevation(m) by default. #n# Units can be specified using header: #n#  #% r, km #n#  #% z, km" );
 	ps->addParameter( new NCPA::StringParameter( "starterfile", "" ) );
@@ -176,6 +186,10 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Flags", "--lossless", "Ignore atmospheric attenuation" );
 	ps->addParameter( new NCPA::FlagParameter( "topo" ) );
 	ps->addParameterDescription( "Flags", "--topo", "Use topography.  Requires presence of 'Z0' parameter in atmospheric files" );
+	ps->addParameter( new NCPA::FlagParameter( "turbulence" ) );
+	ps->addParameterDescription( "Flags", "--turbulence", "Include turbulence." );
+
+	// hidden parameters
 	ps->addParameter( new NCPA::FlagParameter( "disable_top_layer" ) );
 	ps->addParameter( new NCPA::FlagParameter( "broadband" ) );
 	//ps->addParameterDescription( "Flags", "--broadband", "Calculate at multiple frequencies" );

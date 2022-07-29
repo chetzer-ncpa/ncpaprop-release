@@ -772,6 +772,33 @@ void NCPA::Atmosphere1D::calculate_sound_speed_from_temperature(
 	delete [] c;
 }
 
+void NCPA::Atmosphere1D::calculate_temperature_from_sound_speed(
+	const std::string &new_key, const std::string &speed_key,
+	NCPA::units_t temp_units ) {
+
+	if (contains_key( new_key )) {
+		throw std::runtime_error( "Requested key " + new_key + " already exists in atmosphere" );
+	}
+
+	NCPA::AtmosphericProperty1D *c_prop = contents_.at( speed_key );
+	NCPA::units_t old_units = c_prop->get_units();
+	c_prop->convert_units( NCPA::UNITS_SPEED_METERS_PER_SECOND );
+	size_t nz_ = get_basis_length();
+	double *t = new double[ nz_ ];
+	for (size_t i = 0; i < nz_; i++) {
+		//c[ i ] = std::sqrt( GAMMA_FOR_C * R_FOR_C * t_prop->get( (*z_)[i] ) );
+		t[ i ] = NCPA::AtmosphericModel::temperature_from_soundspeed(
+			c_prop->get( (*z_)[i] ) );
+	}
+	c_prop->convert_units( old_units );
+
+	NCPA::Units::convert( t, nz_, NCPA::UNITS_TEMPERATURE_KELVIN,
+		temp_units, t );
+	add_property( new_key, nz_, t, temp_units );
+	delete [] t;
+}
+
+
 void NCPA::Atmosphere1D::calculate_sound_speed_from_pressure_and_density(
 		const std::string &new_key, const std::string &pressure_key,
 		const std::string &density_key, NCPA::units_t wind_units ) {

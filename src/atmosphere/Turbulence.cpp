@@ -113,7 +113,8 @@ void NCPA::Turbulence::set_velocity_factor( double t ) {
 }
 
 void NCPA::Turbulence::compute() {
-
+	// precompute G(k_n)=sqrt(4*pi*deltak*F(k_n)*k_n)
+	// from Salomons, p. 226, as used in J.24 and J.27
 	std::vector<double> F = von_karman_spectral_density();
 	G_[ 0 ] = std::sqrt( 4.0 * PI * F[ 0 ] * kvec_[ 0 ] );
 	for (size_t i = 1; i < N_; i++) {
@@ -134,6 +135,7 @@ double NCPA::Turbulence::get_alpha( size_t i ) const {
 	return alpha_[ i ];
 }
 
+// Salomons, Eq. I.54
 std::vector<double> NCPA::Turbulence::von_karman_spectral_density() {
 
 	double A = 3.300539063636137e-02;

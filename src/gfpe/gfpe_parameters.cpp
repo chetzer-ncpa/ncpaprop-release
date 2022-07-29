@@ -148,10 +148,10 @@ void NCPA::configure_gfpe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_scale_m", "Turbulence scale (m) [100]" );
 
 	ps->addParameter( new NCPA::FloatParameter( "turbulence_t_factor", 1.0e-10 ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_t_factor", "Temperature factor for turbulence spectrum (K) [1.0e-10]" );
+	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_t_factor", "Temperature factor for turbulence spectrum (m^-(2/3)) [1.0e-10]" );
 
 	ps->addParameter( new NCPA::FloatParameter( "turbulence_v_factor", 1.0e-8 ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_v_factor", "Wind velocity factor for turbulence spectrum (m/s) [1.0e-8]" );
+	ps->addParameterDescription( "Optional Parameters [default]", "--turbulence_v_factor", "Wind velocity factor for turbulence spectrum (m^-(2/3)) [1.0e-8]" );
 
 	ps->addParameter( new NCPA::FloatParameter( "k_min", 0.1 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--k_min", "Wavenumber filter minimum [0.1]" );
