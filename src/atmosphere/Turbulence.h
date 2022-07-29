@@ -15,6 +15,7 @@ namespace NCPA {
 
 	public:
 		Turbulence( size_t N );
+		Turbulence( const Turbulence &orig );
 		~Turbulence();
 
 		size_t size() const;

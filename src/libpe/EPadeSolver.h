@@ -154,9 +154,11 @@ namespace NCPA {
 
 		// turbulence
 		void calculate_turbulence( double r, size_t nz, double *z,
-			double k_a, double *&mu ) const;
-		void calculate_turbulence_orig( double r, size_t nz, double *z,
-			double k_a, double *&mu ) const;
+			double k_a, size_t ground_index, double *&mu ) const;
+		// void calculate_turbulence_topo( double r, size_t nz, double *z,
+		// 	double k_a, size_t ground_index, double *&mu ) const;
+		// void calculate_turbulence_orig( double r, size_t nz, double *z,
+		// 	double k_a, double *&mu ) const;
 		void setup_turbulence( std::vector<double> &rand1,
 			std::vector<double> &rand2 );
 		void cleanup_turbulence();

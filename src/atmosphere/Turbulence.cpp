@@ -16,6 +16,24 @@ NCPA::Turbulence::Turbulence( size_t N ) {
 	set_defaults();
 }
 
+NCPA::Turbulence::Turbulence( const NCPA::Turbulence &orig ) {
+	N_ = orig.size();
+	G_.reserve( N_ );
+	kvec_.reserve( N_ );
+	alpha_.reserve( N_ );
+	phases_.reserve( N_ );
+	set_defaults();
+
+	// copy members
+	G_ = orig.G_;
+	kvec_ = orig.kvec_;
+	phases_ = orig.phases_;
+	alpha_ = orig.alpha_;
+	Lt_ = orig.Lt_;
+	C_T_factor_ = orig.C_T_factor_;
+	C_v_factor_ = orig.C_v_factor_;
+}
+
 NCPA::Turbulence::~Turbulence() { }
 
 void NCPA::Turbulence::set_defaults() {
