@@ -33,7 +33,14 @@ This will download, configure, and build **PETSc** and **SLEPc** locally, within
 	arch-${OS}-c-real:     --with-scalar-type=real
 	arch-${OS}-c-complex:  --with-scalar-type=complex
 
-If you already have instances built of both **PETSc** and **SLEPc** using each of these two architectures, you can link to them instead of building them locally.  To do this, set the ``PETSC_DIR`` and ``SLEPC_DIR`` variables to the root directories of **PETSc** and **SLEPc**, and set the ``PETSC_ARCH_REAL`` and ``PETSC_ARCH_COMPLEX`` variables to the names of the architectures as they were built.  Then, you may use:
+If you already have instances built of both **PETSc** and **SLEPc** using each of these two architectures, you can link to them instead of building them locally.  To do this, set the ``PETSC_DIR`` and ``SLEPC_DIR`` variables to the root directories of **PETSc** and **SLEPc**, and set the ``PETSC_ARCH_REAL`` and ``PETSC_ARCH_COMPLEX`` variables to the names of the architectures as they were built.  For example:
+
+	export PETSC_DIR=/usr/local/lib/petsc
+	export SLEPC_DIR=/usr/local/lib/slepc
+	export PETSC_ARCH_REAL=arch-linux-c-real
+	export PETSC_ARCH_COMPLEX=arch-linux-c-complex
+
+Then, you may use:
 
 	./configure
 	
