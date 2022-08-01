@@ -1,13 +1,12 @@
 include @PETSC_INCLUDE_FILE_GENERIC@
 include @SLEPC_INCLUDE_FILE_GENERIC@
-
+include sources.make
 
 # the following provides CCPPFLAGS, CLINKER, CC_INCLUDES, SLEPC_INCLUDE, SLEPC_LIB
 #include $(SLEPC_DIR)/conf/slepc_common
 
 INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
-#SOURCES=anyoption.cpp binaryreader.cpp geographic.cpp util.cpp units.cpp parameterset.cpp
-SOURCES=BroadbandPropagator.cpp ModalBroadbandPropagator.cpp
+#SOURCES=BroadbandPropagator.cpp ModalBroadbandPropagator.cpp
 
 OBJS=$(SOURCES:.cpp=.o)
 TARGET=libbroadband.a

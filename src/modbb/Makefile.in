@@ -1,12 +1,13 @@
 include @PETSC_INCLUDE_FILE_GENERIC@
 include @SLEPC_INCLUDE_FILE_GENERIC@
-
+include sources.make
 
 # the following provides CCPPFLAGS, CLINKER, CC_INCLUDES, SLEPC_INCLUDE, SLEPC_LIB
 #include $(SLEPC_DIR)/conf/slepc_common
 
 INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
-OBJS=ModBB_main.o modbb_parameters.o #SolveModBB.o ProcessOptionsBB.o ModBB_lib.o
+#OBJS=ModBB_main.o modbb_parameters.o #SolveModBB.o ProcessOptionsBB.o ModBB_lib.o
+OBJS=$(SOURCES:.cpp=.o)
 TARGET=ModBB
 
 

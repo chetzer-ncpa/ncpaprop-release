@@ -4,14 +4,14 @@ PETSC_ARCH_COMPLEX=@PETSC_ARCH_COMPLEX@
 
 include @PETSC_INCLUDE_FILE_GENERIC@
 include @SLEPC_INCLUDE_FILE_GENERIC@
-
+include sources.make
 
 # the following provides CCPPFLAGS, CLINKER, CC_INCLUDES, SLEPC_INCLUDE, SLEPC_LIB
 #include $(SLEPC_DIR)/conf/slepc_common
 
 INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
-OBJS=Modess_main.o modess_parameters.o
-#ProcessOptionsNB.o 
+#OBJS=Modess_main.o modess_parameters.o
+OBJS=$(SOURCES:.cpp=.o)
 TARGET=Modess
 
 
