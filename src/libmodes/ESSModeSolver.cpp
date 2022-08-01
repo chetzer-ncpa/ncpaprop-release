@@ -91,6 +91,7 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 
 	azi_min     = azi;
 	atm_profile = atm_prof;
+	atm_profile->convert_altitude_units( Units::fromString( "m" ) );
 
 	// frequencies
 	if (param->getBool( "broadband" ) ) {
