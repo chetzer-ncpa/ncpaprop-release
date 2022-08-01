@@ -1,0 +1,1 @@
+SOURCES=WMod_main.cpp wmod_parameters.cpp
