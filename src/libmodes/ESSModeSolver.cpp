@@ -56,6 +56,7 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
   						= param->getBool( "append_dispersion_file" );
   	Nby2Dprop 			= param->getBool( "multiprop" );
   	turnoff_WKB 		= param->getBool( "turnoff_WKB" );
+  	write_lossless 		= param->getBool( "write_lossless" );
   	z_min_specified     = param->wasFound( "zground_km" );
   	user_tag			= param->getString( "filetag" );
   	if (user_tag.size() > 0) {
@@ -260,6 +261,7 @@ void NCPA::ESSModeSolver::printParams() {
 	printf("          gnd_imp_model : %s\n", gnd_imp_model.c_str());
 	printf("Lamb wave boundary cond : %d\n", Lamb_wave_BC);
 	printf("  SLEPc tolerance param : %g\n", tol);
+  	printf("    write_lossless flag : %d\n", write_lossless);
 	printf("    write_2d_tloss flag : %d\n", write_2D_TLoss);
 	printf("write_phase_speeds flag : %d\n", write_phase_speeds);
 	printf("      write_speeds flag : %d\n", write_speeds);
@@ -382,17 +384,28 @@ int NCPA::ESSModeSolver::solve() {
 			//
 			// Output data  
 			//
+			std::string fname_lossy = "", fname_lossless = "";
 			if (Nby2Dprop) { // if (N by 2D is requested)
+				fname_lossy = tag_filename(NCPAPROP_MODESS_FILENAME_1D_MULTIPROP);
+				fname_lossless = "";
+				if (write_lossless) {
+					fname_lossless = tag_filename(NCPAPROP_MODESS_FILENAME_1D_LOSSLESS_MULTIPROP);
+				}
 				getTLoss1DNx2(azi, select_modes, dz, Nrng_steps, rng_step, sourceheight, 
 					      receiverheight, rho, k_pert, v_s, Nby2Dprop, it,
-					      tag_filename("Nby2D_tloss_1d.nm"),
-					      tag_filename("Nby2D_tloss_1d.lossless.nm") );
+					      fname_lossy, fname_lossless );
 			}
 			else {
-				cout << "Writing to file: 1D transmission loss at the ground..." << endl;
+				cout << "Writing to file: 1D transmission loss" << endl;
+				fname_lossy = tag_filename( NCPAPROP_MODESS_FILENAME_1D );
+				std::cout << "Lossy: " << fname_lossy << std::endl;
+				fname_lossless = "";
+				if (write_lossless) {
+					fname_lossless = tag_filename( NCPAPROP_MODESS_FILENAME_1D_LOSSLESS );
+					std::cout << "Lossless: " << fname_lossless << std::endl;
+				}
 				getTLoss1D(select_modes, dz, Nrng_steps, rng_step, sourceheight, receiverheight, rho, 
-					   k_pert, v_s, tag_filename("tloss_1d.nm"),
-					   tag_filename("tloss_1d.lossless.nm") );
+					   k_pert, v_s, fname_lossy, fname_lossless );
 
 				if ( !modstartfile.empty() ) {
 					cout << "Writing to file: modal starter" << endl;
@@ -405,25 +418,37 @@ int NCPA::ESSModeSolver::solve() {
 				}
 
 				if (write_2D_TLoss) {
-					cout << "Writing to file: 2D transmission loss...\n";
+					std::cout << "Writing to file: 2D transmission loss" << std::endl;
+					fname_lossy = tag_filename( NCPAPROP_MODESS_FILENAME_2D );
+					std::cout << "Lossy: " << fname_lossy << std::endl;
+					fname_lossless = "";
+					if (write_lossless) {
+						fname_lossless = tag_filename( NCPAPROP_MODESS_FILENAME_2D_LOSSLESS );
+						std::cout << "Lossless: " << fname_lossless << std::endl;
+					}
 					getTLoss2D(Nz_grid,select_modes,dz,Nrng_steps,rng_step,sourceheight,rho, 
-						   k_pert,v_s, tag_filename("tloss_2d.nm") );
+						   k_pert,v_s, fname_lossy, fname_lossless );
 				}
 
 				if (write_phase_speeds) {
-					cout << "Writing to file: phase speeds...\n";
-					writePhaseSpeeds(select_modes,freq,k_pert);
+					std::cout << "Writing to file: phase speeds" << std::endl;
+					writePhaseSpeeds( select_modes, freq, k_pert,
+						tag_filename(NCPAPROP_MODESS_FILENAME_PHASE_SPEEDS) );
 				}
 
 				if (write_modes) {
 					cout << "Writing to file: the modes and the phase and group speeds...\n";
-					writeEigenFunctions(Nz_grid,select_modes,dz,v_s);
-					writePhaseAndGroupSpeeds(Nz_grid, dz, select_modes, freq, k_pert, v_s, c_eff);
+					writeEigenFunctions(Nz_grid,select_modes,dz,v_s,"nm");
+					writePhaseAndGroupSpeeds(Nz_grid, dz, select_modes, freq,
+						k_pert, v_s, c_eff,
+						tag_filename(NCPAPROP_MODESS_FILENAME_PHASE_AND_GROUP_SPEEDS));
 				}
 	        
 				if ((write_speeds) &&  !(write_modes)) {
 					cout << "Writing to file: the modal phase speeds and the group speeds...\n";
-					writePhaseAndGroupSpeeds(Nz_grid, dz, select_modes, freq, k_pert, v_s, c_eff);
+					writePhaseAndGroupSpeeds(Nz_grid, dz, select_modes, freq,
+						k_pert, v_s, c_eff,
+						tag_filename(NCPAPROP_MODESS_FILENAME_PHASE_AND_GROUP_SPEEDS));
 				}        
 
 				if (!dispersion_file.empty()) {
@@ -441,7 +466,8 @@ int NCPA::ESSModeSolver::solve() {
 				}
 
 				if (write_atmosphere && (fi == 0)) {
-		            std::string atm_output_filename = tag_filename("atm_profile.nm");
+		            std::string atm_output_filename =
+		            	tag_filename(NCPAPROP_MODESS_FILENAME_ATMOSPHERE);
 		            std::cout << "Writing atmosphere to "
 		              << atm_output_filename << std::endl;
 		            std::vector<std::string> keylist;
@@ -643,7 +669,7 @@ int NCPA::ESSModeSolver::doSelect(int nz, int n_modes, double k_min, double k_ma
 // this in turn will make 'pape' agree with modess output
 void NCPA::ESSModeSolver::getModalStarter(int nz, int select_modes, double dz, double freq,  
 	double z_src, double z_rcv, double *rho, complex<double> *k_pert, double **v_s, 
-	string modstartfile) {
+	const std::string &modstartfile) {
 
 	// computes the modal starter field useful to ingest in a subsequent PE run.
 	// The formula for the modal starter as in Ocean Acoustics, 1994 ed. eq. 6.72, pg. 361:
@@ -697,13 +723,15 @@ void NCPA::ESSModeSolver::getModalStarter(int nz, int select_modes, double dz, d
 }
 
 // compute/save the group and phase speeds
-int NCPA::ESSModeSolver::writePhaseAndGroupSpeeds(int nz, double dz, int select_modes, double freq, 
-	complex<double> *k_pert, double **v_s, double *c_eff) {
+int NCPA::ESSModeSolver::writePhaseAndGroupSpeeds(int nz, double dz,
+	int select_modes, double freq, std::complex<double> *k_pert,
+	double **v_s, double *c_eff, const std::string &filename) {
+
 	int j, n;
 	double v_phase, v_group;
 	double omega = 2*PI*freq;
   
-	FILE *speeds= fopen(tag_filename("speeds.nm").c_str(), "w");
+	FILE *speeds= fopen(filename.c_str(), "w");
 	for (j=0; j< select_modes; j++) {
 		v_phase = omega/real(k_pert[j]);
       
@@ -719,6 +747,6 @@ int NCPA::ESSModeSolver::writePhaseAndGroupSpeeds(int nz, double dz, int select_
 	}
 	fclose(speeds);
 	printf("           Phase and group speeds saved in file %s.\n",
-		tag_filename("speeds.nm").c_str());
+		filename.c_str());
 	return 0;
 }

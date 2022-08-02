@@ -305,8 +305,11 @@ int NCPA::ModeSolver::getTLoss1D(int select_modes, double dz, int n_r, double dr
   
 	sqrtrho_ratio  = sqrt(rho[n_zrcv]/rho[n_zsrc]);
   
-	FILE *tloss_1d    = fopen( filename_lossy.c_str(), "w");
-	FILE *tloss_ll_1d = fopen( filename_lossless.c_str(), "w");
+    FILE *tloss_1d, *tloss_ll_1d;
+	tloss_1d    = fopen( filename_lossy.c_str(), "w");
+	if (write_lossless) {
+		tloss_ll_1d = fopen( filename_lossless.c_str(), "w");
+	}
 	// @todo check that files were opened properly
 
 	for (i=0; i<n_r; i++) {
@@ -316,59 +319,54 @@ int NCPA::ModeSolver::getTLoss1D(int select_modes, double dz, int n_r, double dr
 		modal_sum_i    = 0;      
 		modal_sum_i_ll = 0;
       
-		// Use the commented lines if the modes must be scaled by sqrt(rho)
-		// @todo under what conditions will this be the case?  If never, we should remove entirely
-		/*
-		if (1) {
-		//cout << sqrtrho_ratio << endl;
-		for (m=0; m<select_modes; m++) {
-		modal_sum_c    = modal_sum_c + v_s[n_zsrc][m]*v_s[n_zrcv][m]*sqrtrho_ratio*exp(I*k_pert[m]*r)/sqrt(k_pert[m]);
-		modal_sum_c_ll = modal_sum_c_ll + v_s[n_zsrc][m]*v_s[n_zrcv][m]*sqrtrho_ratio*exp(I*real(k_pert[m])*r)/sqrt(real(k_pert[m]));
-          
-		modal_sum_i    = modal_sum_i + pow(v_s[n_zsrc][m]*v_s[n_zrcv][m]*sqrtrho_ratio,2)*exp(-2*imag(k_pert[m])*r)/abs(k_pert[m]);
-		modal_sum_i_ll = modal_sum_i_ll + pow(v_s[n_zsrc][m]*v_s[n_zrcv][m]*sqrtrho_ratio,2)/real(k_pert[m]);
-		}
-		}
-		*/
-
-		// here we save the modal sum; the reduced pressure is: 
+		// here we save the modal sum; the reduced pressure is:
 		//     p_red(r,z) =modal_sum/(4*pi*sqrt(rho(zs)))= p(r,z)/sqrt(rho(z))
 		for (m=0; m<select_modes; m++) {    
 			modal_sum_c    = modal_sum_c + v_s[n_zsrc][m] * v_s[n_zrcv][m]
 					 * exp(I*k_pert[m]*r) / sqrt(k_pert[m]);
-			modal_sum_c_ll = modal_sum_c_ll + v_s[n_zsrc][m] * v_s[n_zrcv][m]
-					 * exp(I*real(k_pert[m])*r) / sqrt(real(k_pert[m]));
-			modal_sum_i    = modal_sum_i + pow(v_s[n_zsrc][m]*v_s[n_zrcv][m],2) 
+			modal_sum_i    = modal_sum_i + pow(v_s[n_zsrc][m]*v_s[n_zrcv][m],2)
 					 * exp(-2*imag(k_pert[m])*r) / abs(k_pert[m]);
-			modal_sum_i_ll = modal_sum_i_ll + pow(v_s[n_zsrc][m]*v_s[n_zrcv][m],2)
+
+			if (write_lossless) {
+				modal_sum_c_ll = modal_sum_c_ll + v_s[n_zsrc][m] * v_s[n_zrcv][m]
+					 * exp(I*real(k_pert[m])*r) / sqrt(real(k_pert[m]));
+				modal_sum_i_ll = modal_sum_i_ll + pow(v_s[n_zsrc][m]*v_s[n_zrcv][m],2)
 					 / real(k_pert[m]);
+			}
+
 		}
       
 		// no sqrt(rho[n_zrcv]/rho[n_zsrc]) factor
-		if (1) {
-			modal_sum_c    = expov8pi*modal_sum_c/sqrt(r);
+		// if (1) {
+		modal_sum_c    = expov8pi*modal_sum_c/sqrt(r);
+		modal_sum_i    = 4*PI*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
+		if (write_lossless) {
 			modal_sum_c_ll = expov8pi*modal_sum_c_ll/sqrt(r);
-			modal_sum_i    = 4*PI*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
 			modal_sum_i_ll = 4*PI*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
 		}
+		// }
       
 		// sqrt(rho[n_zrcv]/rho[n_zsrc]) factor added
-		if (0) {
-			modal_sum_c    = sqrtrho_ratio*expov8pi*modal_sum_c/sqrt(r);
-			modal_sum_c_ll = sqrtrho_ratio*expov8pi*modal_sum_c_ll/sqrt(r);
-			modal_sum_i    = 4*PI*sqrtrho_ratio*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
-			modal_sum_i_ll = 4*PI*sqrtrho_ratio*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
-		}      
+		// if (0) {
+		// 	modal_sum_c    = sqrtrho_ratio*expov8pi*modal_sum_c/sqrt(r);
+		// 	modal_sum_c_ll = sqrtrho_ratio*expov8pi*modal_sum_c_ll/sqrt(r);
+		// 	modal_sum_i    = 4*PI*sqrtrho_ratio*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
+		// 	modal_sum_i_ll = 4*PI*sqrtrho_ratio*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
+		// }
 
 		fprintf(tloss_1d,"%f %20.12e %20.12e %20.12e\n", r/1000.0, real(modal_sum_c), 
 			imag(modal_sum_c), modal_sum_i);
-		fprintf(tloss_ll_1d,"%f %20.12e %20.12e %20.12e\n", r/1000.0, real(modal_sum_c_ll), 
-			imag(modal_sum_c_ll), modal_sum_i_ll);
+		if (write_lossless) {
+			fprintf(tloss_ll_1d,"%f %20.12e %20.12e %20.12e\n", r/1000.0, real(modal_sum_c_ll),
+				imag(modal_sum_c_ll), modal_sum_i_ll);
+		}
 	}
 	fclose(tloss_1d);
-	fclose(tloss_ll_1d);
 	printf("           file %s created\n", filename_lossy.c_str() );
-	printf("           file %s created\n", filename_lossless.c_str() );
+	if (write_lossless) {
+		fclose(tloss_ll_1d);
+		printf("           file %s created\n", filename_lossless.c_str() );
+	}
 	return 0;
 }
 
@@ -402,11 +400,15 @@ int NCPA::ModeSolver::getTLoss1DNx2(double azimuth, int select_modes, double dz,
 	
 	if (iter==0) {
 		tloss_1d    = fopen(filename_lossy.c_str(),"w");
-		tloss_ll_1d = fopen(filename_lossless.c_str(),"w");
+		if (write_lossless) {
+			tloss_ll_1d = fopen(filename_lossless.c_str(),"w");
+		}
 	}
 	else {  // append
 		tloss_1d    = fopen(filename_lossy.c_str(),"a");
-		tloss_ll_1d = fopen(filename_lossless.c_str(),"a");
+		if (write_lossless) {
+			tloss_ll_1d = fopen(filename_lossless.c_str(),"a");
+		}
 	}
 	// @todo make sure files were opened properly
 
@@ -432,48 +434,54 @@ int NCPA::ModeSolver::getTLoss1DNx2(double azimuth, int select_modes, double dz,
 		for (m=0; m<select_modes; m++) {
 			modal_sum_c    = modal_sum_c 
 				+ (v_s[n_zsrc][m] * v_s[n_zrcv][m] * exp(I*k_pert[m]*r) / sqrt(k_pert[m]));
-			modal_sum_c_ll = modal_sum_c_ll 
-				+ v_s[n_zsrc][m]*v_s[n_zrcv][m]*exp(I*real(k_pert[m])*r)/sqrt(real(k_pert[m]));
-			modal_sum_i    = modal_sum_i    
+			modal_sum_i    = modal_sum_i
 				+ pow(v_s[n_zsrc][m]*v_s[n_zrcv][m],2)*exp(-2*imag(k_pert[m])*r)/abs(k_pert[m]);
-			modal_sum_i_ll = modal_sum_i_ll + pow(v_s[n_zsrc][m]*v_s[n_zrcv][m],2)/real(k_pert[m]);
+			if (write_lossless) {
+				modal_sum_c_ll = modal_sum_c_ll
+					+ v_s[n_zsrc][m]*v_s[n_zrcv][m]*exp(I*real(k_pert[m])*r)/sqrt(real(k_pert[m]));
+				modal_sum_i_ll = modal_sum_i_ll + pow(v_s[n_zsrc][m]*v_s[n_zrcv][m],2)/real(k_pert[m]);
+			}
 		}
       
       
 		// no sqrt(rho[n_zrcv]/rho[n_zsrc]) factor
 		// @todo Need programmatic logic to determine which branch to take, or remove one
-		if (1) {
-			modal_sum_c    = expov8pi*modal_sum_c/sqrt(r);
+		modal_sum_c    = expov8pi*modal_sum_c/sqrt(r);
+		modal_sum_i    = 4*PI*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
+		if (write_lossless) {
 			modal_sum_c_ll = expov8pi*modal_sum_c_ll/sqrt(r);
-			modal_sum_i    = 4*PI*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
 			modal_sum_i_ll = 4*PI*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
 		}
+
       
 		// sqrt(rho[n_zrcv]/rho[n_zsrc]) factor added
-		if (0) {
-			modal_sum_c    = sqrtrho_ratio*expov8pi*modal_sum_c/sqrt(r);
-			modal_sum_c_ll = sqrtrho_ratio*expov8pi*modal_sum_c_ll/sqrt(r);
-			modal_sum_i    = 4*PI*sqrtrho_ratio*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
-			modal_sum_i_ll = 4*PI*sqrtrho_ratio*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
-		}       
+		// if (0) {
+		// 	modal_sum_c    = sqrtrho_ratio*expov8pi*modal_sum_c/sqrt(r);
+		// 	modal_sum_c_ll = sqrtrho_ratio*expov8pi*modal_sum_c_ll/sqrt(r);
+		// 	modal_sum_i    = 4*PI*sqrtrho_ratio*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
+		// 	modal_sum_i_ll = 4*PI*sqrtrho_ratio*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
+		// }
       
 		fprintf(tloss_1d,"%10.3f %8.3f %20.12e %20.12e %20.12e\n", r/1000.0, 
 			azimuth, real(modal_sum_c), imag(modal_sum_c), modal_sum_i);
-		fprintf(tloss_ll_1d,"%10.3f %8.3f %20.12e %20.12e %20.12e\n", r/1000.0, 
-			azimuth, real(modal_sum_c_ll), imag(modal_sum_c_ll), modal_sum_i_ll);
+		if (write_lossless) {
+			fprintf(tloss_ll_1d,"%10.3f %8.3f %20.12e %20.12e %20.12e\n", r/1000.0,
+				azimuth, real(modal_sum_c_ll), imag(modal_sum_c_ll), modal_sum_i_ll);
+		}
 	}
 	fprintf(tloss_1d, "\n");
-	fprintf(tloss_ll_1d, "\n");
-  
 	fclose(tloss_1d);
-	fclose(tloss_ll_1d);
+	if (write_lossless) {
+		fprintf(tloss_ll_1d, "\n");
+		fclose(tloss_ll_1d);
+	}
 	return 0;
 }
 
 // 20150603 DV added code to account for sqrt(rho_rcv/rho_src) if so chosen
 int NCPA::ModeSolver::getTLoss2D(int nz, int select_modes, double dz, int n_r, double dr, 
 	double z_src, double *rho, complex<double> *k_pert, double **v_s, 
-	std::string filename_lossy) {
+	std::string filename_lossy, std::string filename_lossless ) {
 
 	// !!! note the modes assumed here are the modes in Oc. Acoust. divided by sqrt(rho(z))
 	// Thus the formula for (physical) pressure is:
@@ -484,7 +492,7 @@ int NCPA::ModeSolver::getTLoss2D(int nz, int select_modes, double dz, int n_r, d
 	int i, j, m, stepj;
 	int n_zsrc = (int) ceil(z_src/dz);
 	double r, z, sqrtrhoj, rho_atzsrc;
-	complex<double> modal_sum;
+	complex<double> modal_sum, modal_sum_ll;
 	complex<double> I (0.0, 1.0);
 	
 	// the 4*PI factor ensures that the modal sum below ends up being the actual TL
@@ -497,44 +505,52 @@ int NCPA::ModeSolver::getTLoss2D(int nz, int select_modes, double dz, int n_r, d
 		stepj = 10;	// ensure it's never 0; necessary for the loop below
 	}
 
-	FILE *tloss_2d = fopen(filename_lossy.c_str(),"w");
+	FILE *tloss_2d, *tloss_2d_ll;
+	tloss_2d = fopen(filename_lossy.c_str(),"w");
+	if (write_lossless) {
+		tloss_2d_ll = fopen(filename_lossless.c_str(), "w" );
+	}
 
 	for (i=0; i<n_r; i++) {
 		r = (i+1)*dr;
 		for (j=0; j<nz; j=j+stepj) {
 			z = (j)*dz;
 			sqrtrhoj = sqrt(rho[j]);
-			modal_sum = 0.;
+			modal_sum = 0.0;
+			modal_sum_ll = 0.0;
           
 			// Use the commented lines if the modes must be scaled by sqrt(rho)
-			// @todo do we need these?
-			/*
-			if (1) {
 			for (m=0; m<select_modes; m++) {
-			modal_sum = modal_sum + v_s[n_zsrc][m]*v_s[j][m]*sqrtrhoj*exp(I*k_pert[m]*r)/sqrt(k_pert[m]);
-			}
-			modal_sum = expov8pi*modal_sum/sqrt(r*rho_atzsrc);
-			}
-			*/
-                  
-			for (m=0; m<select_modes; m++) {
-				modal_sum = modal_sum + v_s[n_zsrc][m]*v_s[j][m]*exp(I*k_pert[m]*r)/sqrt(k_pert[m]);
+				modal_sum = modal_sum + v_s[n_zsrc][m]*v_s[j][m]
+					*exp(I*k_pert[m]*r)/sqrt(k_pert[m]);
+				if (write_lossless) {
+					modal_sum_ll += v_s[n_zsrc][m]*v_s[j][m]
+						* std::exp(I*k_pert[m].real()*r) / std::sqrt(k_pert[m].real());
+				}
 			}
 			modal_sum = expov8pi*modal_sum/sqrt(r); // no sqrt(rho[n_zrcv]/rho[n_zsrc]) factor
+			if (write_lossless) {
+				modal_sum_ll *= expov8pi / std::sqrt(r);
+			}
 
-			// @todo do we need this?
-			if (0) {
-				// sqrt(rho[n_zrcv]/rho[n_zsrc]) factor added
-				modal_sum = sqrtrhoj/sqrt(rho_atzsrc)*modal_sum/sqrt(r);
-			}           
-
-			fprintf(tloss_2d,"%f %f %15.8e %15.8e\n", r/1000.0, z/1000.0, 
+			fprintf(tloss_2d,"%f %f %15.8e %15.8e\n", r/1000.0, z/1000.0,
 				real(modal_sum), imag(modal_sum));
+			if (write_lossless) {
+				fprintf(tloss_2d_ll,"%f %f %15.8e %15.8e\n", r/1000.0, z/1000.0,
+					real(modal_sum_ll), imag(modal_sum_ll));
+			}
 		}
 		fprintf(tloss_2d,"\n");
+		if (write_lossless) {
+			fprintf(tloss_2d_ll,"\n");
+		}
 	}
 	fclose(tloss_2d);
 	printf("           file %s created\n", filename_lossy.c_str() );
+	if (write_lossless) {
+		fclose(tloss_2d_ll);
+		printf("           file %s created\n", filename_lossless.c_str() );
+	}
 	return 0;
 }
 
@@ -574,22 +590,23 @@ int NCPA::ModeSolver::writeDispersion(int select_modes, double dz, double z_src,
 }
  
 
-int NCPA::ModeSolver::writePhaseSpeeds(int select_modes, double freq, complex<double> *k_pert)
-{
+int NCPA::ModeSolver::writePhaseSpeeds(int select_modes, double freq,
+	complex<double> *k_pert, const std::string &filename ) {
 	int j;
-	FILE *phasespeeds= fopen(tag_filename("phasespeeds.nm").c_str(), "w");
+	FILE *phasespeeds= fopen(filename.c_str(), "w");
 	// @todo check to see if file is opened
 	for (j=0; j< select_modes; j++) {
 		fprintf(phasespeeds, "%d %f %15.8e\n", j, (2*PI*freq)/real(k_pert[j]), imag(k_pert[j]));
 	}
 	fclose(phasespeeds);
-	printf("           file %s created\n",tag_filename("phasespeeds.nm").c_str());
+	printf("           file %s created\n",filename.c_str());
 	return 0;
 }
 
 
 
-int NCPA::ModeSolver::writeEigenFunctions(int nz, int select_modes, double dz, double **v_s)
+int NCPA::ModeSolver::writeEigenFunctions(int nz, int select_modes,
+	double dz, double **v_s, const std::string &file_extension)
 {
 	char mode_output[40];
 	int j, n;
@@ -597,7 +614,7 @@ int NCPA::ModeSolver::writeEigenFunctions(int nz, int select_modes, double dz, d
 	double dz_km = dz/1000.0;
 
 	for (j=0; j<select_modes; j++) {
-		sprintf(mode_output,"mode_%d.nm", j);
+		sprintf(mode_output,"mode_%d.%s", j, file_extension.c_str());
 		FILE *eigenfunction= fopen(tag_filename(mode_output).c_str(), "w");
 		chk = 0.0;
 		for (n=0; n<nz; n++) {
@@ -609,7 +626,7 @@ int NCPA::ModeSolver::writeEigenFunctions(int nz, int select_modes, double dz, d
 		}
 		fclose(eigenfunction);
 	}
-	printf("           files mode_<mode_number> created (%d in total)\n", select_modes);  
+	printf("           %d mode files created\n", select_modes);
 	return 0;
 }
 

@@ -21,12 +21,7 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addHeaderTextVerbatim("|                    Attenuation added perturbatively                      |");
 	ps->addHeaderTextVerbatim("----------------------------------------------------------------------------");
 	ps->addBlankHeaderLine();
-	ps->addHeaderText("By default the program computes the 1D transmission loss (TL) at the ground or the specified receiver height and saves the data to 2 files:" );
-	ps->setHeaderIndent( 4 );
-	ps->addHeaderText("file tloss_1d.nm - considering attenuation in the atmosphere" );
-	ps->addHeaderText("file tloss_1d.lossless.nm  - no attenuation" );
-	ps->resetHeaderIndent();
-	ps->addHeaderText("Additionally, if the flag --write_2d_tloss is present on the command line, the 2D TL is saved to file tloss_2d.nm. The user can also choose to propagate in N different directions i.e. (N by 2D mode) by using the option --multiprop.");
+	ps->addHeaderText("This program computes the 1D transmission loss (TL) using an effective-sound-speed normal mode technique.  The computed loss is output in one or more files as controlled by user-supplied flags.  Default filenames and their contents are detailed below." );
 	ps->addBlankHeaderLine();
 	ps->addHeaderText("The options below can be specified in a colon-separated file \"modess.param\" or at the command line. Command-line options override file options.");
 
@@ -45,11 +40,6 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::StringParameter( "atmosfile" ) );
 	ps->addTest( new NCPA::RequiredTest( "atmosfile" ) );
 	ps->addParameterDescription( "Required Parameters", "--atmosfile", "Atmospheric profile filename" );
-/*
-	ps->addParameter( new NCPA::StringParameter( "atmosfileorder" ) );
-	ps->addTest( new NCPA::RequiredTest( "atmosfileorder" ) );
-	ps->addParameterDescription( "Required Parameters", "--atmosfileorder", "The order of the (z,u,v,w,t,d,p) fields in --atmosfile. The units assumed in the ASCII file are z[km], t [kelvin], d [g/cm^3], p [hectoPa]. The wind speeds are in m/s by default; however if the winds are given in km/s then use option --wind_units kmpersec");
-*/
 
 	ps->addParameter( new NCPA::FloatParameter( "freq" ) );
 	ps->addTest( new NCPA::RequiredTest( "freq" ) );
@@ -57,12 +47,6 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Required Parameters", "--freq", "Frequency of analysis (Hz)" );
 
 	// optional parameters
-	/*
-	ps->addParameter( new NCPA::IntegerParameter( "skiplines", 0 ) );
-	ps->addTest( new NCPA::IntegerGreaterThanOrEqualToTest( "skiplines", 0 ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--skiplines", "Number of header lines to skip in --atmosfile [0]" );
-	*/
-
 	ps->addParameter( new NCPA::StringParameter( "atmosheaderfile", "" ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--atmosheaderfile", "External header file, overrides internal header [None]" );
 
@@ -163,6 +147,9 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::FlagParameter( "write_2d_tloss" ) );
 	ps->addParameterDescription( "Flags", "--write_2d_tloss", "Output 2-D transmission loss to tloss_2d.nm" );
 
+	ps->addParameter( new NCPA::FlagParameter( "write_lossless" ) );
+	ps->addParameterDescription( "Flags", "--write_lossless", "Output lossless as well as lossy results (i.e. omitting atmospheric attenuation).");
+
 	ps->addParameter( new NCPA::FlagParameter( "write_phase_speeds" ) );
 	ps->addParameterDescription( "Flags", "--write_phase_speeds", "Output phase speeds to phasespeeds.nm" );
 
@@ -171,9 +158,6 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 
 	ps->addParameter( new NCPA::FlagParameter( "write_modes" ) );
 	ps->addParameterDescription( "Flags", "--write_modes", "Output modes to mode_###.nm.  Also implies --write_speeds" );
-
-	//ps->addParameter( new NCPA::FlagParameter( "write_dispersion" ) );
-	//ps->addParameterDescription( "Flags", "--write_dispersion", "Output dispersion to dispersion_FFF.nm" );
 
 	ps->addParameter( new NCPA::FlagParameter( "write_atm_profile" ) );
 	ps->addParameterDescription( "Flags", "--write_atm_profile", "Output atmospheric profile to atm_profile.nm" );
@@ -185,17 +169,14 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Flags", "--turnoff_WKB", "Turn off the WKB least phase speed estimation" );
 
 	ps->addParameter( new NCPA::FlagParameter( "wvnum_filter" ) );
-	//ps->addUsageLine( "  --wvnum_filter          Use wavenumber filter by phase speed.  Requires:" );
 	ps->addParameterDescription( "Flags", "--wvnum_filter", "Use wavenumber filter by phase speed.  Requires --c_min and --c_max" );
 
 	ps->addParameter( new NCPA::FloatParameter( "c_min" ) );
 	ps->addTest( new NCPA::FloatGreaterThanTest( "c_min", 0.0 ) );
 	ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "c_min", "wvnum_filter" ) );
-	//ps->addUsageLine( "    --c_min               Minimum phase speed to keep" );
 	ps->addParameter( new NCPA::FloatParameter( "c_max" ) );
 	ps->addTest( new NCPA::FloatGreaterThanTest( "c_max", 0.0 ) );
 	ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "c_max", "wvnum_filter" ) );
-	//ps->addUsageLine( "    --c_max               Maximum phase speed to keep" );
 	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
 	ps->addParameterDescription( "Flags", "--c_min", "Minimum phase speed to keep" );
 	ps->addParameterDescription( "Flags", "--c_max", "Maximum phase speed to keep" );
@@ -212,9 +193,10 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addBlankFooterLine();
 	ps->addFooterText("OUTPUT Files:  Format description (column order):");
 	ps->addFooterTextVerbatim("  tloss_1d.nm:                 r, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
-	ps->addFooterTextVerbatim("  tloss_1d.lossless.nm:");
+	ps->addFooterTextVerbatim("  tloss_1d.lossless.nm:        r, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
 	ps->addFooterTextVerbatim("  tloss_2d.nm:                 r, z, 4*PI*Re(P), 4*PI*Im(P)");
-	ps->addFooterTextVerbatim("  Nby2D_tloss_1d.nm:");
+	ps->addFooterTextVerbatim("  tloss_2d.lossless.nm:        r, z, 4*PI*Re(P), 4*PI*Im(P)");
+	ps->addFooterTextVerbatim("  Nby2D_tloss_1d.nm:           r, theta, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
 	ps->addFooterTextVerbatim("  Nby2D_tloss_1d.lossless.nm:  r, theta, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
 	ps->addFooterTextVerbatim("  phasespeeds.nm:              Mode#, phase speed [m/s], imag(k)");
 	ps->addFooterTextVerbatim("  speeds.nm:                   Mode#, phase speed [m/s], group speed [m/s], imag(k)");
