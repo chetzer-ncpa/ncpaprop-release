@@ -16,17 +16,12 @@ void NCPA::configure_wmod_parameter_set( NCPA::ParameterSet *ps ) {
 	// Add header instructions
 	ps->addHeaderTextVerbatim("----------------------------------------------------------------------------");
 	ps->addHeaderTextVerbatim("|                             NCPA Infrasound                              |");
-	ps->addHeaderTextVerbatim("|                Wide Angle High-Mach Number Normal Modes                  |");
+	ps->addHeaderTextVerbatim("|                Wide Angle High-Mach-Number Normal Modes                  |");
 	ps->addHeaderTextVerbatim("|                            Single Frequency                              |");
 	ps->addHeaderTextVerbatim("|                    Attenuation added perturbatively                      |");
 	ps->addHeaderTextVerbatim("----------------------------------------------------------------------------");
 	ps->addBlankHeaderLine();
-	ps->addHeaderText("By default the program computes the 1D transmission loss (TL) at the ground or the specified receiver height and saves the data to 2 files:" );
-	ps->setHeaderIndent( 4 );
-	ps->addHeaderText("file wtloss_1d.nm - considering attenuation in the atmosphere" );
-	ps->addHeaderText("file wtloss_1d.lossless.nm  - no attenuation" );
-	ps->resetHeaderIndent();
-	ps->addHeaderText("Additionally, if the flag --write_2d_tloss is present on the command line, the 2D TL is saved to file wtloss2d.nm. The user can also choose to propagate in N different directions i.e. (N by 2D mode) by using the option --multiprop.");
+	ps->addHeaderText("This program computes the 1D transmission loss (TL) using a wide-angle high-mach-number normal mode technique.  The computed loss is output in one or more files as controlled by user-supplied flags.  Default filenames and their contents are detailed below." );
 	ps->addBlankHeaderLine();
 	ps->addHeaderText("The options below can be specified in a colon-separated file \"wmod.param\" or at the command line. Command-line options override file options.");
 
@@ -147,6 +142,9 @@ void NCPA::configure_wmod_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::FlagParameter( "write_2d_tloss" ) );
 	ps->addParameterDescription( "Flags", "--write_2d_tloss", "Output 2-D transmission loss to tloss2D.nm" );
 
+	ps->addParameter( new NCPA::FlagParameter( "write_lossless" ) );
+	ps->addParameterDescription( "Flags", "--write_lossless", "Output lossless as well as lossy results (i.e. omitting atmospheric attenuation).");
+
 	ps->addParameter( new NCPA::FlagParameter( "write_phase_speeds" ) );
 	ps->addParameterDescription( "Flags", "--write_phase_speeds", "Output phase speeds to phasespeeds.nm" );
 
@@ -188,18 +186,19 @@ void NCPA::configure_wmod_parameter_set( NCPA::ParameterSet *ps ) {
 	// Footer with file formats and sample commands
 	ps->addBlankFooterLine();
 	ps->addFooterText("OUTPUT Files:  Format description (column order):");
-	ps->addFooterTextVerbatim("  wtloss_1d.nm:                 r, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
-	ps->addFooterTextVerbatim("  wtloss_1d.lossless.nm:");
-	ps->addFooterTextVerbatim("  wtloss_2d.nm:                 r, z, 4*PI*Re(P), 4*PI*Im(P)");
-	ps->addFooterTextVerbatim("  Nby2D_wtloss_1d.nm:");
-	ps->addFooterTextVerbatim("  Nby2D_wtloss_1d.lossless.nm:  r, theta, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
-	ps->addFooterTextVerbatim("  wphasespeeds.nm:              Mode#, phase speed [m/s], imag(k)");
-	ps->addFooterTextVerbatim("  wmode_<mode_count>.nm         z, (Mode amplitude)");
-	ps->addFooterTextVerbatim("  wdispersion_<freq>.nm         Contains one line with entries:");
+	ps->addFooterTextVerbatim("  tloss_1d.wnm:                r, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
+	ps->addFooterTextVerbatim("  tloss_1d.lossless.wnm:       r, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
+	ps->addFooterTextVerbatim("  tloss_2d.wnm:                r, z, 4*PI*Re(P), 4*PI*Im(P)");
+	ps->addFooterTextVerbatim("  tloss_2d.lossless.wnm:       r, z, 4*PI*Re(P), 4*PI*Im(P)");
+	ps->addFooterTextVerbatim("  Nby2D_tloss_1d.wnm:          r, theta, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
+	ps->addFooterTextVerbatim("  Nby2D_tloss_1d.lossless.wnm: r, theta, 4*PI*Re(P), 4*PI*Im(P), (incoherent TL)");
+	ps->addFooterTextVerbatim("  phasespeeds.wnm:             Mode#, phase speed [m/s], imag(k)");
+	ps->addFooterTextVerbatim("  mode_<mode_count>.wnm        z, (Mode amplitude)");
+	ps->addFooterTextVerbatim("  dispersion_<freq>.wnm        Contains one line with entries:");
 	ps->addFooterTextVerbatim("                               freq, (# of modes), rho(z_src), rho(z_rcv)");
 	ps->addFooterTextVerbatim("                               followed for each mode 'i' by quadruples:");
 	ps->addFooterTextVerbatim("                               real(k(i)), imag(k(i)), Mode(i)(z_src), Mode(i)(z_rcv)");
-	ps->addFooterTextVerbatim("  atm_profile.nm               z,u,v,w,t,d,p,c,c_eff");
+	ps->addFooterTextVerbatim("  atm_profile.wnm              z,u,v,t,d,p,c,c_eff");
 	ps->addBlankFooterLine();
 	ps->addFooterText("Examples (run from 'samples' directory):");
 	ps->setFooterIndent( 4 );

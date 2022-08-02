@@ -37,32 +37,37 @@ int main( int argc, char **argv ) {
 
   // object to process the options
   ParameterSet *param = new ParameterSet();
-  configure_wmod_parameter_set( param );
-  param->parseCommandLine( argc, argv );
+  try {
+    configure_wmod_parameter_set( param );
+    param->parseCommandLine( argc, argv );
 
-  // check for help text
-  if (param->wasFound( "help" ) || param->wasFound("h") ) {
-    param->printUsage( cout );
-    return 1;
-  }
+    // check for help text
+    if (param->wasFound( "help" ) || param->wasFound("h") ) {
+      param->printUsage( cout );
+      return 1;
+    }
 
-  // See if an options file was specified
-  string paramFile = param->getString( "paramfile" );
-  param->parseFile( paramFile );
+    // See if an options file was specified
+    string paramFile = param->getString( "paramfile" );
+    param->parseFile( paramFile );
 
-  // parse command line again, to override file options
-  param->parseCommandLine( argc, argv );
+    // parse command line again, to override file options
+    param->parseCommandLine( argc, argv );
 
-  // see if we want a parameter summary
-  if (param->wasFound( "printparams" ) ) {
-    param->printParameters();
-  }
+    // see if we want a parameter summary
+    if (param->wasFound( "printparams" ) ) {
+      param->printParameters();
+    }
 
-  // run parameter checks
-  if (! param->validate() ) {
-    cout << "Parameter validation failed:" << endl;
-    param->printFailedTests( cout );
-    return 0;
+    // run parameter checks
+    if (! param->validate() ) {
+      cout << "Parameter validation failed:" << endl;
+      param->printFailedTests( cout );
+      return 0;
+    }
+  } catch (std::invalid_argument& e) {
+    std::cout << "Parameter validation failed: " << std::endl
+          << e.what() << std::endl;
   }
 
   // set up to measure the duration of this run
@@ -75,23 +80,27 @@ int main( int argc, char **argv ) {
   Atmosphere1D *atm_profile = new Atmosphere1D( atmosfile, atmosheaderfile );
 
   // get solver object 
-  //SolveWMod *a = new SolveWMod(param, atm_profile);
   WModeSolver *a = new WModeSolver(param, atm_profile);
    
 	//   					 
   // compute modes - main action happens here					 
   //
-  a->solve();
+  try {
+    a->solve();
+  } catch (std::runtime_error &e) {
+    std::cout << "Runtime error: " << e.what() << std::endl;
+    return 1;
+  }
   a->printParams();
   
   // save atm. profile if requested
-  if (param->getBool( "write_atm_profile" ) ) {
-    ofstream ofs( "atm_profile.nm" );
-    atm_profile->print_atmosphere( "Z", ofs );
-    ofs.close();
-  } else { 
-    printf(" write_atm_profile flag : %d\n", param->getBool( "write_atm_profile" )); 
-  }
+  // if (param->getBool( "write_atm_profile" ) ) {
+  //   ofstream ofs( "atm_profile.nm" );
+  //   atm_profile->print_atmosphere( "Z", ofs );
+  //   ofs.close();
+  // } else {
+  //   printf(" write_atm_profile flag : %d\n", param->getBool( "write_atm_profile" ));
+  // }
   	  
   delete a;		  	 
   delete atm_profile;

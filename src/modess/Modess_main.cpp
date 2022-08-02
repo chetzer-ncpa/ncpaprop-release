@@ -45,25 +45,30 @@ int main( int argc, char **argv ) {
   
 	// object to process the options
 	ParameterSet *param = new ParameterSet();
-	configure_modess_parameter_set( param );
-	param->parseCommandLine( argc, argv );
+	try {
+		configure_modess_parameter_set( param );
+		param->parseCommandLine( argc, argv );
 
-	// check for help text
-	if (param->wasFound( "help" ) || param->wasFound("h") ) {
-		param->printUsage( cout );
-		return 1;
-	}
+		// check for help text
+		if (param->wasFound( "help" ) || param->wasFound("h") ) {
+			param->printUsage( cout );
+			return 1;
+		}
 
-	// See if an options file was specified
-	string paramFile = param->getString( "paramfile" );
-	param->parseFile( paramFile );
+		// See if an options file was specified
+		string paramFile = param->getString( "paramfile" );
+		param->parseFile( paramFile );
 
-	// parse command line again, to override file options
-	param->parseCommandLine( argc, argv );
+		// parse command line again, to override file options
+		param->parseCommandLine( argc, argv );
 
-	// see if we want a parameter summary
-	if (param->wasFound( "printparams" ) ) {
-		param->printParameters();
+		// see if we want a parameter summary
+		if (param->wasFound( "printparams" ) ) {
+			param->printParameters();
+		}
+	} catch (std::invalid_argument& e) {
+		std::cout << "Parameter validation failed: " << std::endl
+				  << e.what() << std::endl;
 	}
 
 	// run parameter checks
