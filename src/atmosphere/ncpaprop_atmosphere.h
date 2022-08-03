@@ -19,4 +19,8 @@
 
 #include "Turbulence.h"
 
+#include "ncpaprop_atmosphere_interface.h"
+
 #endif
+
+

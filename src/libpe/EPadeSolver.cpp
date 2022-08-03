@@ -249,13 +249,17 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		std::cerr << "Unknown atmosphere option selected" << std::endl;
 		exit(0);
 	}
-	atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
+
+	// set up atmosphere using ncpaprop norms
+	NCPA::setup_ncpaprop_atmosphere( atm_profile_2d );
+
+	// atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
 	if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
 		atm_profile_2d->set_maximum_valid_range( r_max );
 	}
 
 	// altitude units
-	atm_profile_2d->convert_altitude_units( Units::fromString( "m" ) );
+	// atm_profile_2d->convert_altitude_units( Units::fromString( "m" ) );
 
 	// Ground height is treated differently depending on whether we're
 	// using topography or not
@@ -306,79 +310,87 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 
 	// set units
-	if (atm_profile_2d->contains_vector(0,"U")) {
-		atm_profile_2d->convert_property_units( "U", Units::fromString( "m/s" ) );
-	}
-	if (atm_profile_2d->contains_vector(0,"V")) {
-		atm_profile_2d->convert_property_units( "V", Units::fromString( "m/s" ) );
-	}
-	if (atm_profile_2d->contains_vector(0,"T")) {
-		atm_profile_2d->convert_property_units( "T", Units::fromString( "K" ) );
-	}
-	if (atm_profile_2d->contains_vector(0,"P")) {
-		atm_profile_2d->convert_property_units( "P", Units::fromString( "Pa" ) );
-	}
+	// if (atm_profile_2d->contains_vector(0,"U")) {
+	// 	atm_profile_2d->convert_property_units( "U", Units::fromString( "m/s" ) );
+	// }
+	// if (atm_profile_2d->contains_vector(0,"V")) {
+	// 	atm_profile_2d->convert_property_units( "V", Units::fromString( "m/s" ) );
+	// }
+	// if (atm_profile_2d->contains_vector(0,"T")) {
+	// 	atm_profile_2d->convert_property_units( "T", Units::fromString( "K" ) );
+	// }
+	// if (atm_profile_2d->contains_vector(0,"P")) {
+	// 	atm_profile_2d->convert_property_units( "P", Units::fromString( "Pa" ) );
+	// }
 
 	// need density
-	if (atm_profile_2d->contains_vector(0,"RHO")) {
-		atm_profile_2d->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
-	} else {
-		std::cout << "No density provided, calculating from temperature and pressure" << std::endl;
-		for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
-			it != atm_profile_2d->last_profile(); ++it) {
-			if ( (*it)->contains_vector("T") && (*it)->contains_vector("P") ) {
-				(*it)->calculate_density_from_temperature_and_pressure(
-					"RHO", "T", "P", Units::fromString( "kg/m3" ) );
-			} else {
-				throw std::runtime_error( "No RHO provided, and at least one of T and P is missing." );
-			}
-		}
-	}
+	// if (atm_profile_2d->contains_vector(0,"RHO")) {
+	// 	atm_profile_2d->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
+	// } else {
+	// 	std::cout << "No density provided, calculating from temperature and pressure" << std::endl;
+	// 	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
+	// 		it != atm_profile_2d->last_profile(); ++it) {
+	// 		if ( (*it)->contains_vector("T") && (*it)->contains_vector("P") ) {
+	// 			(*it)->calculate_density_from_temperature_and_pressure(
+	// 				"RHO", "T", "P", Units::fromString( "kg/m3" ) );
+	// 		} else {
+	// 			throw std::runtime_error( "No RHO provided, and at least one of T and P is missing." );
+	// 		}
+	// 	}
+	// }
 	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 
 	// calculate derived quantities
+	// for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
+	// 	 it != atm_profile_2d->last_profile(); ++it) {
+	// 	if ( (*it)->contains_vector( "C0" ) ) {
+	// 		(*it)->convert_property_units( "C0", Units::fromString( "m/s" ) );
+	// 		(*it)->copy_vector_property( "C0", "_C0_" );
+	// 		c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+	// 	} else {
+	// 		if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
+	// 			(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
+	// 				Units::fromString( "m/s" ) );
+	// 			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+	// 		} else if ( (*it)->contains_vector("T") ) {
+	// 			(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
+	// 				Units::fromString( "m/s" ) );
+	// 			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+	// 		} else if ( (*it)->contains_vector( "CEFF" ) ) {
+	// 			c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
+	// 		} else {
+	// 			throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
+	// 		}
+	// 	}
+	// }
 	double c0;
-	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
-		 it != atm_profile_2d->last_profile(); ++it) {
-		if ( (*it)->contains_vector( "C0" ) ) {
-			(*it)->convert_property_units( "C0", Units::fromString( "m/s" ) );
-			(*it)->copy_vector_property( "C0", "_C0_" );
-			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-		} else {
-			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
-				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
-					Units::fromString( "m/s" ) );
-				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-			} else if ( (*it)->contains_vector("T") ) {
-				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
-					Units::fromString( "m/s" ) );
-				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-			} else if ( (*it)->contains_vector( "CEFF" ) ) {
-				c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
-			} else {
-				throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
-			}
-		}
+	if (atm_profile_2d->contains_vector(0,"_C0_")) {
+		c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+	} else if (atm_profile_2d->contains_vector(0,"CEFF")) {
+		c0 = atm_profile_2d->get(0.0, "CEFF", z_ground );
+	} else {
+		throw std::runtime_error( "No sound speed was able to be calculated!" );
 	}
+
 
 	// wind speed
-	if (atm_profile_2d->contains_vector(0,"WS")) {
-		atm_profile_2d->convert_property_units("WS", Units::fromString("m/s") );
-		atm_profile_2d->copy_vector_property( "WS", "_WS_" );
-	} else if (atm_profile_2d->contains_vector(0,"U")
-		&& atm_profile_2d->contains_vector(0,"V")) {
-		atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
-	}
+	// if (atm_profile_2d->contains_vector(0,"WS")) {
+	// 	atm_profile_2d->convert_property_units("WS", Units::fromString("m/s") );
+	// 	atm_profile_2d->copy_vector_property( "WS", "_WS_" );
+	// } else if (atm_profile_2d->contains_vector(0,"U")
+	// 	&& atm_profile_2d->contains_vector(0,"V")) {
+	// 	atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
+	// }
 
-	// wind direction
-	if (atm_profile_2d->contains_vector(0,"WD")) {
-		atm_profile_2d->convert_property_units("WD",
-			NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
-		atm_profile_2d->copy_vector_property( "WD", "_WD_" );
-	} else if (atm_profile_2d->contains_vector(0,"U")
-		&& atm_profile_2d->contains_vector(0,"V")) {
-		atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
-	}
+	// // wind direction
+	// if (atm_profile_2d->contains_vector(0,"WD")) {
+	// 	atm_profile_2d->convert_property_units("WD",
+	// 		NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
+	// 	atm_profile_2d->copy_vector_property( "WD", "_WD_" );
+	// } else if (atm_profile_2d->contains_vector(0,"U")
+	// 	&& atm_profile_2d->contains_vector(0,"V")) {
+	// 	atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
+	// }
 
 	// attenuation
 	if ( attnfile.size() > 0 ) {

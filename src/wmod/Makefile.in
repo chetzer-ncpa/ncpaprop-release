@@ -6,7 +6,6 @@ include sources.make
 #include $(SLEPC_DIR)/conf/slepc_common
 
 INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
-#OBJS=WMod_main.o wmod_parameters.o
 OBJS=$(SOURCES:.cpp=.o)
 TARGET=WMod
 
@@ -16,8 +15,8 @@ all: $(TARGET)
 .PHONY: clean
 
 # link	
-$(TARGET): $(OBJS) @STATICLIBS@
-	${CXX_LINKER} -o $@ $^  @LDFLAGS@ @STATICLIBS@ @MODELIBS@ ${CXX_LINKER_FLAGS} ${SLEPC_LIB} ${PETSC_LIB} @LIBS@
+$(TARGET): $(OBJS) @MODELIBS@ @STATICLIBS@
+	${CXX_LINKER} -o $@ $^  @LDFLAGS@ ${CXX_LINKER_FLAGS} ${SLEPC_LIB} ${PETSC_LIB} @LIBS@
 	cp $@ ../../bin
 	
 # compile 

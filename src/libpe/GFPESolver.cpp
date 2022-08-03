@@ -135,76 +135,81 @@ NCPA::GFPESolver::GFPESolver( NCPA::ParameterSet *param ) {
 			param->getString( "atmosheaderfile" ) );
 	}
 
+	// set up atmosphere
+	NCPA::setup_ncpaprop_atmosphere( atm );
+
 	// atmospheric units
 	units_t u_km = Units::fromString("km"), u_m = Units::fromString("m"),
 			u_ms = Units::fromString("m/s"), u_k = Units::fromString("K"),
 			u_mbar = Units::fromString("mbar");
-	atm->convert_range_units( u_m );
-	atm->convert_altitude_units( u_m );
-	if (atm->contains_vector(0,"T")) {
-		atm->convert_property_units( "T", u_k );
-	}
-	if (atm->contains_vector(0,"P")) {
-		atm->convert_property_units( "P", u_mbar );
-	}
-	if (atm->contains_vector(0,"U")) {
-		atm->convert_property_units( "U", u_ms );
-	}
-	if (atm->contains_vector(0,"V")) {
-		atm->convert_property_units( "V", u_ms );
-	}
-	if (atm->contains_scalar(0,"Z0")) {
-		atm->convert_property_units( "Z0", u_m );
-		z_ground = new NCPA::ScalarWithUnits( atm->get(0.0,"Z0"), u_m );
-	} else {
-		z_ground = new NCPA::ScalarWithUnits(
-			atm->get_minimum_altitude(0.0), u_m );
-		atm->add_property( "Z0", z_ground->get(), u_m );
-	}
+
+			
+	// atm->convert_range_units( u_m );
+	// atm->convert_altitude_units( u_m );
+	// if (atm->contains_vector(0,"T")) {
+	// 	atm->convert_property_units( "T", u_k );
+	// }
+	// if (atm->contains_vector(0,"P")) {
+	// 	atm->convert_property_units( "P", u_mbar );
+	// }
+	// if (atm->contains_vector(0,"U")) {
+	// 	atm->convert_property_units( "U", u_ms );
+	// }
+	// if (atm->contains_vector(0,"V")) {
+	// 	atm->convert_property_units( "V", u_ms );
+	// }
+	// if (atm->contains_scalar(0,"Z0")) {
+	// 	atm->convert_property_units( "Z0", u_m );
+	// 	z_ground = new NCPA::ScalarWithUnits( atm->get(0.0,"Z0"), u_m );
+	// } else {
+	// 	z_ground = new NCPA::ScalarWithUnits(
+	// 		atm->get_minimum_altitude(0.0), u_m );
+	// 	atm->add_property( "Z0", z_ground->get(), u_m );
+	// }
 
 	// calculate derived quantities
 	// double c0 = 0.0;
-	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm->first_profile();
-		 it != atm->last_profile(); ++it) {
-		if ( (*it)->contains_vector( "C0" ) ) {
-			(*it)->convert_property_units( "C0", Units::fromString( "m/s" ) );
-			(*it)->copy_vector_property( "C0", "_C0_" );
-			// c0 = atm->get( 0.0, "_C0_", z_ground->get() );
-		} else {
-			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
-				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
-					Units::fromString( "m/s" ) );
-				// c0 = atm->get( 0.0, "_C0_", z_ground->get() );
-			} else if ( (*it)->contains_vector("T") ) {
-				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
-					Units::fromString( "m/s" ) );
-				// c0 = atm->get( 0.0, "_C0_", z_ground->get() );
-			} else if ( (*it)->contains_vector( "CEFF" ) ) {
-				// c0 = atm->get( 0.0, "CEFF", z_ground->get() );
-			} else {
-				throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
-			}
-		}
-	}
+	// for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm->first_profile();
+	// 	 it != atm->last_profile(); ++it) {
+	// 	if ( (*it)->contains_vector( "C0" ) ) {
+	// 		(*it)->convert_property_units( "C0", Units::fromString( "m/s" ) );
+	// 		(*it)->copy_vector_property( "C0", "_C0_" );
+	// 		// c0 = atm->get( 0.0, "_C0_", z_ground->get() );
+	// 	} else {
+	// 		if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
+	// 			(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
+	// 				Units::fromString( "m/s" ) );
+	// 			// c0 = atm->get( 0.0, "_C0_", z_ground->get() );
+	// 		} else if ( (*it)->contains_vector("T") ) {
+	// 			(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
+	// 				Units::fromString( "m/s" ) );
+	// 			// c0 = atm->get( 0.0, "_C0_", z_ground->get() );
+	// 		} else if ( (*it)->contains_vector( "CEFF" ) ) {
+	// 			// c0 = atm->get( 0.0, "CEFF", z_ground->get() );
+	// 		} else {
+	// 			throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
+	// 		}
+	// 	}
+	// }
 
 	// wind speed
-	if (atm->contains_vector(0,"WS")) {
-		atm->convert_property_units("WS", Units::fromString("m/s") );
-		atm->copy_vector_property( "WS", "_WS_" );
-	} else if (atm->contains_vector(0,"U")
-		&& atm->contains_vector(0,"V")) {
-		atm->calculate_wind_speed( "_WS_", "U", "V" );
-	}
+	// if (atm->contains_vector(0,"WS")) {
+	// 	atm->convert_property_units("WS", Units::fromString("m/s") );
+	// 	atm->copy_vector_property( "WS", "_WS_" );
+	// } else if (atm->contains_vector(0,"U")
+	// 	&& atm->contains_vector(0,"V")) {
+	// 	atm->calculate_wind_speed( "_WS_", "U", "V" );
+	// }
 
-	// wind direction
-	if (atm->contains_vector(0,"WD")) {
-		atm->convert_property_units("WD",
-			NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
-		atm->copy_vector_property( "WD", "_WD_" );
-	} else if (atm->contains_vector(0,"U")
-		&& atm->contains_vector(0,"V")) {
-		atm->calculate_wind_direction( "_WD_", "U", "V" );
-	}
+	// // wind direction
+	// if (atm->contains_vector(0,"WD")) {
+	// 	atm->convert_property_units("WD",
+	// 		NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
+	// 	atm->copy_vector_property( "WD", "_WD_" );
+	// } else if (atm->contains_vector(0,"U")
+	// 	&& atm->contains_vector(0,"V")) {
+	// 	atm->calculate_wind_direction( "_WD_", "U", "V" );
+	// }
 
 	// attenuation
 	// if ( attnfile.size() > 0 ) {
