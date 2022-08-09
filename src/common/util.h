@@ -32,7 +32,7 @@ namespace NCPA {
 	@param filename The name of the file to attempt to open.
 	@returns true if the file can be read on open, false otherwise.
 	*/
-	bool fexists( const char *filename );
+	bool fexists( const std::string &filename );
 
 	/**
 	Removes leading and trailing whitespace from a string.
@@ -504,6 +504,24 @@ namespace NCPA {
 
 	/**
 	Dynamically allocates a new array and sets the elements to
+	(x, x+1, x+2, ..., x+n-1).
+	@brief Returns a new array of index values.
+	@param n The size of the array.
+	@param offset The starting value of the array.
+	@returns A pointer to the newly-allocated array.
+	*/
+	template<typename T>
+	T *index_vector( size_t n, T offset ) {
+		T *ivec = new T[ n ];
+		T Tn = (T)n;
+		for (T i = 0; i < Tn; i++) {
+			ivec[ i ] = i + offset;
+		}
+		return ivec;
+	}
+
+	/**
+	Dynamically allocates a new array and sets the elements to
 	(0, 1, 2, ..., n-1).
 	@brief Returns a new array of index values.
 	@param n The size of the array.
@@ -511,13 +529,9 @@ namespace NCPA {
 	*/
 	template<typename T>
 	T *index_vector( size_t n ) {
-		T *ivec = new T[ n ];
-		T Tn = (T)n;
-		for (T i = 0; i < Tn; i++) {
-			ivec[ i ] = i;
-		}
-		return ivec;
+		return index_vector<T>( n, ((T)0.0) );
 	}
+
 
 
 	/**
@@ -1013,7 +1027,53 @@ namespace NCPA {
 		delete [] tempvec;
 	}
 
+	/**
+	@brief Initializes an empty file, deleting any existing contents
+	@param filename The filename to initialize
+	*/
+	void initfile( const std::string &filename );
 
+	/**
+	@brief Read a set of values from a stream
+	@param in The input stream
+	@param N The number of values to read
+	@param target Where to put them
+	@return true if the stream did not enter a bad state, false otherwise
+	*/
+	template<typename T>
+	bool read_values( std::istream &in, size_t N, std::vector<T> target ) {
+		N tmpval;
+		for (size_t i = 0; i < N; i++) {
+			in >> tmpval;
+			if (in.good()) {
+				target.push_back( tmpval );
+			} else {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	@brief Read a set of values from a stream
+	@param in The input stream
+	@param N The number of values to read
+	@param target Where to put them.  Must be initialized.
+	@return true if the stream did not enter a bad state, false otherwise
+	*/
+	template<typename T>
+	bool read_values( std::istream &in, size_t N, T *target ) {
+		N tmpval;
+		for (size_t i = 0; i < N; i++) {
+			in >> tmpval;
+			if (in.good()) {
+				target[ i ] = tmpval;
+			} else {
+				return false;
+			}
+		}
+		return true;
+	}
 
 
 	// Class for 3-D matrices with 1-D storage behind the scenes.  Cuts a lot
@@ -1082,6 +1142,7 @@ namespace NCPA {
 			return data[ indices_3_to_1( ind1, ind2, ind3 ) ];
 		}
 	};
+
 }
 
 

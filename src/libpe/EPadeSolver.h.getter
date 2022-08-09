@@ -1,0 +1,476 @@
+#ifndef NCPAPROP_EPADESOLVER_H_INCLUDED
+#define NCPAPROP_EPADESOLVER_H_INCLUDED
+
+#include <vector>
+#include <deque>
+#include <complex>
+
+#include "petscksp.h"
+
+#include "gsl/gsl_errno.h"
+#include "gsl/gsl_version.h"
+#include "gsl/gsl_blas.h"
+
+#include "ncpaprop_common.h"
+#include "ncpaprop_atmosphere.h"
+
+#ifndef NCPAPROP_EPADE_PE_FILENAME_1D
+#define NCPAPROP_EPADE_PE_FILENAME_1D "tloss_1d.pe"
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_FILENAME_2D
+#define NCPAPROP_EPADE_PE_FILENAME_2D "tloss_2d.pe"
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_FILENAME_MULTIPROP
+#define NCPAPROP_EPADE_PE_FILENAME_MULTIPROP "tloss_multiprop.pe"
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_FILENAME_BROADBAND
+#define NCPAPROP_EPADE_PE_FILENAME_BROADBAND "tloss_broadband.bin"
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_FILENAME_STARTER
+#define NCPAPROP_EPADE_PE_FILENAME_STARTER "starter.pe"
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY
+#define NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY "topography.pe"
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_FILENAME_ATMOSPHERE
+#define NCPAPROP_EPADE_PE_FILENAME_ATMOSPHERE "atm_profile.pe"
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_ABSORBING_LAYER_MAX_THICKNESS_METERS
+#define NCPAPROP_EPADE_PE_ABSORBING_LAYER_MAX_THICKNESS_METERS 5000.0
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_ABSORBING_LAYER_WAVELENGTH_MULTIPLIER
+#define NCPAPROP_EPADE_PE_ABSORBING_LAYER_WAVELENGTH_MULTIPLIER 3.0
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_BASEMENT_THICKNESS
+#define NCPAPROP_EPADE_PE_BASEMENT_THICKNESS 5000.0
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR
+#define NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR 0.01
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_SOUNDSPEED_FOR_DR
+#define NCPAPROP_EPADE_PE_SOUNDSPEED_FOR_DR 340.0
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_BROADBAND_BINARY_PRECISION_FACTOR
+#define NCPAPROP_EPADE_PE_BROADBAND_BINARY_PRECISION_FACTOR 100000000
+#endif
+
+
+
+namespace NCPA {
+
+	enum class AtmosphereType : char {
+		NONE,
+		STRATIFIED_1D, STRATIFIED_2D, STRATIFIED_3D,
+		RANGE_DEPENDENT_1D, RANGE_DEPENDENT_2D, RANGE_DEPENDENT_3D
+	};
+	enum class StarterType : char {
+		NONE, SELF, GAUSSIAN, USER
+	};
+
+	class EPadeSolver : public AtmosphericTransferFunctionSolver {
+
+	public:
+		EPadeSolver();
+		EPadeSolver( NCPA::ParameterSet *param );
+		virtual ~EPadeSolver();
+		virtual void finalize();
+		virtual int solve();
+		virtual bool ready() const;
+		virtual void output1DTL( std::string filename, bool append = false );
+		virtual void output2DTL( std::string filename );
+
+		// getter/setter methods for interacting with private class
+		// members.  This makes the object more portable than directly
+		// ingesting the ParameterSet object
+
+		// max range r_max
+		double getMaximumRange() const;
+		units_t getMaximumRangeUnits() const;
+		void getMaximumRange( double &r, units_t &u ) const;
+		void setMaximumRange( double r,
+			units_t u = UNITS_DISTANCE_KILOMETERS );
+
+		// max height z_max
+		double getMaximumHeight() const;
+		units_t getMaximumHeightUnits() const;
+		void getMaximumHeight( double &zmax, units_t &u ) const;
+		void setMaximumHeight( double zmax,
+			units_t u = UNITS_DISTANCE_KILOMETERS );
+
+		// Source height zs
+		double getSourceHeight() const;
+		units_t getSourceHeightUnits() const;
+		void getSourceHeight( double &z, units_t &u ) const;
+		void setSourceHeight( double zs,
+			units_t u = UNITS_DISTANCE_KILOMETERS );
+
+		// receiver height zr
+		double getReceiverHeight() const;
+		units_t getReceiverHeightUnits() const;
+		void getReceiverHeight( double &z, units_t &u ) const;
+		void setReceiverHeight( double zmax,
+			units_t u = UNITS_DISTANCE_KILOMETERS );
+
+		// ground height groundheight_km
+		double getUserGroundHeight() const;
+		units_t getUserGroundHeightUnits() const;
+		void getUserGroundHeight( double &z, units_t &u ) const;
+		void setUserGroundHeight( double zg,
+			units_t u = UNITS_DISTANCE_KILOMETERS );
+
+		// vertical resolution
+		double getHeightResolution() const;
+		units_t getHeightResolutionUnits() const;
+		void getHeightResolution( double &dz, units_t &u ) const;
+		void setHeightResolution( double dz,
+			units_t u = UNITS_DISTANCE_METERS );
+
+		// range steps NR_requested
+		size_t getRangeSteps() const;
+		void setRangeSteps( size_t nr );
+
+		// Pade order npade
+		size_t getPadeOrder() const;
+		void setPadeOrder( size_t np );
+
+		// ground impedence
+		std::complex<double> getUserGroundImpedence() const;
+		void setUserGroundImpedence( std::complex<double> imp );
+		void setUserGroundImpedence( double re, double im );
+
+		// starter type starter
+		StarterType getStarterType() const;
+		void setStarterType( StarterType starter );
+
+		// user file tag user_tag
+		std::string getFileTag() const;
+		void setFileTag( const std::string &filetag );
+
+		// atmosphere
+		AtmosphereType getAtmosphereType() const;
+		std::string getAtmosphereFileName() const;
+		std::string getAtmosphereHeaderFileName() const;
+		void setAtmosphere( AtmosphereType atmtype,
+			const std::string &filename = "",
+			const std::string &headerfilename = "" );
+
+		// turbulence
+		Turbulence* getTurbulence() const;
+		void setTurbulence( Turbulence *turb );
+		void setTurbulenceScale( double scale, units_t u );
+		void setTurbulenceSpectrumSize( size_t n );
+		void setTurbulenceTemperatureFactor( double d );
+		void setTurbulenceVelocityFactor( double d );
+		void setTurbulenceFileName( const std::string &s );
+		double getTurbulenceScale() const;
+		units_t getTurbulenceScaleUnits() const;
+		size_t getTurbulenceSpectrumSize() const;
+		double getTurbulenceTemperatureFactor() const;
+		double getTurbulenceVelocityFactor() const;
+		std::string getTurbulenceFileName() const;
+
+		// azimuth
+		std::vector<double> getAzimuthVector() const;
+		double getAzimuth() const;
+		void setAzimuth( const std::vector<double> &azimuths );
+		void setAzimuth( double d );
+
+		// frequency
+		std::vector<double> getFrequencyVector() const;
+		double getFrequency() const;
+		void setFrequency( const std::vector<double> &f );
+		void setFrequency( double d );
+
+		// flags
+
+		// lossless propagation tag
+		bool getLossless() const;
+		void setLossless( bool b );
+
+		// use artificial absorbing layer
+		bool getUseTopLayer() const;
+		void setUseTopLayerUsed( bool b );
+
+		// use topography
+		bool getUseTopography() const;
+		void setUseTopography( bool b );
+
+		// use multiprop?
+		bool getMultiprop() const;
+
+		// broadband?
+		bool getBroadband() const;
+
+		// use user-supplied quantities
+		bool getUserGroundHeightUsed() const;
+		bool getUserAttenuationUsed() const;
+
+		// use turbulence?
+		bool getUseTurbulence() const;
+		void setUseTurbulence( bool b );
+		bool getUseRandomTurbulence() const;
+		void setUseRandomTurbulence( bool b );
+
+		// write 2d signal level?
+		bool getWrite2DTransmissionLoss() const;
+		void setWrite2DTransmissionLoss( bool b );
+
+		// write starter?
+		bool getWriteStarter() const;
+		void setWriteStarter( bool b );
+
+		// write topography?
+		bool getWriteTopography() const;
+		void setWriteTopography( bool b );
+
+		// write atmosphere?
+		bool getWriteAtmosphere() const;
+		void setWriteAtmosphere( bool b );
+
+
+
+
+		// filename variables
+
+		// Attenuation filename attnfile
+		std::string getAttenuationFileName() const;
+		void setAttenuationFileName( const std::string &filename );
+
+		// Starter file user_starter_file
+		std::string getStarterFileName() const;
+		void setStarterFileName( const std::string &filename );
+
+		// topography file topofile
+		std::string getTopographyFileName() const;
+		void setTopographyFileName( const std::string &filename );
+
+
+
+
+
+	protected:
+
+		// void set_default_values();
+
+		void outputVec( Vec &v, double *z, int n,
+			std::string filename ) const;
+		void outputSparseMat( Mat &m, size_t nrows,
+			const std::string &filename ) const;
+
+		// solve using the appropriate method
+		virtual int solve_with_topography();
+		virtual int solve_without_topography();
+
+		// functions to perform the various intermediate calculations
+		int calculate_pade_coefficients( std::vector<PetscScalar> *c,
+			int n_numerator, int n_denominator, std::vector<PetscScalar> *numerator_coefficients,
+			std::vector<PetscScalar> *denominator_coefficients );
+		int generate_polymatrices( Mat *qpowers, size_t npade, size_t NZ,
+			std::vector< std::complex< double > > &P, std::vector< std::complex< double > > &Q,
+			Mat *B, Mat *C );
+		int sum_scaled_matrix_polynomial_terms( Mat *qpowers, int qpowers_size,
+			int NZ, std::vector< std::complex< double > > &T, Mat *B );
+		int generate_polymatrix( Mat *qpowers, size_t Qpowers_size, size_t NZ,
+			std::vector< std::complex< double > > &T, Mat *B );
+		int create_matrix_polynomial( size_t nterms, const Mat *Q, Mat **qpowers );
+		int delete_matrix_polynomial( size_t nterms, Mat **qpowers );
+		int build_operator_matrix_with_topography( NCPA::Atmosphere2D *atm, int NZvec, double *zvec, 
+			double r, std::complex<double> *k, double k0, double h2, double z_s,
+			std::complex<double> impedence_factor, std::complex<double> *n, 
+			int boundary_index, const Mat &last_q, Mat *q, bool starter = false );
+		int build_operator_matrix_without_topography( 
+			int NZvec, double *zvec, double k0, double h2, 
+			std::complex<double> impedence_factor, std::complex<double> *n, size_t nqp, 
+			int boundary_index, Mat *q );
+		int zero_below_ground( Mat *q, int NZ, PetscInt ground_index );
+
+		// functions for recurrence relations of various Taylor series
+		std::vector<PetscScalar> taylor_exp_id_sqrt_1pQ_m1( int N, double delta );
+		std::vector<PetscScalar> taylor_sqrt_1pQ_exp_id_sqrt_1pQ_m1( int N, double delta );
+		std::vector<PetscScalar> taylor_1pQ_n025( int N );
+		std::vector<PetscScalar> taylor_1pQ_025( int N );
+		std::vector<PetscScalar> taylor_1pQpid_n025( int N, double delta );
+
+		// approximation functions
+		int approximate_sqrt_1pQ( int NZvec, const Mat *Q, PetscInt Ji, Vec *vecBelow, Vec *vecAbove, PetscInt *nonzeros );
+
+		// functions to calculate the various starter fields
+		int get_starter_gaussian( size_t NZ, double *z, double zs, double k0, int ground_index, Vec *psi );
+		int get_starter_self( size_t NZ, double *z, double z_source, int ground_index, 
+			double k0, Mat *qpowers, size_t npade, bool absolute, Vec *psi );
+		int get_starter_user( std::string filename, int NZ, double *z, Vec *psi );
+		int interpolate_starter( std::deque<double> &z_orig, std::deque<double> &r_orig, 
+			std::deque<double> &i_orig, size_t NZ_new, double *z_new, Vec *psi );
+
+		// functions to calculate atmospheric parameters
+		void absorption_layer( double lambda, double *z, int NZ, double *layer );
+		void fill_atm_vector_relative( NCPA::Atmosphere2D *atm, double range, int NZvec, double *zvec, 
+			std::string key, double groundheight, double *vec );
+		void fill_atm_vector_absolute( NCPA::Atmosphere2D *atm, double range, int NZvec, double *zvec, 
+			std::string key, double fill_value, double *vec );
+		void calculate_atmosphere_parameters( NCPA::Atmosphere2D *atm, int NZvec, double *z_vec, 
+			double r, double z_g, bool use_lossless, bool use_top_layer, double freq, bool use_absolute_z,
+			double &k0, double &c0, double *c_vec, double *a_vec, std::complex<double> *k_vec, 
+			std::complex<double> *n_vec );
+		void calculate_effective_sound_speed( NCPA::Atmosphere2D *atm,
+			double azimuth, const std::string &new_key );
+
+		double check_ground_height_coincidence_with_grid( double *z, 
+			size_t NZ, double tolerance, double z_ground );
+
+		void set_1d_output( bool tf );
+		void write_broadband_header( std::string filename, double *az_vec, size_t n_az, 
+			double *f_vec, size_t n_f, unsigned int precision_factor );
+		void write_broadband_results( std::string filename, double this_az, double this_f, 
+			double *r_vec, size_t n_r, double *z_vec, size_t n_z, std::complex< double > **tloss_mat, 
+			unsigned int precision_factor );
+		void write_topography( std::string filename, double az, double r_max, double dr );
+
+		// turbulence
+		void calculate_turbulence( double r, size_t nz, double *z,
+			double k_a, double *&mu ) const;
+		void calculate_turbulence_orig( double r, size_t nz, double *z,
+			double k_a, double *&mu ) const;
+		void setup_turbulence( std::vector<double> &rand1,
+			std::vector<double> &rand2 );
+		void cleanup_turbulence();
+
+		std::string tag_filename( std::string basename );
+
+		// data members
+		StarterType 			starter_type_ = StarterType::NONE;
+		AtmosphereType 			atmosphere_type_ = AtmosphereType::NONE;
+		std::string 			user_tag_ = "",
+								atmosphere_file_name_ = "",
+								atmosphere_header_file_name_ = "",
+								user_starter_file_ = "",
+								turbulence_file_ = "",
+								topography_file_ = "",
+								attenuation_file_ = "";
+		NCPA::ScalarWithUnits 	r_max_,
+								z_max_,
+								z_source_,
+								z_receiver_,
+								dz_,
+								turbulence_scale_,
+								user_z_ground_;
+		size_t 					nr_ = 0,
+								user_nr_ = 0,
+								npade_ = 0,
+								nturbulence_ = 20;
+		std::complex<double> 	user_ground_impedence_ = 0.0,
+								**tloss_;
+		double 					turbulence_t_factor_ = 1.0e-10,
+			   					turbulence_v_factor_ = 1.0e-8,
+			   					absorption_layer_mu_ = 0.01,
+			   					turbulence_k1_ = 0.1,
+			   					turbulence_k2_ = 20.0,
+			   					c_underground_ = 5.0e10;
+		std::vector<double> 	azimuth_vector_,
+								frequency_vector_
+								z_vector_,
+								z_abs_vector_
+								r_vector_,
+								zgi_r_vector_;
+
+		// flags
+		bool 					user_ground_impedence_used_ = false,
+								user_ground_height_used_ = false,
+			 					lossless_ = false,
+								toplayer_ = true,
+								topo_ = false,
+								use_turbulence_ = false,
+								use_random_turbulence_ = false,
+								write_2d_ = false,
+								write_starter_ = false,
+								write_topography_ = false,
+								write_atmosphere_ = false,
+								user_attenuation_ = false,
+								finalized_        = false;
+
+		// Atmosphere
+		NCPA::Atmosphere2D 		*atm_profile_2d_ = NULL;
+		NCPA::Turbulence		*turbulence_ = NULL;
+		gsl_matrix 				*t_mat1_;
+		gsl_vector 				*t_vec1_, *t_vec_mu_;
+
+
+
+		// global variable space
+		double freq_, calc_az_;
+
+
+
+
+
+
+
+		// still using?
+		double *z = NULL, *z_abs = NULL, *r = NULL, *f = NULL, calc_az;
+		std::complex< double > **tl;
+		int *zgi_r = NULL;   // ground height index
+		double freq;         // current active frequency
+		double *azi;
+		size_t NZ, NR, NR_requested, NAz, NF;
+		double dz;
+		size_t npade;
+		bool use_atm_1d = false, use_atm_2d = false, use_atm_toy = false, use_topo = false;
+		bool z_ground_specified = false, lossless = false, top_layer = true;
+		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
+		bool broadband = false, write_starter = false, write_topo = false;
+		bool write_atmosphere = false;
+		double r_max;    // range limits
+		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
+		double zs, zr;  // source height, receiver height
+		double c_underground;
+		std::complex<double> user_ground_impedence;
+		bool user_ground_impedence_found = false;
+		//double zrcv;
+		//std::string gnd_imp_model;
+		std::string starter;
+		std::string attnfile;
+		std::string user_starter_file;
+		std::string topofile;
+
+
+		// turbulence parameters
+		NCPA::Turbulence *turbulence;
+		// turbulence parameters
+		bool use_turbulence, random_turbulence;
+		double turbulence_k1, turbulence_k2, Lt,
+			temperature_factor, velocity_factor;
+		size_t turbulence_size;
+		std::string turbulence_file;
+		gsl_matrix *t_mat1;
+		gsl_vector *t_vec1, *t_vec_mu;
+		// Vec *turbulence_vec1;
+
+
+		std::vector< double > zt;
+		std::vector< int > zti;
+		int nzplot;
+
+		double absorption_layer_mu = 0.1;
+
+		//NCPA::Atmosphere1D *atm_profile;
+		NCPA::Atmosphere2D *atm_profile_2d;
+
+
+	};
+
+}
+
+
+#endif

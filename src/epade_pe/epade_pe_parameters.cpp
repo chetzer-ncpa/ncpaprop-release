@@ -1,7 +1,126 @@
-#include "parameterset.h"
+#include "ncpaprop_common.h"
 #include "epade_pe_parameters.h"
 #include <string>
 #include <iostream>
+#include <vector>
+
+
+void NCPA::configure_epade_solver( NCPA::EPadeSolver *solver,
+	NCPA::ParameterSet *param ) {
+
+	NCPA::units_t u_km = NCPA::Units::fromString("km"),
+				  u_m  = NCPA::Units::fromString("m"),
+				  u_K  = NCPA::Units::fromString("K");
+	double tempf1, tempf2, tempf3;
+	int    tempi;
+	std::string temps;
+	std::vector<double> tempv;
+
+	// simple values - use defaults if unspecified
+	solver->setMaximumRange( param->getFloat( "maxrange_km" ), u_km );
+	solver->setMaximumHeight( param->getFloat( "maxheight_km" ), u_km );
+	solver->setSourceHeight( param->getFloat("sourceheight_km", u_km ) );
+	solver->setSourceHeight( param->getFloat("receiverheight_km", u_km ) );
+	solver->setHeightResolution( tempf = param->getFloat("dz_m"), u_m );
+	solver->setRangeSteps( param->getInteger("Nrng_steps") );
+	solver->setPadeOrder( param->getInteger( "npade" ) );
+	solver->setFileTag( param->getString( "filetag" ) );
+
+	// only do these if they're specifically there
+	if (param->wasFound( "ground_impedence_imag") ||
+		param->wasFound( "ground_impedence_real") ) {
+
+		solver->setUserGroundImpedence(
+			param->getFloat( "ground_impedence_real" ),
+			param->getFloat( "ground_impedence_imag" ) );
+	}
+	if (param->wasFound( "groundheight_km" ) ) {
+		solver->setUserGroundHeight( param->getFloat( "groundheight_km"),
+			u_km );
+	}
+
+	// atmosphere
+	if (param->wasFound( "atmosfile" )) {
+		solver->setAtmosphere(
+			NCPA::AtmosphereType::STRATIFIED_2D,
+			param->getString( "atmosfile" ),
+			param->getString( "atmosheaderfile" ) );
+	} else if (param->wasFound( "atmosfile2d" ) ) {
+		solver->setAtmosphere(
+			NCPA::AtmosphereType::RANGE_DEPENDENT_2D,
+			param->getString( "atmosfile2d" ),
+			param->getString( "atmosheaderfile" ) );
+	}
+
+	// starter
+	temps = param->getString( "starter" );
+	if (temps == "self") {
+		solver->setStarter( NCPA::StarterType::SELF );
+	} else if (temps == "gaussian") {
+		solver->setStarter( NCPA::StarterType::GAUSSIAN );
+	} else if (temps == "user") {
+		solver->setStarter( NCPA::StarterType::USER );
+		solver->setStarterFileName( param->getString( "starterfile" ) );
+	}
+
+	// azimuth
+	if (param->wasFound("singleprop")) {
+		solver->setAzimuth( param->getFloat( "azimuth" ) );
+	} else if (param->wasFound("multiprop")) {
+		double min_az, max_az, step_az;
+		min_az = param->getFloat("azimuth_start");
+		max_az = param->getFloat("azimuth_end");
+		step_az = param->getFloat("azimuth_step");
+		while (min_az > max_az) {
+			min_az -= 360.0;
+		}
+		tempv.clear();
+		while(min_az <= max_az) {
+			tempv.push_back( min_az );
+			min_az += step_az;
+		}
+		solver->setAzimuth( tempv );
+		tempv.clear();
+	}
+
+	// topography
+	if (param->wasFound("topo")) {
+		solver->setUseTopography( true );
+		solver->setTopographyFileName( param->getString( "topofile" ) );
+	}
+
+	// attenuation
+	if (param->wasFound("attnfile")) {
+		solver->setUserAttenuationUsed( true );
+		solver->setAttenuationFileName( param->getString( "attnfile" ) );
+	}
+
+	// frequency
+	solver->setFrequency( param->getFloat( "freq" ) );
+
+	// optional turbulence
+	if (param->wasFound("turbulence")) {
+		solver->setTurbulenceScale(
+			param->getFloat( "turbulence_scale_m"), u_m );
+		solver->setTurbulenceSpectrumSize( param->getInteger( "n_turbulence" ) );
+		solver->setTurbulenceTemperatureFactor(
+			param->getFloat( "turbulence_t_factor" ) );
+		solver->setTurbulenceVelocityFactor(
+			param->getFloat( "turbulence_v_factor" ) );
+		solver->setTurbulenceFileName(
+			param->getString( "turbulence_file" ) );
+		solver->setUseTurbulence( true );
+	}
+
+	// flags
+	solver->setWrite2DTransmissionLoss( param->wasFound( "write_2d_tloss" ) );
+	solver->setLossless( param->wasFound( "lossless" ) );
+	solver->setUseTopLayer( !param->wasFound( "disable_top_layer" ) );
+	solver->setWriteStarter( param->wasFound( "write_starter" ) );
+	solver->setWriteTopography( param->wasFound( "write_topography" ) );
+	solver->setWriteAtmosphere( param->wasFound( "write_atm_profile" ) );
+}
+
 
 void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 
@@ -122,13 +241,6 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addTest( new NCPA::FloatGreaterThanOrEqualToTest( "maxheight_km", 0.1 ));
 	ps->addParameterDescription( "Optional Parameters [default]", "--maxheight_km", "Maximum height of analysis in km [150.0, or max height of atmosphere]" );
 
-	/*
-	ps->addParameter( new NCPA::IntegerParameter( "Nz_grid", 5001 ) );
-	ps->addTest( new NCPA::IntegerGreaterThanOrEqualToTest( "Nz_grid", 10 ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--Nz_grid", "Number of vertical grid points to use [5001]" );
-	*/
-
-
 	ps->addParameter( new NCPA::FloatParameter( "sourceheight_km", 0.0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--sourceheight_km", "Source height in km [ground]" );
 
@@ -141,11 +253,6 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::IntegerParameter( "Nrng_steps", 0 ) );
 	ps->addTest( new NCPA::IntegerGreaterThanOrEqualToTest( "Nrng_steps", 0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--Nrng_steps", "Number of range steps to use [decide internally]" );
-
-	// ps->addParameter( new NCPA::StringParameter( "ground_impedence_model", "rigid" ) );
-	// test = ps->addTest( new NCPA::StringSetTest( "ground_impedence_model" ) );
-	// test->addStringParameter( "rigid" );
-	// ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence_model", "Impedence model to use.  Currently only \"rigid\" is supported. [rigid]" );
 
 	ps->addParameter( new NCPA::FloatParameter( "ground_impedence_real", 0.0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence_real", "Real part of ground impedence [rigid ground]" );
@@ -174,8 +281,6 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	//ps->addUsageLine( "Flags:" );
 	ps->addParameter( new NCPA::FlagParameter( "write_2d_tloss" ) );
 	ps->addParameterDescription( "Flags", "--write_2d_tloss", "Output 2-D transfer function to tloss_2d.pe" );
-	// ps->addParameter( new NCPA::FlagParameter( "write_atm_profile" ) );
-	// ps->addParameterDescription( "Flags", "--write_atm_profile", "Output atmospheric profile to atm_profile.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_starter" ) );
 	ps->addParameterDescription( "Flags", "--write_starter", "Output starter to starter.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_topography" ) );
@@ -229,3 +334,4 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->setCommandMode( false );
 	ps->resetFooterIndent();
 }
+

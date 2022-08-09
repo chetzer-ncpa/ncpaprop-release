@@ -1,0 +1,154 @@
+
+
+void checkfile_( const std::string &filename ) {
+	std::ostringstream oss;
+	if (!((filename.size() > 0) && NCPA::fexists( filename ))) {
+		oss << "File " << filename << " is not readable!";
+		throw std::runtime_error( oss.str() );
+	}
+}
+
+void NCPA::EPadeSolver::finalize() {
+
+	std::ostringstream oss;
+
+	// convert internal lengths to meters
+	NCPA::units_t u_m = NCPA::Units::fromString("m");
+	r_max_.convert_units( u_m );
+	z_max_.convert_units( u_m );
+	z_source_.convert_units( u_m );
+	z_receiver_.convert_units( u_m );
+	turbulence_scale_.convert_units( u_m );
+	user_z_ground_.convert_units( u_m );
+
+	// first, contradiction checks
+	NCPA::AtmosphereType atmtype = getAtmosphereType();
+	if (atmtype == NCPA::AtmosphereType::RANGE_DEPENDENT_2D) {
+		if (getMultiprop()) {
+			throw std::runtime_error( "Range-dependent 2-D atmosphere is incompatible with multiprop mode");
+		}
+		if (getWrite2DTransmissionLoss()) {
+			std::cerr <<
+				"Multiprop mode: disabling 2-D transmission loss output"
+				<< std::endl;
+			setWrite2DTransmissionLoss( false );
+		}
+		if (getUseTopography()) {
+			std::cerr <<
+				"Multiprop mode: disabling topography" << std::endl;
+			setUseTopography( false );
+		}
+	}
+
+	// check filename requirements
+	if (starter_type_ == NCPA::StarterType::USER) {
+		if (user_starter_file_.size() == 0) {
+			throw std::runtime_error( "No user starter file specified!" );
+		}
+	}
+
+	// check file existence
+	checkfile_( atmosphere_file_name_ );
+	checkfile_( atmosphere_header_file_name_ );
+	checkfile_( turbulence_file_ );
+	checkfile_( topography_file_ );
+	checkfile_( user_starter_file_ );
+
+	// build and initialize atmosphere
+	if (atmosphere_type_ == NCPA::AtmosphereType::STRATIFIED_2D) {
+		atm_profile_2d_ = new NCPA::StratifiedAtmosphere2D(
+			atmosphere_file_name_, atmosphere_header_file_name_ );
+	} else if (atmosphere_type_ == NCPA::AtmosphereType::RANGE_DEPENDENT_2D ) {
+		atm_profile_2d_ = new NCPA::ProfileSeriesAtmosphere2D(
+			atmosphere_file_name_, atmosphere_header_file_name_ );
+	} else {
+		throw std::runtime_error( "Unsupported atmosphere type selected" );
+	}
+	NCPA::setup_ncpaprop_atmosphere( atm_profile_2d_ );
+	if (r_max_.get() > atm_profile_2d->get_maximum_valid_range() ) {
+		atm_profile_2d->set_maximum_valid_range( r_max_.get() );
+	}
+
+	// deal with potential ground height options
+	if (getUseTopography()) {
+		// first, do we get topography from a file?
+		if ( topography_file_.size() > 0 ) {
+			atm_profile_2d_->remove_property("Z0");
+			atm_profile_2d_->read_elevation_from_file( topography_file_ );
+		} else {
+			atm_profile_2d_->finalize_elevation_from_profiles();
+		}
+	} else {
+		// constant elevation
+		if (getUserGroundTopographyUsed()) {
+			std::cout << "Overriding profile Z0 value with command-line value "
+				<< user_z_ground_ << std::endl;
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->add_property( "Z0", user_z_ground_.get(),
+				user_z_ground_.get_units() );
+		} else {
+			if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
+				double z_ground = atm_profile_2d->get_minimum_altitude( 0.0 );
+				atm_profile_2d->add_property("Z0",z_ground,
+					atm_profile_2d->get_altitude_units(0.0));
+			}
+		}
+		atm_profile_2d->convert_property_units( "Z0", Units::fromString( "m" ) );
+	}
+
+	// attenuation
+	if (getUserAttenuationUsed()) {
+		checkfile_( attenuation_file_ );
+		atm_profile_2d->read_attenuation_from_file( "_ALPHA_", attenuation_file_ );
+	} else {
+		if (  !(atm_profile_2d->contains_vector(0.0, "T")
+				&& atm_profile_2d->contains_vector(0.0, "P")
+				&& atm_profile_2d->contains_vector(0.0, "RHO") ) ) {
+			std::cout << "At least one of T, P, or RHO is absent, switching to lossless propagation"
+					  << std::endl;
+			setLossless( true );
+		}
+	}
+
+	// initialize files
+	std::cout << "Initializing files:" << std::endl;
+	NCPA::initfile( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D) );
+	std::cout << tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D) << std::endl;
+	if (getMultiprop()) {
+		NCPA::initfile( tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP) );
+		std::cout << tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP) << std::endl;
+	}
+	if (getWrite2DTransmissionLoss()) {
+		NCPA::initfile( tag_filename(NCPAPROP_EPADE_PE_FILENAME_2D) );
+		std::cout << tag_filename(NCPAPROP_EPADE_PE_FILENAME_2D) << std::endl;
+	}
+	if (getBroadband()) {
+		NCPA::initfile( tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND) );
+		std::cout << tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND) << std::endl;
+	}
+	if (getWriteStarter()) {
+		NCPA::initfile( tag_filename(NCPAPROP_EPADE_PE_FILENAME_STARTER) );
+		std::cout << tag_filename(NCPAPROP_EPADE_PE_FILENAME_STARTER) << std::endl;
+	}
+	if (getWriteTopography()) {
+		NCPA::initfile( tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY) );
+		std::cout << tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY) << std::endl;
+	}
+	if (getWriteAtmosphere()) {
+		NCPA::initfile( tag_filename(NCPAPROP_EPADE_PE_FILENAME_ATMOSPHERE) );
+		std::cout << tag_filename(NCPAPROP_EPADE_PE_FILENAME_ATMOSPHERE) << std::endl;
+	}
+
+	finalized_ = true;
+}
+
+bool NCPA::EPadeSolver::ready() const {
+
+	checktrue_( finalised_, "Solver has not been finalized!" );
+	checktrue_( (atm_profile_2d_ != NULL), "Atmosphere not set!" );
+	checktrue_( (starter_type_ != StarterType::NULL), "Starter not set!" );
+	checktrue_( (r_max_.get() > 0.0), "Positive maximum range required!" );
+	checktrue_( (azimuth_vector_.size() > 0), "No azimuths set!" );
+	checktrue_( (frequency_vector_.size() > 0), "No frequency set!" );
+	return true;
+}

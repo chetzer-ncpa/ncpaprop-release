@@ -254,7 +254,8 @@ namespace NCPA {
 
 		virtual void convert_units( units_t new_units );
 		virtual units_t get_units() const;
-		//virtual void revert_units();
+
+		virtual std::string str() const;
 
 		
 	};

@@ -33,7 +33,7 @@ std::string NCPA::timeAsString(double d) {
     return s;
 }
 
-bool NCPA::fexists( const char *filename ) {
+bool NCPA::fexists( const std::string &filename ) {
 	std::ifstream ifile( filename );
 	bool tf = ifile.good();
 	ifile.close();
@@ -392,4 +392,11 @@ size_t NCPA::nextpow2( size_t v ) {
 		p++;
 	}
 	return p;
+}
+
+
+void NCPA::initfile( const std::string &filename ) {
+	std::ofstream outfile( filename,
+		std::ofstream::out | std::ofstream::trunc );
+	outfile.close();
 }

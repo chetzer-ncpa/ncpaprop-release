@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 
 // initialize static members
@@ -380,6 +381,9 @@ void NCPA::ScalarWithUnits::convert_units( NCPA::units_t new_units ) {
 	// if there's no change in units, don't bother with the calculation, just push another
 	// one onto the stack so reversion can happen properly
 	//if (new_units != units_.top()) {
+	if (units_ == UNITS_NONE) {
+		return;
+	}
 	if (new_units != units_) {
 		do_units_conversion_( units_, new_units );
 	}
@@ -423,7 +427,11 @@ std::ostream &NCPA::operator<<( std::ostream &output, const NCPA::ScalarWithUnit
 }
 
 
-
+std::string NCPA::ScalarWithUnits::str() const {
+	std::ostringstream oss;
+	oss << value_ << " " << NCPA::Units::toStr( units_ );
+	return oss.str();
+}
 
 
 
@@ -462,6 +470,7 @@ NCPA::units_t NCPA::VectorWithUnits::get_units() const {
 void NCPA::VectorWithUnits::convert_units( NCPA::units_t new_units ) {
 	// will throw out_of_range and leave original units unchanged if there's an error
 	// if there's no change in units, don't bother with the calculation
+	if (units_ == UNITS_NONE) { return; }
 	if (new_units != units_) {
 		do_units_conversion_( n_, values_, units_, new_units );
 		units_ = new_units;
