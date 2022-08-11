@@ -18,10 +18,17 @@ void NCPA::configure_epade_solver( NCPA::EPadeSolver *solver,
 
 	// simple values - use defaults if unspecified
 	solver->setMaximumRange( param->getFloat( "maxrange_km" ), u_km );
-	solver->setMaximumHeight( param->getFloat( "maxheight_km" ), u_km );
-	solver->setSourceHeight( param->getFloat("sourceheight_km", u_km ) );
-	solver->setSourceHeight( param->getFloat("receiverheight_km", u_km ) );
-	solver->setHeightResolution( tempf = param->getFloat("dz_m"), u_m );
+	if (param->wasFound("maxheight_km")) {
+		solver->setMaximumHeight( param->getFloat( "maxheight_km" ), u_km );
+	}
+	if (param->wasFound("sourceheight_km")) {
+		solver->setSourceHeight( param->getFloat("sourceheight_km", u_km ) );
+	}
+	if (param->wasFound("receiverheight_km")) {
+		solver->setReceiverHeight( param->getFloat("receiverheight_km", u_km ) );
+	}
+
+	solver->setHeightResolution( param->getFloat("dz_m"), u_m );
 	solver->setRangeSteps( param->getInteger("Nrng_steps") );
 	solver->setPadeOrder( param->getInteger( "npade" ) );
 	solver->setFileTag( param->getString( "filetag" ) );

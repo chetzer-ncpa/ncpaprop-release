@@ -216,6 +216,8 @@ namespace NCPA {
 		// use user-supplied quantities
 		bool getUserGroundHeightUsed() const;
 		bool getUserAttenuationUsed() const;
+		bool getUserSourceHeightUsed() const;
+		bool getUserReceiverHeightUsed() const;
 
 		// use turbulence?
 		bool getUseTurbulence() const;
@@ -382,12 +384,16 @@ namespace NCPA {
 								frequency_vector_
 								z_vector_,
 								z_abs_vector_
-								r_vector_,
-								zgi_r_vector_;
+								r_vector_;
+		std::vector<size_t>		zgi_r_vector_;
 
 		// flags
 		bool 					user_ground_impedence_used_ = false,
 								user_ground_height_used_ = false,
+								user_max_height_used_ = false,
+								user_source_height_used_ = false,
+								user_receiver_height_used_ = false,
+								user_dz_used_ = false,
 			 					lossless_ = false,
 								toplayer_ = true,
 								topo_ = false,
