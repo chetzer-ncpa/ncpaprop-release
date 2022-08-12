@@ -513,7 +513,12 @@ int NCPA::EPadeSolver::solve_without_topography() {
 		z_abs[ i ] = z[ i ] + z_ground;
 		indices[ i ] = i;
 	}
-	zs = NCPA::max( zs-z_ground+dz, dz );
+	// zs = NCPA::max( zs-z_ground+dz, dz );
+	// zr = NCPA::max( zr-z_ground+dz, dz );
+	zs = NCPA::max( zs, z_ground );
+	zr = NCPA::max( zr, z_ground );
+	size_t zr_i = NCPA::find_closest_index<double>( z, NZ, zr );
+	std::cout << "zr_i for zr=" << zr << " is " << zr_i << std::endl;
 
 	if (use_turbulence) {
 		if (!random_turbulence) {
@@ -743,7 +748,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				for (i = 0; i < NZ; i++) {
 					tl[ i ][ ir ] = contents[ i ] * hank;
 				}
-				zgi_r[ ir ] = 0.0;
+				zgi_r[ ir ] = zr_i;  // constant receiver height
 
 				if ( fmod( rr, 1.0e5 ) < dr) {
 					std::cout << " -> Range " << rr/1000.0 << " km" << std::endl;
