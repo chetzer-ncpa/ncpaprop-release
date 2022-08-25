@@ -151,6 +151,8 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence_real", "Real part of ground impedence [rigid ground]" );
 	ps->addParameter( new NCPA::FloatParameter( "ground_impedence_imag", 0.0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--ground_impedence_imag", "Imaginary part of ground impedence [rigid ground]" );
+	ps->addParameter( new NCPA::FloatParameter( "top_layer_thickness_m", -1.0 ) );
+	ps->addParameterDescription( "Optional Parameters [default]", "--top_layer_thickness_m", "Thickness of absorbing layer at the domain top [frequency-dependent]" );
 	ps->addParameter( new NCPA::IntegerParameter( "n_turbulence", 20 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--n_turbulence", "Number of random turbulence phases to compute [20]" );
 	ps->addParameter( new NCPA::StringParameter( "turbulence_file" ) );

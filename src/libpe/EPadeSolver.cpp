@@ -83,6 +83,7 @@ void NCPA::EPadeSolver::set_default_values() {
 	// doubles
 	freq = 0.0; dz = 0.0; r_max = 0.0; z_max = 0.0; z_min = 0.0; z_ground = 0.0;
 	z_bottom = 0.0; zs = 0.0; zr = 0.0; calc_az = 0.0;
+	top_layer_thickness_m = -1.0;
 
 	// complex
 	user_ground_impedence = 0.0;
@@ -138,6 +139,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	if (user_tag.size() > 0) {
 		user_tag += ".";
 	}
+	top_layer_thickness_m = param->getFloat( "top_layer_thickness_m" );
 
 	// flags
 	lossless 			= param->wasFound( "lossless" );
@@ -1589,7 +1591,8 @@ int NCPA::EPadeSolver::delete_matrix_polynomial( size_t nterms, Mat **qpowers ) 
 }
 
 // Calculate and return k0, c0, c, a, k, and n
-void NCPA::EPadeSolver::calculate_atmosphere_parameters( NCPA::Atmosphere2D *atm, int NZvec, double *z_vec, 
+void NCPA::EPadeSolver::calculate_atmosphere_parameters(
+	NCPA::Atmosphere2D *atm, int NZvec, double *z_vec,
 	double r, double z_g, bool use_lossless, bool use_top_layer, double freq, bool absolute, 
 	double &k0, double &c0, double *c_vec, double *a_vec, std::complex<double> *k_vec, 
 	std::complex<double> *n_vec ) {
@@ -1619,7 +1622,11 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters( NCPA::Atmosphere2D *atm
 	double *abslayer = new double[ NZvec ];
 	memset( abslayer, 0, NZvec * sizeof(double) );
 	if (use_top_layer) {
-		absorption_layer( c0 / freq, z_vec, NZvec, abslayer );
+		double tlt = top_layer_thickness_m;
+		if (tlt < 0.0) {
+			tlt = NCPA::min<double>( c0 / freq, 5000.0 );
+		}
+		absorption_layer( tlt, z_vec, NZvec, abslayer );
 		// std::ofstream absout("abslayer_2d.dat");
 		// NCPA::print_2_columns<double,double>( absout, NZ, z, abslayer );
 		// absout.close();

@@ -182,6 +182,7 @@ namespace NCPA {
 		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double zs, zr;  // source height, receiver height
 		double c_underground;
+		double top_layer_thickness_m;
 		std::complex<double> user_ground_impedence;
 		bool user_ground_impedence_found = false;
 		//double zrcv;
