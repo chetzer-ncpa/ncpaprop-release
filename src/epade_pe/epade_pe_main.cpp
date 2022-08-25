@@ -66,7 +66,9 @@ int main( int argc, char **argv ) {
 	
 	EPadeSolver *solver;
 	try {
-		solver = new EPadeSolver( param );
+		// solver = new EPadeSolver( param );
+		solver = new EPadeSolver();
+		configure_epade_solver( solver, param );
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 		solver->solve();
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
