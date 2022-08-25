@@ -10,8 +10,10 @@
 
 #include "modes.h"
 #include "EigenEngine.h"
-#include "Atmosphere1D.h"
-#include "util.h"
+#include "ncpaprop_common.h"
+#include "ncpaprop_atmosphere.h"
+// #include "Atmosphere1D.h"
+// #include "util.h"
 
 #define MAX_MODES 4000 
 
@@ -114,6 +116,8 @@ void NCPA::WModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere1D
     Nfreq = 1;
   }
 
+  NCPA::setup_ncpaprop_atmosphere( atm_profile );
+
 	// get Hgt, zw, mw, T, rho, Pr in SI units; they are freed in computeModes()
 	// @todo write functions to allocate and free these, it shouldn't be hidden
 	// Note units: height in m, wind speeds in m/s, pressure in Pa(?), density in
@@ -128,7 +132,7 @@ void NCPA::WModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere1D
 	alpha = new double [Nz_grid];
 
 	// Set up units of atmospheric profile object
-	atm_profile->convert_altitude_units( Units::fromString( "m" ) );
+	// atm_profile->convert_altitude_units( Units::fromString( "m" ) );
 
 	//
 	// !!! ensure maxheight is less than the max height covered by the provided atm profile
@@ -145,7 +149,7 @@ void NCPA::WModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere1D
 	}
   
 	// fill and convert to SI units
-	double dz       = (maxheight - z_min)/(Nz_grid - 1);	// the z-grid spacing
+	// double dz       = (maxheight - z_min)/(Nz_grid - 1);	// the z-grid spacing
 	//double z_min_km = z_min / 1000.0;
 	//double dz_km    = dz / 1000.0;
   
@@ -153,33 +157,58 @@ void NCPA::WModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere1D
 	// the first value is at the ground level e.g. rho[0] = rho(z_min)
 	// @todo make fill_vector( zvec ) methods in AtmosphericProfile()
 	// @todo add underscores to internally calculated parameter keys
-	if (atm_profile->contains_vector( "C0" ) ) {
-    atm_profile->copy_vector_property( "C0", "_C0_" );
-    atm_profile->convert_property_units( "_C0_", Units::fromString( "m/s" ) );
+	// if (atm_profile->contains_vector( "C0" ) ) {
+ //    atm_profile->copy_vector_property( "C0", "_C0_" );
+ //    atm_profile->convert_property_units( "_C0_", Units::fromString( "m/s" ) );
 
-    // do we need to calculate temperature?
-    if (!atm_profile->contains_vector("T" )) {
-      std::cout << "No temperature provided, calculating from sound speed"
-            << std::endl;
-      atm_profile->calculate_temperature_from_sound_speed( "T", "_C0_",
-        Units::fromString( "K" ) );
+ //    // do we need to calculate temperature?
+ //    if (!atm_profile->contains_vector("T" )) {
+ //      std::cout << "No temperature provided, calculating from sound speed"
+ //            << std::endl;
+ //      atm_profile->calculate_temperature_from_sound_speed( "T", "_C0_",
+ //        Units::fromString( "K" ) );
+ //    }
+ //  } else {
+ //    if (atm_profile->contains_vector( "P" ) && atm_profile->contains_vector("RHO")) {
+ //      atm_profile->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
+ //        Units::fromString( "m/s" ) );
+ //    } else {
+ //      atm_profile->calculate_sound_speed_from_temperature( "_C0_", "T",
+ //        Units::fromString( "m/s" ) );
+ //    }
+ //  }
+ //  atm_profile->convert_property_units( "U", Units::fromString( "m/s" ) );
+ //  atm_profile->convert_property_units( "V", Units::fromString( "m/s" ) );
+ //  atm_profile->convert_property_units( "T", Units::fromString( "K" ) );
+ //  atm_profile->convert_property_units( "P", Units::fromString( "Pa" ) );
+ //  atm_profile->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
+ //  if (atm_profile->contains_scalar("Z0")) {
+ //    atm_profile->convert_property_units( "Z0", Units::fromString( "m" ) );
+ //    double profile_z0 = atm_profile->get( "Z0" );
+ //    if (z_min < profile_z0) {
+ //      std::cout << "Adjusting minimum altitude to profile ground height of "
+ //                << profile_z0 << " m" << std::endl;
+ //      z_min = profile_z0;
+ //    }
+ //  }
+
+ //  atm_profile->calculate_wind_speed( "_WS_", "U", "V" );
+	// atm_profile->calculate_wind_direction( "_WD_", "U", "V" );
+	// if (usrattfile.empty()) {
+ //    atm_profile->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
+ //  } else {
+ //    atm_profile->read_attenuation_from_file( "_ALPHA_", usrattfile );
+ //  }
+
+  // ground height cases
+  if (z_min_specified) {
+    // user specifies ground height.  This overrides a Z0 parameter
+    // in the profile file
+    if (atm_profile->contains_scalar("Z0")) {
+      atm_profile->remove_property("Z0");
     }
-  } else {
-    if (atm_profile->contains_vector( "P" ) && atm_profile->contains_vector("RHO")) {
-      atm_profile->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
-        Units::fromString( "m/s" ) );
-    } else {
-      atm_profile->calculate_sound_speed_from_temperature( "_C0_", "T", 
-        Units::fromString( "m/s" ) );
-    }
-  }
-  atm_profile->convert_property_units( "U", Units::fromString( "m/s" ) );
-  atm_profile->convert_property_units( "V", Units::fromString( "m/s" ) );
-  atm_profile->convert_property_units( "T", Units::fromString( "K" ) );
-  atm_profile->convert_property_units( "P", Units::fromString( "Pa" ) );
-  atm_profile->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
-  if (atm_profile->contains_scalar("Z0")) {
-    atm_profile->convert_property_units( "Z0", Units::fromString( "m" ) );
+    atm_profile->add_property("Z0",z_min,NCPA::Units::fromString("m"));
+  } else if (atm_profile->contains_scalar("Z0")) {
     double profile_z0 = atm_profile->get( "Z0" );
     if (z_min < profile_z0) {
       std::cout << "Adjusting minimum altitude to profile ground height of "
@@ -187,15 +216,16 @@ void NCPA::WModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere1D
       z_min = profile_z0;
     }
   }
-  
-  atm_profile->calculate_wind_speed( "_WS_", "U", "V" );
-	atm_profile->calculate_wind_direction( "_WD_", "U", "V" );
-	if (usrattfile.empty()) {
-    atm_profile->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
-  } else {
-    atm_profile->read_attenuation_from_file( "_ALPHA_", usrattfile );
+
+  // now check to make sure profile reaches the ground
+  if (z_min < atm_profile->get_minimum_altitude()) {
+    std::ostringstream oss;
+    oss << "Error: Atmospheric profile values do not reach the ground height of "
+      << z_min << " meters.";
+    throw std::runtime_error( oss.str() );
   }
 
+  double dz       = (maxheight - z_min)/(Nz_grid - 1);  // the z-grid spacing
 	for (int i=0; i<Nz_grid; i++) {
 		Hgt[i] = z_min + i*dz; // Hgt[0] = zground MSL
 		rho[i] = atm_profile->get( "RHO", Hgt[i]);

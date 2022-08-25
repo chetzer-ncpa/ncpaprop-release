@@ -2,7 +2,8 @@
 #define NCPAPROP_ATMOSPHERE3D_H_INCLUDED
 
 #include "ncpaprop_common.h"
-#include "ncpaprop_atmosphere.h"
+// #include "ncpaprop_atmosphere.h"
+#include "AtmosphericModel.h"
 #include "AtmosphericProperty3D.h"
 
 namespace NCPA {

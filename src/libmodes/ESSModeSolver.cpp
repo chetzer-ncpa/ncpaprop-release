@@ -11,8 +11,8 @@
 
 #include "modes.h"
 #include "EigenEngine.h"
-#include "Atmosphere1D.h"
-#include "util.h"
+#include "ncpaprop_common.h"
+#include "ncpaprop_atmosphere.h"
 
 #define MAX_MODES 4000 
 
@@ -92,7 +92,8 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 
 	azi_min     = azi;
 	atm_profile = atm_prof;
-	atm_profile->convert_altitude_units( Units::fromString( "m" ) );
+	// atm_profile->convert_altitude_units( Units::fromString( "m" ) );
+	NCPA::setup_ncpaprop_atmosphere( atm_profile );
 
 	// frequencies
 	if (param->getBool( "broadband" ) ) {
@@ -132,7 +133,6 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 	c_eff = new double [Nz_grid]; // to be filled in getModalTrace(), depends on azimuth
 	alpha = new double [Nz_grid];
 
-
 	//
 	// !!! ensure maxheight is less than the max height covered by the provided atm profile
 	// may avoid some errors asociated with the code thinking that it goes above 
@@ -148,69 +148,75 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 	}
   
 	// fill and convert to SI units
-	double dz       = (maxheight - z_min)/(Nz_grid - 1);	// the z-grid spacing
+	// double dz       = (maxheight - z_min)/(Nz_grid - 1);	// the z-grid spacing
 	//double z_min_km = z_min / 1000.0;
 	//double dz_km    = dz / 1000.0;
   
 	// Note: the rho, Pr, T, zw, mw are computed wrt ground level i.e.
 	// the first value is at the ground level e.g. rho[0] = rho(z_min)
-	// @todo make fill_vector( zvec ) methods in AtmosphericProfile()
-	// @todo add underscores to internally calculated parameter keys
-	if (atm_profile->contains_vector( "C0" ) ) {
-		std::cout << "Using user-supplied static sound speed" << std::endl;
-		atm_profile->copy_vector_property( "C0", "_C0_" );
-		atm_profile->convert_property_units( "_C0_", Units::fromString( "m/s" ) );
+	// if (atm_profile->contains_vector( "C0" ) ) {
+	// 	std::cout << "Using user-supplied static sound speed" << std::endl;
+	// 	atm_profile->copy_vector_property( "C0", "_C0_" );
+	// 	atm_profile->convert_property_units( "_C0_", Units::fromString( "m/s" ) );
 
-		// do we need to calculate temperature?
-		if (!atm_profile->contains_vector("T" )) {
-			std::cout << "No temperature provided, calculating from sound speed"
-					  << std::endl;
-			atm_profile->calculate_temperature_from_sound_speed( "T", "_C0_",
-				Units::fromString( "K" ) );
-		}
-	} else {
-		if (atm_profile->contains_vector( "P" ) && atm_profile->contains_vector("RHO")) {
-			std::cout << "Calculating sound speed from pressure and density." << std::endl;
-			atm_profile->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
-				Units::fromString( "m/s" ) );
-		} else if (atm_profile->contains_vector( "T" )) {
-			std::cout << "Calculating sound speed from temperature" << std::endl;
-			atm_profile->calculate_sound_speed_from_temperature( "_C0_", "T", 
-				Units::fromString( "m/s" ) );
-		} else {
-			throw std::runtime_error( "Can't calculate static sound speed, either temperature T or pressure P and density RHO missing" );
-		}
-	}
+	// 	// do we need to calculate temperature?
+	// 	if (!atm_profile->contains_vector("T" )) {
+	// 		std::cout << "No temperature provided, calculating from sound speed"
+	// 				  << std::endl;
+	// 		atm_profile->calculate_temperature_from_sound_speed( "T", "_C0_",
+	// 			Units::fromString( "K" ) );
+	// 	}
+	// } else {
+	// 	if (atm_profile->contains_vector( "P" ) && atm_profile->contains_vector("RHO")) {
+	// 		std::cout << "Calculating sound speed from pressure and density." << std::endl;
+	// 		atm_profile->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
+	// 			Units::fromString( "m/s" ) );
+	// 	} else if (atm_profile->contains_vector( "T" )) {
+	// 		std::cout << "Calculating sound speed from temperature" << std::endl;
+	// 		atm_profile->calculate_sound_speed_from_temperature( "_C0_", "T",
+	// 			Units::fromString( "m/s" ) );
+	// 	} else {
+	// 		throw std::runtime_error( "Can't calculate static sound speed, either temperature T or pressure P and density RHO missing" );
+	// 	}
+	// }
 
 	// Set up units of atmospheric profile object
-	atm_profile->convert_altitude_units( Units::fromString( "m" ) );
-	if (atm_profile->contains_vector("U")) {
-		atm_profile->convert_property_units( "U", Units::fromString( "m/s" ) );
-	} else {
-		throw std::runtime_error( "U wind vector not found in atmosphere file" );
-	}
-	if (atm_profile->contains_vector("V")) {
-		atm_profile->convert_property_units( "V", Units::fromString( "m/s" ) );
-	} else {
-		throw std::runtime_error( "V wind vector not found in atmosphere file" );
-	}
-	if (atm_profile->contains_vector("T")) {
-		atm_profile->convert_property_units( "T", Units::fromString( "K" ) );
-	} else {
-		throw std::runtime_error( "T temperature vector not found in atmosphere file" );
-	}
-	if (atm_profile->contains_vector("P")) {
-		atm_profile->convert_property_units( "P", Units::fromString( "Pa" ) );
-	} else {
-		throw std::runtime_error( "P pressure vector not found in atmosphere file" );
-	}
-	if (atm_profile->contains_vector("RHO")) {
-		atm_profile->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
-	} else {
-		throw std::runtime_error( "RHO density vector not found in atmosphere file" );
-	}
-	if (atm_profile->contains_scalar("Z0")) {
-		atm_profile->convert_property_units( "Z0", Units::fromString( "m" ) );
+	// atm_profile->convert_altitude_units( Units::fromString( "m" ) );
+	// if (atm_profile->contains_vector("U")) {
+	// 	atm_profile->convert_property_units( "U", Units::fromString( "m/s" ) );
+	// } else {
+	// 	throw std::runtime_error( "U wind vector not found in atmosphere file" );
+	// }
+	// if (atm_profile->contains_vector("V")) {
+	// 	atm_profile->convert_property_units( "V", Units::fromString( "m/s" ) );
+	// } else {
+	// 	throw std::runtime_error( "V wind vector not found in atmosphere file" );
+	// }
+	// if (atm_profile->contains_vector("T")) {
+	// 	atm_profile->convert_property_units( "T", Units::fromString( "K" ) );
+	// } else {
+	// 	throw std::runtime_error( "T temperature vector not found in atmosphere file" );
+	// }
+	// if (atm_profile->contains_vector("P")) {
+	// 	atm_profile->convert_property_units( "P", Units::fromString( "Pa" ) );
+	// } else {
+	// 	throw std::runtime_error( "P pressure vector not found in atmosphere file" );
+	// }
+	// if (atm_profile->contains_vector("RHO")) {
+	// 	atm_profile->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
+	// } else {
+	// 	throw std::runtime_error( "RHO density vector not found in atmosphere file" );
+	// }
+
+	// ground height cases
+	if (z_min_specified) {
+		// user specifies ground height.  This overrides a Z0 parameter
+		// in the profile file
+		if (atm_profile->contains_scalar("Z0")) {
+			atm_profile->remove_property("Z0");
+		}
+		atm_profile->add_property("Z0",z_min,NCPA::Units::fromString("m"));
+	} else if (atm_profile->contains_scalar("Z0")) {
 		double profile_z0 = atm_profile->get( "Z0" );
 		if (z_min < profile_z0) {
 			std::cout << "Adjusting minimum altitude to profile ground height of "
@@ -219,8 +225,18 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 		}
 	}
 
-	atm_profile->calculate_wind_speed( "_WS_", "U", "V" );
-	atm_profile->calculate_wind_direction( "_WD_", "U", "V" );
+	// now check to make sure profile reaches the ground
+	if (z_min < atm_profile->get_minimum_altitude()) {
+		std::ostringstream oss;
+		oss << "Error: Atmospheric profile values do not reach the ground height of "
+			<< z_min << " meters.";
+		throw std::runtime_error( oss.str() );
+	}
+
+	double dz = (maxheight - z_min)/(Nz_grid - 1);	// the z-grid spacing
+
+	// atm_profile->calculate_wind_speed( "_WS_", "U", "V" );
+	// atm_profile->calculate_wind_direction( "_WD_", "U", "V" );
 	if (usrattfile.empty()) {
 		atm_profile->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
 	} else {
@@ -296,13 +312,13 @@ int NCPA::ESSModeSolver::solve() {
 	double dz, admittance, rng_step, z_min_km;  // , h2;
 	double k_min, k_max;			
 	double *diag, *k2, *k_s, **v, **v_s;
-	complex<double> *k_pert;
+	std::complex<double> *k_pert;
 
 	diag   = new double [Nz_grid];
   
 	k2     = new double [MAX_MODES];
 	k_s    = new double [MAX_MODES];
-	k_pert = new complex<double> [MAX_MODES];
+	k_pert = new std::complex<double> [MAX_MODES];
 	v      = dmatrix(Nz_grid,MAX_MODES);
 	v_s    = dmatrix(Nz_grid,MAX_MODES); 			
 
