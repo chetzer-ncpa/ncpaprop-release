@@ -517,9 +517,9 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	}
 	// zs = NCPA::max( zs-z_ground+dz, dz );
 	// zr = NCPA::max( zr-z_ground+dz, dz );
-	zs = NCPA::max( zs, z_ground );
-	zr = NCPA::max( zr, z_ground );
-	size_t zr_i = NCPA::find_closest_index<double>( z, NZ, zr - z_ground );
+	// zs = NCPA::max( zs, z_ground );
+	// zr = NCPA::max( zr, z_ground );
+	size_t zr_i = NCPA::find_closest_index<double>( z, NZ, zr );
 	std::cout << "zr_i for zr=" << zr << " is " << zr_i << std::endl;
 
 	if (use_turbulence) {
@@ -1133,7 +1133,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		dz * NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR;
 	z_ground = check_ground_height_coincidence_with_grid(
 		z, NZ, grid_tolerance, z_ground );
-	zs = NCPA::max( zs, z_ground );
+	double zs_abs = z_ground + zs;
+	// zs = NCPA::max( zs, z_ground );
 
 	// define ground_index, which is J in @notes
 	ground_index = (int)(NCPA::find_closest_index( z, NZ, z_ground ));
@@ -1142,10 +1143,12 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	}
 
 	// adjust source height if it falls within 5% of a ground point
-	int closest_source_grid_point = (int)(NCPA::find_closest_index( z, NZ, zs ));
-	if (fabs(zs - z[ closest_source_grid_point ]) < grid_tolerance) {
-		zs = z[ closest_source_grid_point ] + grid_tolerance;
-		std::cout << "Adjusting source height to " << zs 
+	int closest_source_grid_point =
+		(int)(NCPA::find_closest_index( z, NZ, zs_abs ));
+	if (fabs(zs_abs - z[ closest_source_grid_point ])
+			< grid_tolerance) {
+		zs_abs = z[ closest_source_grid_point ] + grid_tolerance;
+		std::cout << "Adjusting source height to " << zs_abs-z_ground
 			<< " m to avoid grid point singularity" << std::endl;
 	}
 
@@ -1352,7 +1355,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					&q, true );
 				create_matrix_polynomial( npade+1, &q, &qpowers );
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
-				get_starter_gaussian( NZ, z, zs, k0, ground_index, &psi_o );
+				get_starter_gaussian( NZ, z, zs+z_ground, k0,
+					ground_index, &psi_o );
 			} else if (starter == "user" ) {
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
 					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
@@ -1449,10 +1453,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 
 				// make sure the receiver height is above ground
-				double z0g = z_ground;
-				z0g = NCPA::max( z0g, zr );
+				double z0g = z_ground + zr;
+				// z0g = NCPA::max( z0g, zr );
 				zgi_r[ ir ] = (int)(NCPA::find_closest_index( z, NZ, z0g ));
-				if ( z[ zgi_r[ ir ] ] < z0g ) {
+				if ( z[ zgi_r[ ir ] ] < z_ground ) {
 					zgi_r[ ir ]++;
 				}
 				
@@ -2202,8 +2206,8 @@ void NCPA::EPadeSolver::absorption_layer( double lambda, double *z, int NZ, doub
 }
 
 
-int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z, double zs, double k0, int ground_index,
-	Vec *psi ) {
+int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z,
+	double zs, double k0, int ground_index, Vec *psi ) {
 
 	double fac = 2.0;
 	//double kfac = k0 / fac;
@@ -2228,8 +2232,9 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z, double zs, do
 }
 
 
-int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nzground, 
-	double k0, Mat *qpowers, size_t npade, bool absolute, Vec *psi ) {
+int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs,
+	int nzground, double k0, Mat *qpowers, size_t npade, bool absolute,
+	Vec *psi ) {
 
 	Vec rhs, ksi, Bksi, tempvec;
 	Mat /*A, AA,*/ B, C;
@@ -2249,12 +2254,12 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nz
 	// we're in relative elevation, the ground is at 0 by definition
 	size_t nzsrc;
 	if (absolute) {
-		nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
+		nzsrc = NCPA::find_closest_index<double>( z, NZ, zs+z_ground );
 		while (z[nzsrc] < z_ground) {
 			nzsrc++;
 		}
 	} else {
-		nzsrc = NCPA::find_closest_index<double>( z, NZ, zs-z_ground );
+		nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
 	}
 
 	double h = z[1] - z[0];

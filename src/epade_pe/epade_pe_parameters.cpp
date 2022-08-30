@@ -130,10 +130,10 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 
 
 	ps->addParameter( new NCPA::FloatParameter( "sourceheight_km", 0.0 ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--sourceheight_km", "Source height in km [ground]" );
+	ps->addParameterDescription( "Optional Parameters [default]", "--sourceheight_km", "Source height in km above the ground [0.0]" );
 
 	ps->addParameter( new NCPA::FloatParameter( "receiverheight_km", 0.0 ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--receiverheight_km", "Receiver height in km [ground]" );
+	ps->addParameterDescription( "Optional Parameters [default]", "--receiverheight_km", "Receiver height in km above the ground [0.0]" );
 
 	ps->addParameter( new NCPA::FloatParameter( "groundheight_km", 0.0 ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--groundheight_km", "Ground height in km [Z0 parameter in profile, or 0.0]" );
@@ -166,7 +166,7 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::StringParameter( "topofile", "" ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--topofile", "File name containing topography [n/a]. Columns are #n# Range(km) Elevation(m) by default. #n# Units can be specified using header: #n#  #% r, km #n#  #% z, km" );
 	ps->addParameter( new NCPA::StringParameter( "starterfile", "" ) );
-	ps->addParameterDescription( "Optional Parameters [default]", "--starterfile", "File name containing starter [n/a]. Columns are #n# Height(km) RealPart ImaginaryPart" );
+	ps->addParameterDescription( "Optional Parameters [default]", "--starterfile", "File name containing starter [n/a]. Columns are #n# Height(km) RealPart ImaginaryPart #n# Height should be absolute if using --topo, ground-relative otherwise." );
 	ps->addParameter( new NCPA::StringParameter( "attnfile", "" ) );
 	ps->addParameterDescription( "Optional Parameters [default]", "--attnfile", "File name containing attenuation, to override default Sutherland/Bass [n/a]. Columns are #n# Height(km) Attenuation(np/m)" );
 	ps->addParameter( new NCPA::StringParameter( "filetag", "" ) );
