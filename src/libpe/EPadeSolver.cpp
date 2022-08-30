@@ -519,7 +519,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	// zr = NCPA::max( zr-z_ground+dz, dz );
 	zs = NCPA::max( zs, z_ground );
 	zr = NCPA::max( zr, z_ground );
-	size_t zr_i = NCPA::find_closest_index<double>( z, NZ, zr );
+	size_t zr_i = NCPA::find_closest_index<double>( z, NZ, zr - z_ground );
 	std::cout << "zr_i for zr=" << zr << " is " << zr_i << std::endl;
 
 	if (use_turbulence) {
@@ -2247,11 +2247,14 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs, int nz
 	// find closest index to zs. Make sure the picked point is above
 	// the ground surface if we're working in absolute elevation.  If
 	// we're in relative elevation, the ground is at 0 by definition
-	size_t nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
+	size_t nzsrc;
 	if (absolute) {
+		nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
 		while (z[nzsrc] < z_ground) {
 			nzsrc++;
 		}
+	} else {
+		nzsrc = NCPA::find_closest_index<double>( z, NZ, zs-z_ground );
 	}
 
 	double h = z[1] - z[0];
