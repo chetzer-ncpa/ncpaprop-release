@@ -97,6 +97,7 @@ void NCPA::EPadeSolver::set_default_values() {
 	multiprop = false; write2d = false;
 	broadband = false; write_starter = false; write_topo = false;
 	user_ground_impedence_found = false; write_atmosphere = false;
+	pointsource = true;
 
 	// string
 	starter = ""; attnfile = ""; user_starter_file = ""; topofile = "";
@@ -140,6 +141,10 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		user_tag += ".";
 	}
 	top_layer_thickness_m = param->getFloat( "top_layer_thickness_m" );
+	linesourcefile 		= param->getString( "linesourcefile" );
+	if (linesourcefile.size() > 0) {
+		pointsource = false;
+	}
 
 	// flags
 	lossless 			= param->wasFound( "lossless" );
@@ -194,8 +199,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		max_az 			= min_az;
 		step_az 		= 0;
 	}
-	azi = new double[ NAz ];
-	memset( azi, 0, NAz * sizeof( double ) );
+	azi = NCPA::zeros<double>( NAz );
 	for (size_t i = 0; i < NAz; i++) {
 		azi[ i ] = min_az + i * step_az;
 	}
@@ -220,14 +224,13 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
       	}
 
       	NF = (double)(std::floor((f_max - f_min) / f_step)) + 1;
-      	f = new double[ NF ];
-      	std::memset( f, 0, NF * sizeof( double ) );
+      	f = NCPA::zeros<double>( NF );
       	for (size_t fi = 0; fi < NF; fi++) {
       		f[ fi ] = f_min + ((double)fi) * f_step;
       	}
 	} else {
 		freq = param->getFloat( "freq" );
-		f = new double[ 1 ];
+		f = NCPA::zeros<double>( 1 );
 		f[ 0 ] = freq;
 		NF = 1;
 	}
@@ -504,12 +507,9 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	// fill and convert to SI units
 	//double dz       = (z_max - z_ground)/(NZ - 1);	// the z-grid spacing
 	NZ = ((int)std::floor((z_max - z_ground) / dz)) + 1;
-	z = new double[ NZ ];
-	z_abs = new double[ NZ ];
-	std::memset( z, 0, NZ * sizeof( double ) );
-	std::memset( z_abs, 0, NZ * sizeof( double ) );
-	indices = new PetscInt[ NZ ];
-	std::memset( indices, 0, NZ*sizeof(PetscInt) );
+	z = NCPA::zeros<double>( NZ );
+	z_abs = NCPA::zeros<double>( NZ );
+	indices = NCPA::zeros<PetscInt>( NZ );
 	for (i = 0; i < NZ; i++) {
 		z[ i ]     = ((double)i) * dz;
 		z_abs[ i ] = z[ i ] + z_ground;
@@ -559,10 +559,20 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 	// set up for source atmosphere
 	double k0 = 0.0, c0 = 0.0;
-	double *c = new double[ NZ ];
-	double *a_t = new double[ NZ ];
-	std::complex<double> *k = new std::complex<double>[ NZ ];
-	std::complex<double> *n = new std::complex<double>[ NZ ];
+	double *c = NCPA::zeros<double>( NZ );
+	double *a_t = NCPA::zeros<double>( NZ );
+	std::complex<double> *k = NCPA::zeros<std::complex<double>>( NZ );
+	std::complex<double> *n = NCPA::zeros<std::complex<double>>( NZ );
+
+	std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
+	if (starter == "self") {
+		if (pointsource) {
+			make_point_source( NZ, z, zs, 0.0, source );
+		} else {
+			read_line_source_from_file( NZ, z, z_ground,
+				linesourcefile, source );
+		}
+	}
 
 	// write broadband header for testing
 	if (broadband) {
@@ -601,10 +611,8 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 		  	std::cout << "Setting dr to " << dr << " meters." << std::endl;
 
-		  	r = new double[ NR ];
-		  	std::memset( r, 0, NR * sizeof(double) );
-		  	zgi_r = new int[ NR ];
-		  	std::memset( zgi_r, 0, NR * sizeof( int ) );
+		  	r = NCPA::zeros<double>( NR );
+		  	zgi_r = NCPA::zeros<int>( NR );
 
 		  	for (i = 0; i < NR; i++) {
 		  		r[ i ] = ((double)(i+1)) * dr;
@@ -639,15 +647,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 			// calculate q matrices
 			Mat q;
-			//qpowers = new Mat[ npade+1 ];
-			//qpowers_starter = new Mat[ npade+1 ];
-			// make_q_powers( NZ, z, k0, h2, ground_impedence_factor, n, npade+1, 0, qpowers );
-			// PetscBool symm;
-			// ierr = MatIsSymmetric( qpowers[0], 1e-8, &symm );
-			// std::cout << "Matrix q[0] " << (symm == PETSC_TRUE ? "is" : "is not") << " symmetric" << std::endl;
-			// exit(0);
-
-			build_operator_matrix_without_topography( NZ, z, k0, h2, ground_impedence_factor, 
+			build_operator_matrix_without_topography( NZ, z, k0, h2, ground_impedence_factor,
 				n, npade+1, 0, &q );
 			// outputSparseMat( q, NZ, "Q_orig.dat" );
 			create_matrix_polynomial( npade+1, &q, &qpowers );
@@ -655,13 +655,13 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 			if (starter == "self") {
 				Mat q_starter;
-				// qpowers_starter = new Mat[ npade+1 ];
-				// make_q_powers( NZ, z, k0, h2, ground_impedence_factor, n, npade+1, ground_index, qpowers_starter );
-				build_operator_matrix_without_topography( NZ, z, k0, h2, ground_impedence_factor, 
+				build_operator_matrix_without_topography( NZ, z, k0, h2, ground_impedence_factor,
 					n, npade+1, 0, &q_starter );
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
-				get_starter_self( NZ, z, zs, ground_index, k0, qpowers_starter, npade, 
-					false, &psi_o );
+
+				// source function calculated earlier
+				get_starter_self( NZ, z, source, k0, qpowers_starter,
+					npade, &psi_o );
 				
 				ierr = MatDestroy( &q_starter );CHKERRQ(ierr);
 			} else if (starter == "gaussian") {
@@ -687,7 +687,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 			std::cout << "Marching out field..." << std::endl;
 			ierr = VecDuplicate( psi_o, &Bpsi_o );CHKERRQ(ierr);
-			contents = new PetscScalar[ NZ ];
+			contents = NCPA::zeros<PetscScalar>( NZ );
 
 			ierr = KSPCreate( PETSC_COMM_SELF, &ksp );CHKERRQ(ierr);
 			ierr = KSPSetOperators( ksp, C, C );CHKERRQ(ierr);
@@ -902,9 +902,47 @@ int NCPA::EPadeSolver::get_starter_user( std::string filename, int NZ, double *z
 	}
 
 	return interpolate_starter( z_file, r_file, i_file, NZ, z, psi );
-
 }
 
+void NCPA::EPadeSolver::interpolate_complex( size_t NZ_orig,
+		double *z_orig, double *r_orig, double *i_orig,
+		size_t NZ_new, double *z_new, std::complex<double> *c_new ) {
+
+	gsl_interp_accel *accel_r_, *accel_i_;
+	gsl_spline *spline_r_, *spline_i_;
+	std::complex<double> J( 0.0, 1.0 );
+
+	accel_r_ = gsl_interp_accel_alloc();
+#if GSL_MAJOR_VERSION > 1
+	spline_r_ = gsl_spline_alloc( gsl_interp_steffen, NZ_orig );
+#else
+	spline_r_ = gsl_spline_alloc( gsl_interp_cspline, NZ_orig );
+#endif
+	gsl_spline_init( spline_r_, z_orig, r_orig, NZ_orig );
+	accel_i_ = gsl_interp_accel_alloc();
+#if GSL_MAJOR_VERSION > 1
+	spline_i_ = gsl_spline_alloc( gsl_interp_steffen, NZ_orig );
+#else
+	spline_i_ = gsl_spline_alloc( gsl_interp_cspline, NZ_orig );
+#endif
+	gsl_spline_init( spline_i_, z_orig, i_orig, NZ_orig );
+
+	for (size_t i = 0; i < NZ_new; i++) {
+		if (z_new[ i ] < z_orig[ 0 ] || z_new[ i ] > z_orig[ NZ_orig-1 ]) {
+			c_new[ i ] = 0.0;
+		} else {
+			c_new[ i ] = gsl_spline_eval( spline_r_, z_new[ i ], accel_r_ )
+				+ J * gsl_spline_eval( spline_i_, z_new[ i ], accel_i_ );
+		}
+	}
+
+	gsl_spline_free( spline_r_ );
+	gsl_spline_free( spline_i_ );
+	gsl_interp_accel_free( accel_r_ );
+	gsl_interp_accel_free( accel_i_ );
+}
+
+// @todo make this use the new interpolate_complex method
 int NCPA::EPadeSolver::interpolate_starter( 
 			std::deque<double> &z_orig, std::deque<double> &r_orig, 
 			std::deque<double> &i_orig, 
@@ -932,9 +970,9 @@ int NCPA::EPadeSolver::interpolate_starter(
 		i_orig.push_back( 0.0 );
 	}
 
-	z_spline = new double[ z_orig.size() ];
-	r_spline = new double[ z_orig.size() ];
-	i_spline = new double[ z_orig.size() ];
+	z_spline = NCPA::zeros<double>( z_orig.size() );
+	r_spline = NCPA::zeros<double>( z_orig.size() );
+	i_spline = NCPA::zeros<double>( z_orig.size() );
 	for (ii = 0; ii < (PetscInt)(z_orig.size()); ii++) {
 		z_spline[ ii ] = z_orig[ ii ];
 		r_spline[ ii ] = r_orig[ ii ];
@@ -1118,12 +1156,9 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 	z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
 	NZ = ((int)std::floor((z_max - z_bottom) / dz)) + 1;
-	z = new double[ NZ ];
-	z_abs = new double[ NZ ];
-	std::memset( z, 0, NZ * sizeof( double ) );
-	std::memset( z_abs, 0, NZ * sizeof( double ) );
-	indices = new PetscInt[ NZ ];
-	std::memset( indices, 0, NZ*sizeof(PetscInt) );
+	z = NCPA::zeros<double>( NZ );
+	z_abs = NCPA::zeros<double>( NZ );
+	indices = NCPA::zeros<PetscInt>( NZ );
 	for (i = 0; i < NZ; i++) {
 		z[ i ] = ((double)i) * dz + z_bottom;
 		z_abs[ i ] = z[ i ];
@@ -1189,10 +1224,20 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 	// set up for source atmosphere
 	double k0 = 0.0, c0 = 0.0;
-	double *c = new double[ NZ ];
-	double *a_t = new double[ NZ ];
-	std::complex<double> *k = new std::complex<double>[ NZ ];
-	std::complex<double> *n = new std::complex<double>[ NZ ];
+	double *c = NCPA::zeros<double>( NZ );
+	double *a_t = NCPA::zeros<double>( NZ );
+	std::complex<double> *k = NCPA::zeros<std::complex<double>>( NZ );
+	std::complex<double> *n = NCPA::zeros<std::complex<double>>( NZ );
+
+	std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
+	if (starter == "self") {
+		if (pointsource) {
+			make_point_source( NZ, z, zs+z_ground, z_ground, source );
+		} else {
+			read_line_source_from_file( NZ, z, z_ground,
+				linesourcefile, source );
+		}
+	}
 
 	// write broadband header for testing
 	if (broadband) {
@@ -1232,11 +1277,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		  		NR = NR_requested;
 		  		dr = r_max / NR;
 		  	}
-		  	r = new double[ NR ];
-		  	std::memset( r, 0, NR * sizeof(double) );
-		  	zgi_r = new int[ NR ];
-		  	std::memset( zgi_r, 0, NR * sizeof( int ) );
-		  	// int i;
+		  	r = NCPA::zeros<double>( NR );
+		  	zgi_r = NCPA::zeros<int>( NR );
 		  	for (i = 0; i < NR; i++) {
 		  		r[ i ] = ((double)(i+1)) * dr;
 		  	}
@@ -1278,20 +1320,13 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				// for now build the non-topographic starter
 				// revisit when time and funding permit
 				size_t NZ_starter = NZ - ground_index;
-				double *z_starter = new double[ NZ_starter ];
-				std::memset( z_starter, 0, NZ_starter * sizeof(double) );
-
-				std::complex<double> *k_starter = new std::complex<double>[ NZ_starter ];
-				std::memset( k_starter, 0, NZ_starter * sizeof(std::complex<double>) );
-
-				std::complex<double> *n_starter = new std::complex<double>[ NZ_starter ];
-				std::memset( n_starter, 0, NZ_starter * sizeof(std::complex<double>) );
-
-				double *c_starter = new double[ NZ_starter ];
-				std::memset( c_starter, 0, NZ_starter * sizeof(double) );
-
-				double *a_starter = new double[ NZ_starter ];
-				std::memset( a_starter, 0, NZ_starter * sizeof(double) );
+				double *z_starter = NCPA::zeros<double>( NZ_starter ),
+					   *c_starter = NCPA::zeros<double>( NZ_starter ),
+					   *a_starter = NCPA::zeros<double>( NZ_starter );
+				std::complex<double> *k_starter =
+					NCPA::zeros<std::complex<double>>( NZ_starter );
+				std::complex<double> *n_starter =
+					NCPA::zeros<std::complex<double>>( NZ_starter );
 
 				double k0_starter, c0_starter;
 				size_t ii;
@@ -1309,17 +1344,14 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					k0_starter, h2, ground_impedence_factor, n_starter, npade+1, 0, 
 					&q_starter );
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
-				get_starter_self( NZ_starter, z_starter, zs, 0, k0_starter,
-					qpowers_starter, npade, true, &psi_o );
+				get_starter_self( NZ_starter, z_starter, source, k0_starter,
+					qpowers_starter, npade, &psi_o );
 
 				// now interpolate calculated starter to actual Z vector
 				std::deque< double > z_spline, r_spline, i_spline;
-				PetscScalar *psi_orig = new PetscScalar[ NZ_starter ];
-				std::memset( psi_orig, 0, NZ_starter * sizeof( PetscScalar ) );
-				PetscInt *starter_indices = new PetscInt[ NZ_starter ];
-				for (ii = 0; ii < NZ_starter; ii++) {
-					starter_indices[ ii ] = ii;
-				}
+				PetscScalar *psi_orig = NCPA::zeros<PetscScalar>( NZ_starter );
+				PetscInt *starter_indices = NCPA::index_vector<PetscInt>( NZ_starter );
+
 				ierr = VecGetValues( psi_o, NZ_starter, starter_indices, psi_orig );CHKERRQ(ierr);
 				for (ii = 0; ii < NZ_starter; ii++) {
 					z_spline.push_back( z_starter[ ii ] );
@@ -1382,7 +1414,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 			std::cout << "Marching out field..." << std::endl;
 			ierr = VecDuplicate( psi_o, &Bpsi_o );CHKERRQ(ierr);
-			contents = new PetscScalar[ NZ ];
+			contents = NCPA::zeros<PetscScalar>( NZ );
 
 			ierr = KSPCreate( PETSC_COMM_SELF, &ksp );CHKERRQ(ierr);
 			ierr = KSPSetOperators( ksp, C, C );CHKERRQ(ierr);
@@ -1628,8 +1660,7 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
 			fill_atm_vector_relative( atm, r, NZvec, z_vec, "_ALPHA_", z_g, a_vec );
 		}
 	}
-	double *abslayer = new double[ NZvec ];
-	memset( abslayer, 0, NZvec * sizeof(double) );
+	double *abslayer = NCPA::zeros<double>( NZvec );
 	if (use_top_layer) {
 		double tlt = top_layer_thickness_m;
 		if (tlt < 0.0) {
@@ -1806,14 +1837,9 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
 	//double dJ = zvec[ Ji ] / h;
 
 	// number of nonzero values
-	nonzeros = new PetscInt[ NZvec ];
-	indices = new PetscInt[ NZvec ];
-	col = new PetscInt[ NZvec ];
-	for (i = 0; i < NZvec; i++) {
-		nonzeros[ i ] = 3;
-		indices[ i ] = i;
-		col[ i ] = 0;
-	}
+	nonzeros = NCPA::single_valued_vector<PetscInt>( NZvec, 3 );
+	indices  = NCPA::index_vector<PetscInt>( NZvec );
+	col      = NCPA::zeros<PetscInt>( NZvec );
 	nonzeros[ 0 ] = 2;
 	nonzeros[ NZvec-1 ] = 2;
 
@@ -1843,7 +1869,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
 	gamma = s_A / (J_s - dJ + 1.0);
 
 	// Calculate matrix ratio representation of sqrt(1+Q)
-	rowDiff = new PetscScalar[ NZvec ];
+	rowDiff = NCPA::zeros<PetscScalar>( NZvec );
 	if (last_q != PETSC_NULL) {
 		PetscScalar I( 0.0, 1.0 ), *rowAbove, *rowBelow;
 		PetscScalar M = I * k0 * atm->get_interpolated_ground_elevation_first_derivative( r ) * h / denom;
@@ -1854,13 +1880,11 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
 		ierr = VecScale( vecAbove, M );CHKERRQ(ierr);
 		
 		// get the Ji'th and (Ji-1)'th rows of the M matrix
-		rowBelow = new PetscScalar[ NZvec ];
-		std::memset( rowBelow, 0, NZvec * sizeof(PetscScalar) );
+		rowBelow = NCPA::zeros<PetscScalar>( NZvec );
 		ierr = VecGetValues( vecBelow, NZvec, indices, rowBelow );CHKERRQ(ierr);
 		nonzeros[ Ji-1 ] = num_nonzeros;
 
-		rowAbove = new PetscScalar[ NZvec ];
-		std::memset( rowAbove, 0, NZvec * sizeof(PetscScalar) );
+		rowAbove = NCPA::zeros<PetscScalar>( NZvec );
 		ierr = VecGetValues( vecAbove, NZvec, indices, rowAbove );CHKERRQ(ierr);
 		nonzeros[ Ji ] = num_nonzeros;
 		
@@ -1899,8 +1923,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
 
     // iterate over block.  If this instance contains the first row, leave that one
     // for later, same for if this instance contains the last row.
-    PetscScalar *Drow = new PetscScalar[ NZvec ];
-    memset( Drow, 0, NZvec*sizeof(PetscScalar) );
+    PetscScalar *Drow = NCPA::zeros<PetscScalar>( NZvec );
     for( i=(FirstBlock? Istart+1: Istart); i<(LastBlock? Iend-1: Iend); i++ ) {
 
 		// set column numbers.  Since the matrix Q is tridiagonal (because input 
@@ -2231,9 +2254,90 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z,
 	return 1;
 }
 
+void NCPA::EPadeSolver::make_point_source( size_t NZ, double *z, double zs,
+		double z_ground, std::complex<double> *source ) {
+	std::memset( source, 0, NZ * sizeof(std::complex<double>) );
+	size_t nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
+	while (z[nzsrc] < z_ground) {
+		nzsrc++;
+	}
+	source[ nzsrc ].real( 1.0 );
+}
 
-int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs,
-	int nzground, double k0, Mat *qpowers, size_t npade, bool absolute,
+void NCPA::EPadeSolver::read_line_source_from_file( size_t NZ, double *z,
+	double z_ground, const std::string &filename,
+	std::complex<double> *source ) {
+
+	std::vector< std::string >::const_iterator cit;
+
+	// get the lines
+	std::string delimiters = ":,= ";
+	std::string headerchars = "#";
+	std::vector< std::vector< std::string > > contents;
+	std::vector< std::string > headerlines;
+	NCPA::read_text_columns_from_file_with_header(
+		filename, contents, headerlines, delimiters, headerchars );
+
+	// first, parse the header for units information
+	NCPA::units_t file_z_units = NCPA::Units::fromString( "km" );
+	for (cit = headerlines.cbegin(); cit != headerlines.cend(); ++cit) {
+		std::string thisline = *cit;
+		if (thisline.find( "#%" ) == 0) {
+			thisline.erase( 0, 2 );
+			thisline = NCPA::deblank( thisline );
+			std::vector<std::string> fields = NCPA::split(
+				thisline, delimiters );
+			if (fields.size() < 2) {
+				std::cerr << "Line source file descriptive header line "
+						  << thisline << " has no delimiter characters ("
+						  << delimiters << "), ignoring" << std::endl;
+			} else {
+				units_t tempunits = NCPA::Units::fromString( fields[1] );
+				if (tempunits == UNITS_NONE) {
+					std::cerr << "Unrecognized units " << fields[1]
+							  << ", ignoring" << std::endl;
+				} else {
+					switch ((fields[0])[0]) {
+						case 'z':
+						case 'Z':
+							file_z_units = tempunits;
+							break;
+						default:
+							std::cerr << "Unrecognized parameter tag "
+									<< (fields[0])[0]
+									<< ", must be in [Zz].  Ignoring"
+									<< std::endl;
+					}
+				}
+			}
+		}
+	}
+
+	// now get the column contents
+	bool complex_in = (contents.size() == 3);
+	size_t nvals = contents[ 0 ].size();
+	double *z_orig = NCPA::zeros<double>( nvals ),
+		   *r_orig = NCPA::zeros<double>( nvals ),
+		   *i_orig = NCPA::zeros<double>( nvals );
+	for (size_t ii = 0; ii < nvals; ii++) {
+		z_orig[ ii ] = std::stod( contents[ 0 ][ ii ] );
+		r_orig[ ii ] = std::stod( contents[ 1 ][ ii ] );
+		if (complex_in) {
+			i_orig[ ii ] = std::stod( contents[ 2 ][ ii ] );
+		}
+	}
+
+	std::memset( source, 0, NZ*sizeof(std::complex<double>) );
+	interpolate_complex( nvals, z_orig, r_orig, i_orig, NZ, z, source );
+	delete [] z_orig;
+	delete [] r_orig;
+	delete [] i_orig;
+
+}
+
+
+int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
+	std::complex<double> *source, double k0, Mat *qpowers, size_t npade,
 	Vec *psi ) {
 
 	Vec rhs, ksi, Bksi, tempvec;
@@ -2252,21 +2356,24 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs,
 	// find closest index to zs. Make sure the picked point is above
 	// the ground surface if we're working in absolute elevation.  If
 	// we're in relative elevation, the ground is at 0 by definition
-	size_t nzsrc;
-	if (absolute) {
-		nzsrc = NCPA::find_closest_index<double>( z, NZ, zs+z_ground );
-		while (z[nzsrc] < z_ground) {
-			nzsrc++;
-		}
-	} else {
-		nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
-	}
+	// size_t nzsrc;
+	// if (absolute) {
+	// 	nzsrc = NCPA::find_closest_index<double>( z, NZ, zs+z_ground );
+	// 	while (z[nzsrc] < z_ground) {
+	// 		nzsrc++;
+	// 	}
+	// } else {
+	// 	nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
+	// }
 
 	double h = z[1] - z[0];
 	PetscScalar hinv = 1.0 / h;
-	PetscInt ps_nzsrc = nzsrc;
-	ierr = VecSetValues( rhs, 1, &ps_nzsrc, &hinv, INSERT_VALUES );CHKERRQ(ierr);
-	
+	PetscInt *indices = NCPA::index_vector<PetscInt>( NZ );
+	// PetscInt ps_nzsrc = nzsrc;
+	// ierr = VecSetValues( rhs, 1, &ps_nzsrc, &hinv, INSERT_VALUES );CHKERRQ(ierr);
+	ierr = VecSetValues( rhs, NZ, indices, source, INSERT_VALUES );CHKERRQ(ierr);
+	ierr = VecScale( rhs, hinv );CHKERRQ(ierr);
+
 	// solve first part (Eq. 26)
 	ierr = VecDuplicate( rhs, &ksi );CHKERRQ(ierr);
 	ierr = VecCopy( rhs, ksi );CHKERRQ(ierr);
@@ -2374,8 +2481,7 @@ int NCPA::EPadeSolver::calculate_pade_coefficients( std::vector<PetscScalar> *c,
 	ierr = VecSetFromOptions( x ); CHKERRQ(ierr);
 	ierr = VecDuplicate( x, &y );CHKERRQ(ierr);
 
-	//indices = new PetscInt[ N-1 ];
-	indices = new PetscInt[ N ];
+	indices = NCPA::zeros<PetscInt>( N );
 	for (ii = 0; ii < N; ii++) {
 		tempsc = -c->at( ii+1 );
 		// std::cout << "y[ " << ii << " ] = -c[ " << ii+1 << " ] = " << tempsc << std::endl;
@@ -2394,7 +2500,7 @@ int NCPA::EPadeSolver::calculate_pade_coefficients( std::vector<PetscScalar> *c,
 	ierr = KSPSolve( ksp, y, x );CHKERRQ(ierr);
 
 	// populate P and Q vectors. Q is denominator coefficients (b), P is numerator coefficients (a)
-	contents = new PetscScalar[ N ];
+	contents = NCPA::zeros<PetscScalar>( N );
 	ierr = VecGetValues( x, N, indices, contents );
 
 	numerator_coefficients->clear();
@@ -2557,8 +2663,7 @@ void NCPA::EPadeSolver::write_broadband_header( std::string filename, double *az
 	if (n_f > buf_size) {
 		buf_size = n_f;
 	}
-	int64_t *buffer = new int64_t[ buf_size ];
-	std::memset( buffer, 0, buf_size * sizeof( int64_t ) );
+	int64_t *buffer = NCPA::zeros<int64_t>( buf_size );
 
 	// write header starting with vector sizes and multiplicative factor
 	uint32_t holder = n_az;
@@ -2635,8 +2740,7 @@ void NCPA::EPadeSolver::write_broadband_results( std::string filename, double th
 	if (n_z > buf_size) {
 		buf_size = n_z;
 	}
-	int64_t *buffer = new int64_t[ buf_size ];
-	std::memset( buffer, 0, buf_size * sizeof( int64_t ) );
+	int64_t *buffer = NCPA::zeros<int64_t>( buf_size );
 	size_t i, j;
 	for (i = 0; i < n_z; i++) {
 		buffer[ i ] = (int64_t)std::lround( z_vec[ i ] * (double)precision_factor );
@@ -2737,80 +2841,6 @@ void NCPA::EPadeSolver::calculate_effective_sound_speed(
 		throw std::runtime_error( oss.str() );
 	}
 }
-
-// void NCPA::EPadeSolver::calculate_turbulence_orig( double r,
-// 		size_t nz, double *z, double k_a,
-// 		double *&mu ) const {
-
-// 	size_t i, j, nt;
-// 	nt = turbulence->size();
-
-// 	// build matrices
-// 	NCPA::Matrix<double> *vec1, *mat1, *mat_mu;
-
-// 	vec1 = new NCPA::DenseMatrix<double>( 1, nt );
-// 	mat1 = new NCPA::DenseMatrix<double>( nt, nz );
-
-// 	// std::ofstream ofs( "mat1_orig.dat" );
-
-// 	// fill vector and matrix
-// 	for (i = 0; i < nt; i++) {
-// 		vec1->set( 0, i, turbulence->get_G( i ) );
-// 		for (j = 0; j < nz; j++) {
-// 			double temp = r * turbulence->get_k( i ).real()
-// 						+ turbulence->get_alpha( i )
-// 						+ turbulence->get_k( i ).imag() * z[ j ];
-// 			mat1->set( i, j, std::cos( temp ) );
-// 			// ofs << i << " " << j << " " << mat1->get( i, j ) << std::endl;
-// 		}
-// 	}
-
-// 	// std::ofstream ofs( "vec1_orig.dat" );
-// 	// for (i = 0; i < nt; i++) {
-// 	// 	ofs << vec1->get( 0, i ) << std::endl;
-// 	// }
-// 	// ofs.close();
-
-// 	mat_mu = vec1->multiply( mat1 );
-// 	for (j = 0; j < nz; j++) {
-// 		mu[ j ] = mat_mu->get( 0, j );
-// 	}
-
-// 	delete vec1;
-// 	delete mat1;
-// 	delete mat_mu;
-// }
-
-
-// void NCPA::EPadeSolver::calculate_turbulence( double r,
-// 		size_t nz, double *z, double k_a,
-// 		double *&mu ) const {
-
-// 	size_t i, j, nt;
-// 	nt = turbulence->size();
-
-// 	gsl_vector_set_zero( t_vec1 );
-// 	gsl_vector_set_zero( t_vec_mu );
-// 	gsl_matrix_set_zero( t_mat1 );
-
-// 	for (i = 0; i < nt; i++) {
-// 		// vec1->set( 0, i, turbulence->get_G( i ) );
-// 		gsl_vector_set( t_vec1, i, turbulence->get_G( i ) );
-// 		for (j = 0; j < nz; j++) {
-// 			double temp = r * turbulence->get_k( i ).real()
-// 						+ turbulence->get_alpha( i )
-// 						+ turbulence->get_k( i ).imag() * z[ j ];
-// 			gsl_matrix_set( t_mat1, j, i, std::cos( temp ) );
-// 			// mat1->set( i, j, std::cos( temp ) );
-// 			// ofs << i << " " << j << " " << mat1->get( i, j ) << std::endl;
-// 		}
-// 	}
-
-// 	gsl_blas_dgemv( CblasNoTrans, 1.0, t_mat1, t_vec1, 0.0, t_vec_mu );
-// 	for (j = 0; j < nz; j++) {
-// 		mu[ j ] = gsl_vector_get( t_vec_mu, j );
-// 	}
-// }
 
 void NCPA::EPadeSolver::calculate_turbulence( double r,
 		size_t nz, double *z, double k_a, size_t ground_index,

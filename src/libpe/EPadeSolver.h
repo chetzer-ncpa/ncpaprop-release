@@ -120,13 +120,20 @@ namespace NCPA {
 
 		// functions to calculate the various starter fields
 		int get_starter_gaussian( size_t NZ, double *z, double zs, double k0, int ground_index, Vec *psi );
-		int get_starter_self( size_t NZ, double *z, double z_source, int ground_index, 
-			double k0, Mat *qpowers, size_t npade, bool absolute, Vec *psi );
+		int get_starter_self( size_t NZ, double *z,
+			std::complex<double> *source, double k0, Mat *qpowers,
+			size_t npade, Vec *psi );
 		int get_starter_user( std::string filename, int NZ, double *z, Vec *psi );
 		int interpolate_starter( std::deque<double> &z_orig, std::deque<double> &r_orig, 
 			std::deque<double> &i_orig, size_t NZ_new, double *z_new, Vec *psi );
-		// int get_starter_self_revised( size_t NZ, double *z, double z_source, double rr, 
-		// 	double z_ground, double k0, Mat *qpowers, size_t npade, Vec *psi );
+		void interpolate_complex( size_t NZ_orig,
+			double *z_orig, double *r_orig, double *i_orig,
+			size_t NZ_new, double *z_new, std::complex<double> *c_new );
+		void make_point_source( size_t NZ, double *z, double zs,
+			double z_ground, std::complex<double> *source );
+		void read_line_source_from_file( size_t NZ, double *z,
+			double z_ground, const std::string &filename,
+			std::complex<double> *source );
 
 		// functions to calculate atmospheric parameters
 		void absorption_layer( double lambda, double *z, int NZ, double *layer );
@@ -177,7 +184,7 @@ namespace NCPA {
 		bool z_ground_specified = false, lossless = false, top_layer = true;
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
-		bool write_atmosphere = false;
+		bool write_atmosphere = false, pointsource = true;
 		double r_max;    // range limits
 		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double zs, zr;  // source height, receiver height
@@ -192,6 +199,7 @@ namespace NCPA {
 		std::string user_starter_file;
 		std::string topofile;
 		std::string user_tag = "";
+		std::string linesourcefile;
 
 		// turbulence parameters
 		NCPA::Turbulence *turbulence;

@@ -321,7 +321,8 @@ void NCPA::read_matrix_from_file( const std::string &filename, double **&content
 }
 
 void NCPA::read_text_columns_from_file( const std::string &filename,
-		std::vector< std::vector< std::string > > &contents, std::string delimiters ) {
+		std::vector< std::vector< std::string > > &contents,
+		std::string delimiters ) {
 
 	// count the rows
 	//size_t nrows = count_rows_arbcol( filename );
@@ -392,4 +393,49 @@ size_t NCPA::nextpow2( size_t v ) {
 		p++;
 	}
 	return p;
+}
+
+
+void NCPA::read_text_columns_from_file_with_header(
+		const std::string &filename,
+		std::vector< std::vector< std::string > > &contents,
+		std::vector< std::string > &headerlines,
+		const std::string &delimiters, const std::string &headerchars ) {
+
+	std::vector< std::string > fields;
+	size_t datanum = 0, i;
+	contents.clear();
+	headerlines.clear();
+
+	// open and start to read
+	std::ifstream infile( filename );
+	std::string line;
+	NCPA::safe_getline( infile, line );
+	line = NCPA::deblank( line );
+
+	// see if it's a header line.  First non-whitespace character
+	// will be one of headerchars
+	std::vector<std::string> initvec( 1 );
+	while (infile.good()) {
+		if (line.find_first_of( headerchars ) == 0) {
+			headerlines.push_back( line );
+		} else {
+			fields.clear();
+			fields = NCPA::split( line, delimiters );
+			size_t ncols = fields.size();
+
+			// if we don't have enough columns, add more
+			for (i = 0; i < ncols; i++) {
+				if (contents.size() <= i) {
+					initvec.resize(datanum+1);
+					contents.resize( i+i, initvec );
+				}
+				contents[ i ][ datanum ] = fields[ i ];
+			}
+		}
+		++datanum;
+		NCPA::safe_getline( infile, line );
+		line = NCPA::deblank( line );
+	}
+	infile.close();
 }

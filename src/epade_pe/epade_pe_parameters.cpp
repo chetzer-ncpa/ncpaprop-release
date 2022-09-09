@@ -60,7 +60,10 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	test->addStringParameter( "gaussian" );
 	test->addStringParameter( "user" );
 	ps->addParameterDescription( "Required Parameters", "--starter", "Starter type: one of { self, gaussian, user }" );
-	
+	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
+	ps->addParameterDescription( "Required Parameters", "--linesourcefile", "File containing line source as a function of height [n/a]. Columns are #n# Range(km) Elevation(m) by default. #n# Units can be specified using header: #n#  #% z, km");
+	ps->addParameter( new NCPA::StringParameter( "linesourcefile", "" ) );
+	ps->resetParameterIndent();
 
 	ps->addParameter( new NCPA::FloatParameter( "maxrange_km" ) );
 	ps->addTest( new NCPA::RequiredTest( "maxrange_km" ) );
