@@ -457,12 +457,11 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	Mat *qpowers = PETSC_NULL, *qpowers_starter = PETSC_NULL;
 	Vec psi_o, Bpsi_o; //, psi_temp;
 	KSP ksp;
+	PC pc;
 
 	// for turbulence, if needed
 	double *mu_r, *mu_rpdr;
 	std::vector<double> rand1, rand2;
-
-	// PC pc;
 
 	// set up z grid for flat ground.  When we add terrain we will need to move this inside
 	// the range loop
@@ -690,6 +689,9 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			contents = new PetscScalar[ NZ ];
 
 			ierr = KSPCreate( PETSC_COMM_SELF, &ksp );CHKERRQ(ierr);
+			ierr = KSPSetType( ksp, KSPPREONLY );CHKERRQ(ierr);
+			ierr = KSPGetPC( ksp, &pc );CHKERRQ(ierr);
+			ierr = PCSetType( pc, PCLU );CHKERRQ(ierr);
 			ierr = KSPSetOperators( ksp, C, C );CHKERRQ(ierr);
 			ierr = KSPSetFromOptions( ksp );CHKERRQ(ierr);
 			for (size_t ir = 0; ir < (NR-1); ir++) {
@@ -1076,7 +1078,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	Mat *qpowers = PETSC_NULL, *qpowers_starter = PETSC_NULL;
 	Vec psi_o, Bpsi_o; //, psi_temp;
 	KSP ksp;
-	// PC pc;
+	PC pc;
 
 	// for turbulence, if needed
 	double *mu_r, *mu_rpdr;
@@ -1383,8 +1385,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			std::cout << "Marching out field..." << std::endl;
 			ierr = VecDuplicate( psi_o, &Bpsi_o );CHKERRQ(ierr);
 			contents = new PetscScalar[ NZ ];
-
 			ierr = KSPCreate( PETSC_COMM_SELF, &ksp );CHKERRQ(ierr);
+			ierr = KSPSetType( ksp, KSPPREONLY );CHKERRQ(ierr);
+			ierr = KSPGetPC( ksp, &pc );CHKERRQ(ierr);
+			ierr = PCSetType( pc, PCLU );CHKERRQ(ierr);
 			ierr = KSPSetOperators( ksp, C, C );CHKERRQ(ierr);
 			ierr = KSPSetFromOptions( ksp );CHKERRQ(ierr);
 			for (size_t ir = 0; ir < (NR-1); ir++) {
@@ -2237,10 +2241,10 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs,
 	Vec *psi ) {
 
 	Vec rhs, ksi, Bksi, tempvec;
-	Mat /*A, AA,*/ B, C;
-	KSP /*ksp,*/ ksp2;
+	Mat B, C;
+	KSP ksp2;
+	PC pc;
 	PetscScalar I( 0.0, 1.0 ), tempsc, zeroval = 0.0;
-	// PetscInt ii, Istart, Iend;
 	PetscErrorCode ierr;
 	
 	// create rhs vector
@@ -2292,6 +2296,9 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z, double zs,
 
 	// solve for tempvec = C \ Bksi
 	ierr = KSPCreate( PETSC_COMM_WORLD, &ksp2 );CHKERRQ(ierr);
+	ierr = KSPSetType( ksp2, KSPPREONLY );CHKERRQ(ierr);
+	ierr = KSPGetPC( ksp2, &pc );CHKERRQ(ierr);
+	ierr = PCSetType( pc, PCLU );CHKERRQ(ierr);
 	ierr = KSPSetOperators( ksp2, C, C );CHKERRQ(ierr);
 	ierr = KSPSetFromOptions( ksp2 );CHKERRQ(ierr);
 	ierr = KSPSolve( ksp2, Bksi, *psi );CHKERRQ(ierr);
@@ -2345,6 +2352,7 @@ int NCPA::EPadeSolver::calculate_pade_coefficients( std::vector<PetscScalar> *c,
 	Mat A;
 	Vec x, y;
 	KSP ksp;
+	PC pc;
 
 	// Create and populate matrix system
 	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, N, N, n_denominator, NULL, &A );CHKERRQ(ierr);
@@ -2389,6 +2397,9 @@ int NCPA::EPadeSolver::calculate_pade_coefficients( std::vector<PetscScalar> *c,
 
 	// solve
 	ierr = KSPCreate( PETSC_COMM_WORLD, &ksp );CHKERRQ(ierr);
+	ierr = KSPSetType( ksp, KSPPREONLY );CHKERRQ(ierr);
+	ierr = KSPGetPC( ksp, &pc );CHKERRQ(ierr);
+	ierr = PCSetType( pc, PCLU );CHKERRQ(ierr);
 	ierr = KSPSetOperators( ksp, A, A );CHKERRQ(ierr);
 	ierr = KSPSetFromOptions( ksp );CHKERRQ(ierr);
 	ierr = KSPSolve( ksp, y, x );CHKERRQ(ierr);
