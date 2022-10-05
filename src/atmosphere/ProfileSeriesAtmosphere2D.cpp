@@ -41,11 +41,15 @@ NCPA::ProfileSeriesAtmosphere2D::ProfileSeriesAtmosphere2D( const std::string& f
 		}
 
 		try {
-			range = std::stof( fields[ 0 ] );
+			range = std::stod( fields[ 0 ] );
 		} catch ( std::invalid_argument &e ) {
 			oss << "ProfileSeriesAtmosphere2D - Error parsing input line:" << std::endl << line << std::endl 
 				<< "First field not parseable as a floating-point number" << std::endl;
 			throw std::invalid_argument( oss.str() );
+		} catch (std::out_of_range &e) {
+			oss << "Error converting data line:" << std::endl << line
+				<< std::endl << "Value  is out of range for double precision.";
+			throw std::runtime_error( oss.str() );
 		}
 
 		atmfile = fields[ 1 ];
