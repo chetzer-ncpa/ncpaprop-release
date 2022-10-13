@@ -37,7 +37,13 @@ int main( int argc, char **argv ) {
 	// object to process the options
 	ParameterSet *param = new ParameterSet();
 	configure_epade_pe_parameter_set( param );
-	param->parseCommandLine( argc, argv );
+	try {
+		param->parseCommandLine( argc, argv );
+	} catch (std::invalid_argument &e) {
+		std::cout << "Argument parsing from command line failed:"
+			<< std::endl << e.what() << std::endl;
+		return 0;
+	}
 
 	// check for help text
 	if (param->wasFound( "help" ) || param->wasFound("h") ) {
@@ -47,10 +53,22 @@ int main( int argc, char **argv ) {
 
 	// See if an options file was specified
 	string paramFile = param->getString( "paramfile" );
-	param->parseFile( paramFile );
+	try {
+		param->parseFile( paramFile );
+	} catch (std::invalid_argument &e) {
+		std::cout << "Argument parsing from " << paramFile
+			<< " failed: " << std::endl << e.what() << std::endl;
+		return 0;
+	}
 
 	// parse command line again, to override file options
-	param->parseCommandLine( argc, argv );
+	try {
+		param->parseCommandLine( argc, argv );
+	} catch (std::invalid_argument &e) {
+		std::cout << "Argument parsing from command line failed:"
+			<< std::endl << e.what() << std::endl;
+		return 0;
+	}
 
 	// see if we want a parameter summary
 	if (param->wasFound( "printparams" ) ) {
