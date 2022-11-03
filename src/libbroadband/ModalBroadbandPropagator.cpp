@@ -7,6 +7,7 @@
 #include <complex>
 #include <cstring>
 #include <fstream>
+#include <algorithm>
 #include "util.h"
 #include "parameterset.h"
 
@@ -158,10 +159,6 @@ int NCPA::ModalBroadbandPropagator::calculate_waveform() {
   transfer_function = new std::complex<double> [Nfreq];
   pulse_vec = new std::complex<double> [NFFT];
   arg_vec   = new std::complex<double> [NFFT]; 
-  std::memset( dft_vec,   0, Nfreq * sizeof( std::complex< double > ) );
-  std::memset( transfer_function, 0, Nfreq * sizeof( std::complex< double > ) );
-  std::memset( pulse_vec, 0, NFFT  * sizeof( std::complex< double > ) );
-  std::memset( arg_vec,   0, NFFT  * sizeof( std::complex< double > ) );
 
   fmx = ((double)NFFT)*f_step; // max frequency
 								      
@@ -214,7 +211,8 @@ int NCPA::ModalBroadbandPropagator::calculate_waveform() {
           t0=tskip+rr/max_cel;
           printf("%8.3f     %9.3f      %9.3f\n", max_cel, t0, rr/1000.0);
 
-          std::memset( transfer_function,  0, Nfreq * sizeof( std::complex< double > ) );
+          //std::memset( transfer_function,  0, Nfreq * sizeof( std::complex< double > ) );
+          std::fill( transfer_function, transfer_function + Nfreq, std::complex<double>{} );
           compute_modal_sum( rr );
 
           // the call with NFFT as argument			            

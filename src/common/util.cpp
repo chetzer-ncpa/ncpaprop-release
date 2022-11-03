@@ -23,12 +23,15 @@ std::string NCPA::timeAsString(double d) {
     tm* uttime = std::gmtime( &temptime );
     double ipart, fpart;
     fpart = std::modf( d, &ipart);
+    char holder[50];
 
-    char* holder = new char[ 28 ];
-    std::sprintf(holder,"%4d-%02d-%02d %02d:%02d:%02d.%03d GMT",
-            uttime->tm_year+1900, uttime->tm_mon+1, uttime->tm_mday,
-            uttime->tm_hour, uttime->tm_min, uttime->tm_sec,
-            (int)(round(fpart * 1000)) );
+    std::sprintf(holder,"%4d-%02d-%02d %02d:%02d:%06.3f GMT",
+            (unsigned char)(uttime->tm_year)+1900,
+			(unsigned char)(uttime->tm_mon+1),
+			(unsigned char)(uttime->tm_mday),
+            (unsigned char)(uttime->tm_hour),
+			(unsigned char)(uttime->tm_min),
+			(double)(uttime->tm_sec) + fpart );
     std::string s = holder;
     return s;
 }

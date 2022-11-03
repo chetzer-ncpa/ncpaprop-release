@@ -12,6 +12,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <cstdint>
+#include <algorithm>
 
 #include "petscksp.h"
 
@@ -1642,8 +1643,10 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
 
 	std::memset( c_vec, 0, NZvec * sizeof(double) );
 	std::memset( a_vec, 0, NZvec * sizeof(double) );
-	std::memset( k_vec, 0, NZvec * sizeof( std::complex< double > ) );
-	std::memset( n_vec, 0, NZvec * sizeof( std::complex< double > ) );
+//	std::memset( k_vec, 0, NZvec * sizeof( std::complex< double > ) );
+//	std::memset( n_vec, 0, NZvec * sizeof( std::complex< double > ) );
+	std::fill( k_vec, k_vec+NZvec, std::complex<double>{} );
+	std::fill( n_vec, n_vec+NZvec, std::complex<double>{} );
 
 	// z_vec is relative to ground
 	if (absolute) {
@@ -2256,7 +2259,8 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z,
 
 void NCPA::EPadeSolver::make_point_source( size_t NZ, double *z, double zs,
 		double z_ground, std::complex<double> *source ) {
-	std::memset( source, 0, NZ * sizeof(std::complex<double>) );
+//	std::memset( source, 0, NZ * sizeof(std::complex<double>) );
+	std::fill( source, source+NZ, std::complex<double>{} );
 	size_t nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
 	while (z[nzsrc] < z_ground) {
 		nzsrc++;
@@ -2327,7 +2331,8 @@ void NCPA::EPadeSolver::read_line_source_from_file( size_t NZ, double *z,
 		}
 	}
 
-	std::memset( source, 0, NZ*sizeof(std::complex<double>) );
+//	std::memset( source, 0, NZ*sizeof(std::complex<double>) );
+	std::fill( source, source+NZ, std::complex<double>{} );
 	interpolate_complex( nvals, z_orig, r_orig, i_orig, NZ, z, source );
 	delete [] z_orig;
 	delete [] r_orig;

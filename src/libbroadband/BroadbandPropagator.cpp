@@ -443,8 +443,7 @@ void NCPA::BroadbandPropagator::model_pulse_fft(double power,double scale, doubl
   std::complex<double> *p_vec;
   fftw_plan p;
 
-  p_vec=(std::complex<double> *)malloc(sizeof(std::complex<double>)*NFFT);
-  std::memset( p_vec, 0, sizeof(std::complex<double>)*NFFT );
+  p_vec = new std::complex<double>( NFFT );
 
   for(i=0;i<NFFT;i++){
     p_vec[i]=model_pulse_shape(power,scale,i*dt); // the pulse timeseries

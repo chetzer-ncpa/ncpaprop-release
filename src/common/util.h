@@ -487,8 +487,8 @@ namespace NCPA {
 	*/
 	template<typename T>
 	T *zeros( size_t n ) {
-		T *out = new T[ n ];
-		std::memset( out, 0, n*sizeof(T) );
+		T *out = new T[ n ]();
+//		std::memset( out, 0, n*sizeof(T) );
 		return out;
 	}
 
@@ -632,8 +632,8 @@ namespace NCPA {
 		T **v;
 		v = new T* [nr];
 		for (size_t i = 0; i < nr; i++) {
-			v[ i ] = new T[ nc ];
-			std::memset( v[ i ], 0, nc * sizeof(T) );
+			v[ i ] = new T[ nc ]();
+			//std::memset( v[ i ], 0, nc * sizeof(T) );
 		}
 		return v;
 	}
