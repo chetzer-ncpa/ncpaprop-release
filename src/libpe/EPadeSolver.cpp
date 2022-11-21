@@ -21,6 +21,7 @@
 #include "gsl/gsl_version.h"
 #include "gsl/gsl_blas.h"
 
+#include "Atmosphere1D.h"
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
 
@@ -224,7 +225,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
       		throw std::runtime_error( "f_min must be less than f_max!" );
       	}
 
-      	NF = (double)(std::floor((f_max - f_min) / f_step)) + 1;
+      	NF = (size_t)(std::floor((f_max - f_min) / f_step)) + 1;
       	f = NCPA::zeros<double>( NF );
       	for (size_t fi = 0; fi < NF; fi++) {
       		f[ fi ] = f_min + ((double)fi) * f_step;
@@ -404,7 +405,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	double lambda0 = c0 / freq;
   	if (dz <= 0.0) {
   		dz = lambda0 / 20.0;
-  		double nearestpow10 = std::pow( 10.0, std::floor( std::log10( dz ) ) );
+  		double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
   		double factor = std::floor( dz / nearestpow10 );
   		dz = nearestpow10 * factor;
   		std::cout << "Setting dz to " << dz << " m" << std::endl;
