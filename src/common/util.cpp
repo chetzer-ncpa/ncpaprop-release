@@ -406,7 +406,7 @@ void NCPA::read_text_columns_from_file_with_header(
 		const std::string &delimiters, const std::string &headerchars ) {
 
 	std::vector< std::string > fields;
-	size_t datanum = 0, i;
+	size_t j, i;
 	contents.clear();
 	headerlines.clear();
 
@@ -418,27 +418,44 @@ void NCPA::read_text_columns_from_file_with_header(
 
 	// see if it's a header line.  First non-whitespace character
 	// will be one of headerchars
-	std::vector<std::string> initvec( 1 );
+//	std::vector<std::string> initvec( 1 );
+	std::vector<std::string> datalines;
 	while (infile.good()) {
 		if (line.find_first_of( headerchars ) == 0) {
 			headerlines.push_back( line );
 		} else {
-			fields.clear();
-			fields = NCPA::split( line, delimiters );
-			size_t ncols = fields.size();
-
-			// if we don't have enough columns, add more
-			for (i = 0; i < ncols; i++) {
-				if (contents.size() <= i) {
-					initvec.resize(datanum+1);
-					contents.resize( i+i, initvec );
-				}
-				contents[ i ][ datanum ] = fields[ i ];
-			}
+			datalines.push_back(line);
+//			fields.clear();
+//			fields = NCPA::split( line, delimiters );
+//			size_t ncols = fields.size();
+//
+//			// if we don't have enough columns, add more
+//			for (i = 0; i < ncols; i++) {
+//				if (contents.size() <= i) {
+//					initvec.resize(datanum+1);
+//					contents.resize( i+i, initvec );
+//					std::cout << "Resizing contents to " << i+1 << std::endl;
+//				}
+//				std::cout << "Trying contents[" << i << "][" << datanum << "] = "
+//						<< fields[i] << std::endl;
+//				contents[ i ][ datanum ] = fields[ i ];
+//			}
+//			++datanum;
 		}
-		++datanum;
+//		++datanum;
 		NCPA::safe_getline( infile, line );
 		line = NCPA::deblank( line );
 	}
 	infile.close();
+
+	// identify number of columns
+	fields = NCPA::split(datalines[0], delimiters);
+	std::vector<std::string> initvec( datalines.size() );
+	contents.resize( fields.size(), initvec );
+	for (i = 0; i < datalines.size(); i++) {
+		fields = NCPA::split(datalines[i],delimiters);
+		for (j = 0; j < fields.size(); j++) {
+			contents[j][i] = fields[j];
+		}
+	}
 }

@@ -1490,7 +1490,11 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				double z0g = z_ground + zr;
 				// z0g = NCPA::max( z0g, zr );
 				zgi_r[ ir ] = (int)(NCPA::find_closest_index( z, NZ, z0g ));
-				if ( z[ zgi_r[ ir ] ] < z_ground ) {
+				while ( z[ zgi_r[ ir ] ] <= z_ground ) {
+//					std::cout << "Adjusting reported z for r[" << ir << "] = "
+//							<< r[ ir ] << " from "
+//							<< z[ zgi_r[ ir ] ] << " to " << z[ zgi_r[ ir ]+1 ]
+//							<< " for z_g = " << z_ground << std::endl;
 					zgi_r[ ir ]++;
 				}
 				
