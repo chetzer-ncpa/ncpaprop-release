@@ -21,6 +21,10 @@
 #define NCPAPROP_EPADE_PE_FILENAME_2D "tloss_2d.pe"
 #endif
 
+#ifndef NCPAPROP_EPADE_PE_2D_OUTPUT_Z_STEP
+#define NCPAPROP_EPADE_PE_2D_OUTPUT_Z_STEP 10
+#endif
+
 #ifndef NCPAPROP_EPADE_PE_FILENAME_MULTIPROP
 #define NCPAPROP_EPADE_PE_FILENAME_MULTIPROP "tloss_multiprop.pe"
 #endif
@@ -52,6 +56,39 @@
 #ifndef NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR
 #define NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR 0.01
 #endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_Z
+#define NCPAPROP_EPADE_PE_UNITS_Z NCPA::Units::fromString("m")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_R
+#define NCPAPROP_EPADE_PE_UNITS_R NCPA::Units::fromString("m")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_T
+#define NCPAPROP_EPADE_PE_UNITS_T NCPA::Units::fromString("K")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_U
+#define NCPAPROP_EPADE_PE_UNITS_U NCPA::Units::fromString("m/s")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_V
+#define NCPAPROP_EPADE_PE_UNITS_V NCPA::Units::fromString("m/s")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_P
+#define NCPAPROP_EPADE_PE_UNITS_P NCPA::Units::fromString("Pa")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_RHO
+#define NCPAPROP_EPADE_PE_UNITS_RHO NCPA::Units::fromString("kg/m3")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_C
+#define NCPAPROP_EPADE_PE_UNITS_C NCPA::Units::fromString("m/s")
+#endif
+
 
 namespace NCPA {
 

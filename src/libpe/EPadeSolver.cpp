@@ -39,7 +39,7 @@ void NCPA::EPadeSolver::outputVec( Vec &v, double *z, int n, std::string filenam
 	VecGetArray(v,&array);
 	for (int i = 0; i < n; i++) {
 		if (z != NULL) {
-			out << z[i]/1000.0 << "  ";
+			out << z[i] << "  ";
 		}
 		out << array[i].real() << "  " << array[i].imag() << std::endl;
 	}
@@ -256,13 +256,13 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		std::cerr << "Unknown atmosphere option selected" << std::endl;
 		exit(0);
 	}
-	atm_profile_2d->convert_range_units( NCPA::Units::fromString( "m" ) );
+	atm_profile_2d->convert_range_units( NCPAPROP_EPADE_PE_UNITS_R );
 	if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
 		atm_profile_2d->set_maximum_valid_range( r_max );
 	}
 
 	// altitude units
-	atm_profile_2d->convert_altitude_units( Units::fromString( "m" ) );
+	atm_profile_2d->convert_altitude_units( NCPAPROP_EPADE_PE_UNITS_Z );
 
 	// Ground height is treated differently depending on whether we're
 	// using topography or not
@@ -279,7 +279,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 			    << " m" << std::endl;
 			atm_profile_2d->remove_property("Z0");
 			atm_profile_2d->add_property( "Z0", z_ground,
-				NCPA::Units::fromString("m") );
+					NCPAPROP_EPADE_PE_UNITS_Z );
 			atm_profile_2d->finalize_elevation_from_profiles();
 		} else {
 			atm_profile_2d->finalize_elevation_from_profiles();
@@ -294,7 +294,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
 			     << " m" << std::endl;
 			atm_profile_2d->remove_property("Z0");
-			atm_profile_2d->add_property( "Z0", z_ground, NCPA::Units::fromString("m") );
+			atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
 		} else {
 			if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
 				z_ground = atm_profile_2d->get_minimum_altitude( 0.0 );
@@ -302,7 +302,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 					atm_profile_2d->get_altitude_units(0.0));
 			}
 		}
-		atm_profile_2d->convert_property_units( "Z0", Units::fromString( "m" ) );
+		atm_profile_2d->convert_property_units( "Z0", NCPAPROP_EPADE_PE_UNITS_Z );
 		z_ground = atm_profile_2d->get( 0.0, "Z0" );
 	}
 
@@ -314,28 +314,28 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 	// set units
 	if (atm_profile_2d->contains_vector(0,"U")) {
-		atm_profile_2d->convert_property_units( "U", Units::fromString( "m/s" ) );
+		atm_profile_2d->convert_property_units( "U", NCPAPROP_EPADE_PE_UNITS_U );
 	}
 	if (atm_profile_2d->contains_vector(0,"V")) {
-		atm_profile_2d->convert_property_units( "V", Units::fromString( "m/s" ) );
+		atm_profile_2d->convert_property_units( "V", NCPAPROP_EPADE_PE_UNITS_V );
 	}
 	if (atm_profile_2d->contains_vector(0,"T")) {
-		atm_profile_2d->convert_property_units( "T", Units::fromString( "K" ) );
+		atm_profile_2d->convert_property_units( "T", NCPAPROP_EPADE_PE_UNITS_T );
 	}
 	if (atm_profile_2d->contains_vector(0,"P")) {
-		atm_profile_2d->convert_property_units( "P", Units::fromString( "Pa" ) );
+		atm_profile_2d->convert_property_units( "P", NCPAPROP_EPADE_PE_UNITS_P );
 	}
 
 	// need density
 	if (atm_profile_2d->contains_vector(0,"RHO")) {
-		atm_profile_2d->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
+		atm_profile_2d->convert_property_units( "RHO", NCPAPROP_EPADE_PE_UNITS_RHO );
 	} else {
 		std::cout << "No density provided, calculating from temperature and pressure" << std::endl;
 		for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
 			it != atm_profile_2d->last_profile(); ++it) {
 			if ( (*it)->contains_vector("T") && (*it)->contains_vector("P") ) {
 				(*it)->calculate_density_from_temperature_and_pressure(
-					"RHO", "T", "P", Units::fromString( "kg/m3" ) );
+					"RHO", "T", "P", NCPAPROP_EPADE_PE_UNITS_RHO );
 			} else {
 				throw std::runtime_error( "No RHO provided, and at least one of T and P is missing." );
 			}
@@ -348,17 +348,17 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
 		 it != atm_profile_2d->last_profile(); ++it) {
 		if ( (*it)->contains_vector( "C0" ) ) {
-			(*it)->convert_property_units( "C0", Units::fromString( "m/s" ) );
+			(*it)->convert_property_units( "C0", NCPAPROP_EPADE_PE_UNITS_C );
 			(*it)->copy_vector_property( "C0", "_C0_" );
 			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
 		} else {
 			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
 				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
-					Units::fromString( "m/s" ) );
+						NCPAPROP_EPADE_PE_UNITS_C );
 				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
 			} else if ( (*it)->contains_vector("T") ) {
 				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
-					Units::fromString( "m/s" ) );
+						NCPAPROP_EPADE_PE_UNITS_C );
 				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
 			} else if ( (*it)->contains_vector( "CEFF" ) ) {
 				c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
@@ -370,7 +370,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 	// wind speed
 	if (atm_profile_2d->contains_vector(0,"WS")) {
-		atm_profile_2d->convert_property_units("WS", Units::fromString("m/s") );
+		atm_profile_2d->convert_property_units("WS", NCPAPROP_EPADE_PE_UNITS_U );
 		atm_profile_2d->copy_vector_property( "WS", "_WS_" );
 	} else if (atm_profile_2d->contains_vector(0,"U")
 		&& atm_profile_2d->contains_vector(0,"V")) {
@@ -1497,6 +1497,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 //							<< " for z_g = " << z_ground << std::endl;
 					zgi_r[ ir ]++;
 				}
+				zgi_r[ir]++;
 				
 				if ( fmod( rr, 1.0e5 ) < dr) {
 					std::cout << " -> Range " << rr/1000.0 << " km" << std::endl;
@@ -2288,7 +2289,7 @@ void NCPA::EPadeSolver::read_line_source_from_file( size_t NZ, double *z,
 		filename, contents, headerlines, delimiters, headerchars );
 
 	// first, parse the header for units information
-	NCPA::units_t file_z_units = NCPA::Units::fromString( "km" );
+	NCPA::units_t file_z_units = NCPAPROP_EPADE_PE_UNITS_Z;
 	for (cit = headerlines.cbegin(); cit != headerlines.cend(); ++cit) {
 		std::string thisline = *cit;
 		if (thisline.find( "#%" ) == 0) {
@@ -2323,8 +2324,10 @@ void NCPA::EPadeSolver::read_line_source_from_file( size_t NZ, double *z,
 	}
 
 	// now get the column contents
-	bool complex_in = (contents.size() == 3);
+	size_t ncols = contents.size();
 	size_t nvals = contents[ 0 ].size();
+	bool complex_in = (ncols == 3);
+
 	double *z_orig = NCPA::zeros<double>( nvals ),
 		   *r_orig = NCPA::zeros<double>( nvals ),
 		   *i_orig = NCPA::zeros<double>( nvals );
@@ -2337,6 +2340,8 @@ void NCPA::EPadeSolver::read_line_source_from_file( size_t NZ, double *z,
 	}
 
 //	std::memset( source, 0, NZ*sizeof(std::complex<double>) );
+	// convert units
+	NCPA::Units::convert(z_orig,nvals,file_z_units,NCPAPROP_EPADE_PE_UNITS_Z,z_orig);
 	std::fill( source, source+NZ, std::complex<double>{} );
 	interpolate_complex( nvals, z_orig, r_orig, i_orig, NZ, z, source );
 	delete [] z_orig;
@@ -2620,20 +2625,23 @@ void NCPA::EPadeSolver::output1DTL( std::string filename, bool append ) {
 		out_1d.open( filename, std::ofstream::out | std::ofstream::trunc );
 	}
 	for (size_t i = 0; i < (NR-1); i++) {
-		out_1d << r[ i ]/1000.0 << " " << calc_az << " " << tl[ zgi_r[ i ] ][ i ].real()
-		       << " " << tl[ zgi_r[ i ] ][ i ].imag() << std::endl;
+		out_1d << r[ i ]/1000.0 << " "
+			   << calc_az << " "
+			   << z[ zgi_r[ i ] ] << " "
+			   << tl[ zgi_r[ i ] ][ i ].real() << " "
+			   << tl[ zgi_r[ i ] ][ i ].imag() << std::endl;
 	}
 	out_1d.close();
 }
 
 void NCPA::EPadeSolver::output2DTL( std::string filename ) {
 	std::ofstream out_2d( filename, std::ofstream::out | std::ofstream::trunc );
-	int zplot_int = 10;
 	for (size_t i = 0; i < (NR-1); i++) {
-		for (size_t j = 0; j < NZ; j += zplot_int) {
-			//out_2d << r[ i ]/1000.0 << " " << z[ j ]/1000.0 << " " << tl[ j ][ i ] << " 0.0" << std::endl;
-			out_2d << r[ i ]/1000.0 << " " << z[ j ]/1000.0 << " " << tl[ j ][ i ].real() 
-			<< " " << tl[ j ][ i ].imag() << std::endl;
+		for (size_t j = 0; j < NZ; j += NCPAPROP_EPADE_PE_2D_OUTPUT_Z_STEP) {
+			out_2d  << r[ i ]/1000.0 << " "
+					<< z[ j ]/1000.0 << " "
+					<< tl[ j ][ i ].real() << " "
+					<< tl[ j ][ i ].imag() << std::endl;
 		}
 		out_2d << std::endl;
 	}
@@ -2830,7 +2838,7 @@ void NCPA::EPadeSolver::calculate_effective_sound_speed(
 
 	// first: was it given explicitly using column "CEFF"?
 	if (atm->contains_vector( 0.0, "CEFF" )) {
-		atm->convert_property_units( "CEFF", Units::fromString( "m/s" ) );
+		atm->convert_property_units( "CEFF", NCPAPROP_EPADE_PE_UNITS_C );
 		atm->copy_vector_property( "CEFF", new_key );
 
 	// do we have the wind speed and direction?
