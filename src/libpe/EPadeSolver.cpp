@@ -857,9 +857,10 @@ int NCPA::EPadeSolver::get_starter_user( std::string filename, int NZ, double *z
 	std::ifstream in( filename );
 	std::string line;
 	std::vector< std::string > filelines, fields;
-	std::deque< double > z_file, r_file, i_file;
+//	std::deque< double > z_file, r_file, i_file;
 	size_t nlines, i;
 	std::ostringstream oss;
+	PetscErrorCode ierr;
 
 	std::getline( in, line );
 
@@ -876,7 +877,9 @@ int NCPA::EPadeSolver::get_starter_user( std::string filename, int NZ, double *z
 	in.close();
 
 	nlines = filelines.size();
-	double this_z, this_r, this_i;
+//	double this_z, this_r, this_i;
+	double *this_z = NCPA::zeros<double>( nlines );
+	std::complex<double> *this_c = NCPA::zeros<std::complex<double>>( nlines );
 
 	for (i = 0; i < nlines; i++) {
 		fields = NCPA::split( NCPA::deblank( filelines[ i ] ), " ," );
@@ -888,98 +891,164 @@ int NCPA::EPadeSolver::get_starter_user( std::string filename, int NZ, double *z
 		}
 
 		try {
-			this_z = std::stod( fields[ 0 ] );
-			this_r = std::stod( fields[ 1 ] );
-			this_i = std::stod( fields[ 2 ] );
+			this_z[ i ] = std::stod( fields[ 0 ] ) * 1000.0;
+			this_c[ i ].real( std::stod( fields[ 1 ] ) );
+			this_c[ i ].imag( std::stod( fields[ 2 ] ) );
 		} catch ( std::invalid_argument &e ) {
 			oss << "EPadeSolver - Error parsing starter line:" << std::endl << line << std::endl 
 				<< "All fields must be numeric" << std::endl;
 			throw std::invalid_argument( oss.str() );
 		}
-		z_file.push_back( this_z * 1000.0 );
-		r_file.push_back( this_r );
-		i_file.push_back( this_i );
+//		z_file.push_back( this_z * 1000.0 );
+//		r_file.push_back( this_r );
+//		i_file.push_back( this_i );
 	}
 
-	return interpolate_starter( z_file, r_file, i_file, NZ, z, psi );
+	ierr = VecCreate( PETSC_COMM_SELF, psi );CHKERRQ(ierr);
+	ierr = VecSetSizes( *psi, PETSC_DECIDE, NZ );CHKERRQ(ierr);
+	ierr = VecSetFromOptions( *psi ); CHKERRQ(ierr);
+	ierr = VecSet( *psi, 0.0 );
+	PetscInt *z_indices = NCPA::index_vector<PetscInt>( NZ );
+	PetscScalar *new_c = NCPA::zeros<PetscScalar>( NZ );
+	interpolate_complex( nlines, this_z, this_c, NZ, z, new_c );
+	ierr = VecSetValues( *psi, NZ, z_indices, new_c, INSERT_VALUES );CHKERRQ(ierr);
+	ierr = VecAssemblyBegin( *psi );CHKERRQ(ierr);
+	ierr = VecAssemblyEnd( *psi );CHKERRQ(ierr);
+
+	delete [] this_z;
+	delete [] this_c;
+	return 1;
 
 }
 
-int NCPA::EPadeSolver::interpolate_starter( 
-			std::deque<double> &z_orig, std::deque<double> &r_orig, 
-			std::deque<double> &i_orig, 
-			size_t NZ_new, double *z_new, Vec *psi ) {
+void NCPA::EPadeSolver::interpolate_complex( size_t NZ_orig,
+		double *z_orig, std::complex<double> *c_orig,
+		size_t NZ_new, double *z_new, std::complex<double> *c_new ) {
+	double *r_orig = NCPA::zeros<double>( NZ_orig );
+	double *i_orig = NCPA::zeros<double>( NZ_orig );
+	for (size_t i = 0; i < NZ_orig; i++) {
+		r_orig[ i ] = c_orig[ i ].real();
+		i_orig[ i ] = c_orig[ i ].imag();
+	}
+	interpolate_complex( NZ_orig, z_orig, r_orig, i_orig, NZ_new, z_new, c_new );
+	delete [] r_orig;
+	delete [] i_orig;
+}
 
-	PetscScalar J( 0.0, 1.0 );
-	PetscErrorCode ierr;
+
+void NCPA::EPadeSolver::interpolate_complex( size_t NZ_orig,
+		double *z_orig, double *r_orig, double *i_orig,
+		size_t NZ_new, double *z_new, std::complex<double> *c_new ) {
+
 	gsl_interp_accel *accel_r_, *accel_i_;
 	gsl_spline *spline_r_, *spline_i_;
-	double *z_spline, *r_spline, *i_spline;
-
-	PetscInt ii;
-	PetscScalar tempval;
-	
-
-	double dz = z_orig[ 1 ] - z_orig[ 0 ];
-	while (z_orig.front() > z_new[ 0 ]) {
-		z_orig.push_front( z_orig[ 0 ] - dz );
-		r_orig.push_front( 0.0 );
-		i_orig.push_front( 0.0 );
-	}
-	while (z_orig.back() < z_new[ NZ_new-1 ]) {
-		z_orig.push_back( z_orig.back() + dz );
-		r_orig.push_back( 0.0 );
-		i_orig.push_back( 0.0 );
-	}
-
-	z_spline = new double[ z_orig.size() ];
-	r_spline = new double[ z_orig.size() ];
-	i_spline = new double[ z_orig.size() ];
-	for (ii = 0; ii < (PetscInt)(z_orig.size()); ii++) {
-		z_spline[ ii ] = z_orig[ ii ];
-		r_spline[ ii ] = r_orig[ ii ];
-		i_spline[ ii ] = i_orig[ ii ];
-	}
+	std::complex<double> J( 0.0, 1.0 );
 
 	accel_r_ = gsl_interp_accel_alloc();
 #if GSL_MAJOR_VERSION > 1
-	spline_r_ = gsl_spline_alloc( gsl_interp_steffen, z_orig.size() );
+	spline_r_ = gsl_spline_alloc( gsl_interp_steffen, NZ_orig );
 #else
-	spline_r_ = gsl_spline_alloc( gsl_interp_cspline, z_orig.size() );
+	spline_r_ = gsl_spline_alloc( gsl_interp_cspline, NZ_orig );
 #endif
-	gsl_spline_init( spline_r_, z_spline, r_spline, z_orig.size() );
+	gsl_spline_init( spline_r_, z_orig, r_orig, NZ_orig );
 	accel_i_ = gsl_interp_accel_alloc();
 #if GSL_MAJOR_VERSION > 1
-	spline_i_ = gsl_spline_alloc( gsl_interp_steffen, z_orig.size() );
+	spline_i_ = gsl_spline_alloc( gsl_interp_steffen, NZ_orig );
 #else
-	spline_i_ = gsl_spline_alloc( gsl_interp_cspline, z_orig.size() );
+	spline_i_ = gsl_spline_alloc( gsl_interp_cspline, NZ_orig );
 #endif
-	gsl_spline_init( spline_i_, z_spline, i_spline, z_orig.size() );
+	gsl_spline_init( spline_i_, z_orig, i_orig, NZ_orig );
 
-	ierr = VecCreate( PETSC_COMM_SELF, psi );CHKERRQ(ierr);
-	ierr = VecSetSizes( *psi, PETSC_DECIDE, NZ_new );CHKERRQ(ierr);
-	ierr = VecSetFromOptions( *psi ); CHKERRQ(ierr);
-	ierr = VecSet( *psi, 0.0 );
-
-	for (ii = 0; ii < (PetscInt)NZ_new; ii++) {
-		tempval = gsl_spline_eval( spline_r_, z_new[ ii ], accel_r_ ) 
-				  + J * gsl_spline_eval( spline_i_, z_new[ ii ], accel_i_ );
-		ierr = VecSetValues( *psi, 1, &ii, &tempval, INSERT_VALUES );CHKERRQ(ierr);
+	for (size_t i = 0; i < NZ_new; i++) {
+		if (z_new[ i ] < z_orig[ 0 ] || z_new[ i ] > z_orig[ NZ_orig-1 ]) {
+			c_new[ i ] = 0.0;
+		} else {
+			c_new[ i ] = gsl_spline_eval( spline_r_, z_new[ i ], accel_r_ )
+				+ J * gsl_spline_eval( spline_i_, z_new[ i ], accel_i_ );
+		}
 	}
-	ierr = VecAssemblyBegin( *psi );CHKERRQ(ierr);
-	ierr = VecAssemblyEnd( *psi );CHKERRQ(ierr);
 
 	gsl_spline_free( spline_r_ );
 	gsl_spline_free( spline_i_ );
 	gsl_interp_accel_free( accel_r_ );
 	gsl_interp_accel_free( accel_i_ );
-
-	delete [] z_spline;
-	delete [] r_spline;
-	delete [] i_spline;
-
-	return 1;
 }
+
+//int NCPA::EPadeSolver::interpolate_starter(
+//			std::deque<double> &z_orig, std::deque<double> &r_orig,
+//			std::deque<double> &i_orig,
+//			size_t NZ_new, double *z_new, Vec *psi ) {
+//
+//	PetscScalar J( 0.0, 1.0 );
+//	PetscErrorCode ierr;
+//	gsl_interp_accel *accel_r_, *accel_i_;
+//	gsl_spline *spline_r_, *spline_i_;
+//	double *z_spline, *r_spline, *i_spline;
+//
+//	PetscInt ii;
+//	PetscScalar tempval;
+//
+//
+//	double dz = z_orig[ 1 ] - z_orig[ 0 ];
+//	while (z_orig.front() > z_new[ 0 ]) {
+//		z_orig.push_front( z_orig[ 0 ] - dz );
+//		r_orig.push_front( 0.0 );
+//		i_orig.push_front( 0.0 );
+//	}
+//	while (z_orig.back() < z_new[ NZ_new-1 ]) {
+//		z_orig.push_back( z_orig.back() + dz );
+//		r_orig.push_back( 0.0 );
+//		i_orig.push_back( 0.0 );
+//	}
+//
+//	z_spline = new double[ z_orig.size() ];
+//	r_spline = new double[ z_orig.size() ];
+//	i_spline = new double[ z_orig.size() ];
+//	for (ii = 0; ii < (PetscInt)(z_orig.size()); ii++) {
+//		z_spline[ ii ] = z_orig[ ii ];
+//		r_spline[ ii ] = r_orig[ ii ];
+//		i_spline[ ii ] = i_orig[ ii ];
+//	}
+//
+//	accel_r_ = gsl_interp_accel_alloc();
+//#if GSL_MAJOR_VERSION > 1
+//	spline_r_ = gsl_spline_alloc( gsl_interp_steffen, z_orig.size() );
+//#else
+//	spline_r_ = gsl_spline_alloc( gsl_interp_cspline, z_orig.size() );
+//#endif
+//	gsl_spline_init( spline_r_, z_spline, r_spline, z_orig.size() );
+//	accel_i_ = gsl_interp_accel_alloc();
+//#if GSL_MAJOR_VERSION > 1
+//	spline_i_ = gsl_spline_alloc( gsl_interp_steffen, z_orig.size() );
+//#else
+//	spline_i_ = gsl_spline_alloc( gsl_interp_cspline, z_orig.size() );
+//#endif
+//	gsl_spline_init( spline_i_, z_spline, i_spline, z_orig.size() );
+//
+//	ierr = VecCreate( PETSC_COMM_SELF, psi );CHKERRQ(ierr);
+//	ierr = VecSetSizes( *psi, PETSC_DECIDE, NZ_new );CHKERRQ(ierr);
+//	ierr = VecSetFromOptions( *psi ); CHKERRQ(ierr);
+//	ierr = VecSet( *psi, 0.0 );
+//
+//	for (ii = 0; ii < (PetscInt)NZ_new; ii++) {
+//		tempval = gsl_spline_eval( spline_r_, z_new[ ii ], accel_r_ )
+//				  + J * gsl_spline_eval( spline_i_, z_new[ ii ], accel_i_ );
+//		ierr = VecSetValues( *psi, 1, &ii, &tempval, INSERT_VALUES );CHKERRQ(ierr);
+//	}
+//	ierr = VecAssemblyBegin( *psi );CHKERRQ(ierr);
+//	ierr = VecAssemblyEnd( *psi );CHKERRQ(ierr);
+//
+//	gsl_spline_free( spline_r_ );
+//	gsl_spline_free( spline_i_ );
+//	gsl_interp_accel_free( accel_r_ );
+//	gsl_interp_accel_free( accel_i_ );
+//
+//	delete [] z_spline;
+//	delete [] r_spline;
+//	delete [] i_spline;
+//
+//	return 1;
+//}
 
 int NCPA::EPadeSolver::build_operator_matrix_without_topography( 
 	int NZvec, double *zvec, double k0, double h2, 
@@ -1311,27 +1380,38 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
 				get_starter_self( NZ_starter, z_starter, zs, 0, k0_starter,
 					qpowers_starter, npade, true, &psi_o );
-//				outputVec( psi_o, z_starter, NZ_starter,
-//						tag_filename("starter.prespline.pe") );
+				outputVec( psi_o, z_starter, NZ_starter,
+						tag_filename("starter.prespline.pe") );
 
 				// now interpolate calculated starter to actual Z vector
-				std::deque< double > z_spline, r_spline, i_spline;
-				PetscScalar *psi_orig = new PetscScalar[ NZ_starter ];
-				std::memset( psi_orig, 0, NZ_starter * sizeof( PetscScalar ) );
-				PetscInt *starter_indices = new PetscInt[ NZ_starter ];
-				for (ii = 0; ii < NZ_starter; ii++) {
-					starter_indices[ ii ] = ii;
-				}
+//				std::deque< double > z_spline, r_spline, i_spline;
+//				PetscScalar *psi_orig = new PetscScalar[ NZ_starter ];
+//				std::memset( psi_orig, 0, NZ_starter * sizeof( PetscScalar ) );
+				PetscScalar *psi_orig = NCPA::zeros<PetscScalar>( NZ_starter );
+				PetscScalar *psi_new = NCPA::zeros<PetscScalar>( NZ );
+				PetscInt *starter_indices = NCPA::index_vector<PetscInt>( NZ_starter );
+//				PetscInt *starter_indices = new PetscInt[ NZ_starter ];
+//				for (ii = 0; ii < NZ_starter; ii++) {
+//					starter_indices[ ii ] = ii;
+//				}
 				ierr = VecGetValues( psi_o, NZ_starter, starter_indices, psi_orig );CHKERRQ(ierr);
-				for (ii = 0; ii < NZ_starter; ii++) {
-					z_spline.push_back( z_starter[ ii ] );
-					r_spline.push_back( psi_orig[ ii ].real() );
-					i_spline.push_back( psi_orig[ ii ].imag() );
-				}
+//				for (ii = 0; ii < NZ_starter; ii++) {
+//					z_spline.push_back( z_starter[ ii ] );
+//					r_spline.push_back( psi_orig[ ii ].real() );
+//					i_spline.push_back( psi_orig[ ii ].imag() );
+//				}
 				ierr = VecDestroy( &psi_o );
-				interpolate_starter( z_spline, r_spline, i_spline, NZ, z, &psi_o );
-				outputVec( psi_o, z_starter, NZ_starter,
-						tag_filename("starter.postspline.pe") );
+				interpolate_complex( NZ_starter, z_starter, psi_orig, NZ, z, psi_new );
+				ierr = VecCreate( PETSC_COMM_SELF, &psi_o );CHKERRQ(ierr);
+				ierr = VecSetSizes( psi_o, PETSC_DECIDE, NZ );CHKERRQ(ierr);
+				ierr = VecSetFromOptions( psi_o ); CHKERRQ(ierr);
+				ierr = VecSet( psi_o, 0.0 );
+				PetscInt *z_indices = NCPA::index_vector<PetscInt>( NZ );
+				ierr = VecSetValues( psi_o, NZ, z_indices, psi_new, INSERT_VALUES );CHKERRQ(ierr);
+				ierr = VecAssemblyBegin( psi_o );CHKERRQ(ierr);
+				ierr = VecAssemblyEnd( psi_o );CHKERRQ(ierr);
+//				interpolate_starter( z_spline, r_spline, i_spline, NZ, z, &psi_o );
+				outputVec( psi_o, z, NZ, tag_filename("starter.postspline.pe") );
 
 				// clean up temp variables
 				delete [] z_starter;
@@ -1340,7 +1420,9 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				delete [] c_starter;
 				delete [] a_starter;
 				delete [] starter_indices;
+				delete [] z_indices;
 				delete [] psi_orig;
+				delete [] psi_new;
 				ierr = MatDestroy( &q_starter );CHKERRQ(ierr);
 				delete_matrix_polynomial( npade+1, &qpowers_starter );
 

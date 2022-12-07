@@ -123,8 +123,14 @@ namespace NCPA {
 		int get_starter_self( size_t NZ, double *z, double z_source, int ground_index, 
 			double k0, Mat *qpowers, size_t npade, bool absolute, Vec *psi );
 		int get_starter_user( std::string filename, int NZ, double *z, Vec *psi );
-		int interpolate_starter( std::deque<double> &z_orig, std::deque<double> &r_orig, 
-			std::deque<double> &i_orig, size_t NZ_new, double *z_new, Vec *psi );
+//		int interpolate_starter( std::deque<double> &z_orig, std::deque<double> &r_orig,
+//			std::deque<double> &i_orig, size_t NZ_new, double *z_new, Vec *psi );
+		void interpolate_complex( size_t NZ_orig,
+				double *z_orig, double *r_orig, double *i_orig,
+				size_t NZ_new, double *z_new, std::complex<double> *c_new );
+		void interpolate_complex( size_t NZ_orig,
+						double *z_orig, std::complex<double> *c_orig,
+						size_t NZ_new, double *z_new, std::complex<double> *c_new );
 		// int get_starter_self_revised( size_t NZ, double *z, double z_source, double rr, 
 		// 	double z_ground, double k0, Mat *qpowers, size_t npade, Vec *psi );
 
