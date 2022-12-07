@@ -33,6 +33,10 @@
 #define NCPAPROP_EPADE_PE_FILENAME_BROADBAND "tloss_broadband.bin"
 #endif
 
+#ifndef NCPAPROP_EPADE_PE_FILENAME_SOURCE
+#define NCPAPROP_EPADE_PE_FILENAME_SOURCE "source.pe"
+#endif
+
 #ifndef NCPAPROP_EPADE_PE_FILENAME_STARTER
 #define NCPAPROP_EPADE_PE_FILENAME_STARTER "starter.pe"
 #endif
@@ -171,6 +175,8 @@ namespace NCPA {
 		void read_line_source_from_file( size_t NZ, double *z,
 			double z_ground, const std::string &filename,
 			std::complex<double> *source );
+		void write_source( const std::string &filename, const std::complex<double> *source,
+				const double *z, size_t NZ ) const;
 
 		// functions to calculate atmospheric parameters
 		void absorption_layer( double lambda, double *z, int NZ, double *layer );
@@ -221,7 +227,7 @@ namespace NCPA {
 		bool z_ground_specified = false, lossless = false, top_layer = true;
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
-		bool write_atmosphere = false, pointsource = true;
+		bool write_atmosphere = false, pointsource = true, _write_source_function = false;
 		double r_max;    // range limits
 		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double zs, zr;  // source height, receiver height

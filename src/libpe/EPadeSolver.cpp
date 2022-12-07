@@ -99,7 +99,7 @@ void NCPA::EPadeSolver::set_default_values() {
 	multiprop = false; write2d = false;
 	broadband = false; write_starter = false; write_topo = false;
 	user_ground_impedence_found = false; write_atmosphere = false;
-	pointsource = true;
+	pointsource = true; _write_source_function = false;
 
 	// string
 	starter = ""; attnfile = ""; user_starter_file = ""; topofile = "";
@@ -149,17 +149,18 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	}
 
 	// flags
-	lossless 			= param->wasFound( "lossless" );
-	use_atm_1d			= param->wasFound( "atmosfile" );
-	use_atm_2d			= param->wasFound( "atmosfile2d" );
+	lossless 				= param->wasFound( "lossless" );
+	use_atm_1d				= param->wasFound( "atmosfile" );
+	use_atm_2d				= param->wasFound( "atmosfile2d" );
 	//use_atm_toy			= param->wasFound( "toy" );
-	top_layer			= !(param->wasFound( "disable_top_layer" ));
-	use_topo			= param->wasFound( "topo" );
-	write2d 			= param->wasFound( "write_2d_tloss" );
-	write_starter       = param->wasFound( "write_starter" );
-	multiprop 			= param->wasFound( "multiprop" );
-	write_topo 		 	= param->wasFound( "write_topography" );
-	write_atmosphere 	= param->wasFound( "write_atm_profile" );
+	top_layer				= !(param->wasFound( "disable_top_layer" ));
+	use_topo				= param->wasFound( "topo" );
+	write2d 				= param->wasFound( "write_2d_tloss" );
+	write_starter       	= param->wasFound( "write_starter" );
+	_write_source_function 	= param->wasFound( "write_source" );
+	multiprop 				= param->wasFound( "multiprop" );
+	write_topo 		 		= param->wasFound( "write_topography" );
+	write_atmosphere 		= param->wasFound( "write_atm_profile" );
 
 	// Handle differences based on single vs multiprop
 	double min_az, max_az, step_az;
@@ -1234,10 +1235,17 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
 	if (starter == "self") {
 		if (pointsource) {
+			std::cout << "Generating point source at " << zs << "m" << std::endl;
 			make_point_source( NZ, z, zs+z_ground, z_ground, source );
 		} else {
+			std::cout << "Reading line source from " << linesourcefile << std::endl;
 			read_line_source_from_file( NZ, z, z_ground,
 				linesourcefile, source );
+		}
+
+		// output source file for checking
+		if (_write_source_function) {
+			write_source(tag_filename(NCPAPROP_EPADE_PE_FILENAME_SOURCE), source, z, NZ);
 		}
 	}
 
@@ -1497,7 +1505,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 //							<< " for z_g = " << z_ground << std::endl;
 					zgi_r[ ir ]++;
 				}
-				zgi_r[ir]++;
+//				zgi_r[ir]++;
 				
 				if ( fmod( rr, 1.0e5 ) < dr) {
 					std::cout << " -> Range " << rr/1000.0 << " km" << std::endl;
@@ -2830,7 +2838,15 @@ void NCPA::EPadeSolver::write_topography( std::string filename,
 	}
 
 	outfile.close();
+}
 
+void NCPA::EPadeSolver::write_source( const std::string &filename,
+		const std::complex<double> *source, const double *z, size_t NZ ) const {
+	std::ofstream out(filename,std::ios_base::out);
+	for (size_t i = 0; i < NZ; i++) {
+		out << z[i] << " " << source[i].real() << " " << source[i].imag() << std::endl;
+	}
+	out.close();
 }
 
 void NCPA::EPadeSolver::calculate_effective_sound_speed(

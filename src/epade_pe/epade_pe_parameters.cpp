@@ -183,6 +183,8 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	// ps->addParameterDescription( "Flags", "--write_atm_profile", "Output atmospheric profile to atm_profile.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_starter" ) );
 	ps->addParameterDescription( "Flags", "--write_starter", "Output starter to starter.pe" );
+	ps->addParameter( new NCPA::FlagParameter( "write_source" ) );
+	ps->addParameterDescription( "Flags", "--write_source", "Output source function to source.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_topography" ) );
 	ps->addParameterDescription( "Flags", "--write_topography", "Output interpolated topography to topography.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_atm_profile" ) );
