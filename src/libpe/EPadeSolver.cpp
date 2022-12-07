@@ -1311,6 +1311,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
 				get_starter_self( NZ_starter, z_starter, zs, 0, k0_starter,
 					qpowers_starter, npade, true, &psi_o );
+//				outputVec( psi_o, z_starter, NZ_starter,
+//						tag_filename("starter.prespline.pe") );
 
 				// now interpolate calculated starter to actual Z vector
 				std::deque< double > z_spline, r_spline, i_spline;
@@ -1328,6 +1330,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 				ierr = VecDestroy( &psi_o );
 				interpolate_starter( z_spline, r_spline, i_spline, NZ, z, &psi_o );
+				outputVec( psi_o, z_starter, NZ_starter,
+						tag_filename("starter.postspline.pe") );
 
 				// clean up temp variables
 				delete [] z_starter;
