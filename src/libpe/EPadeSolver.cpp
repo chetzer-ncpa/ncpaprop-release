@@ -1245,6 +1245,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 		// output source file for checking
 		if (_write_source_function) {
+			std::cout << "Writing source function to "
+					<< tag_filename(NCPAPROP_EPADE_PE_FILENAME_SOURCE) << std::endl;
 			write_source(tag_filename(NCPAPROP_EPADE_PE_FILENAME_SOURCE), source, z, NZ);
 		}
 	}
