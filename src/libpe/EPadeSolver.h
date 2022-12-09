@@ -165,10 +165,13 @@ namespace NCPA {
 			std::complex<double> *source, double k0, Mat *qpowers,
 			size_t npade, Vec *psi );
 		int get_starter_user( std::string filename, int NZ, double *z, Vec *psi );
-		int interpolate_starter( std::deque<double> &z_orig, std::deque<double> &r_orig, 
-			std::deque<double> &i_orig, size_t NZ_new, double *z_new, Vec *psi );
+//		int interpolate_starter( std::deque<double> &z_orig, std::deque<double> &r_orig,
+//			std::deque<double> &i_orig, size_t NZ_new, double *z_new, Vec *psi );
 		void interpolate_complex( size_t NZ_orig,
 			double *z_orig, double *r_orig, double *i_orig,
+			size_t NZ_new, double *z_new, std::complex<double> *c_new );
+		void interpolate_complex( size_t NZ_orig,
+			double *z_orig, std::complex<double> *c_orig,
 			size_t NZ_new, double *z_new, std::complex<double> *c_new );
 		void make_point_source( size_t NZ, double *z, double zs,
 			double z_ground, std::complex<double> *source );
@@ -235,8 +238,7 @@ namespace NCPA {
 		double top_layer_thickness_m;
 		std::complex<double> user_ground_impedence;
 		bool user_ground_impedence_found = false;
-		//double zrcv;
-		//std::string gnd_imp_model;
+
 		std::string starter;
 		std::string attnfile;
 		std::string user_starter_file;
@@ -254,7 +256,6 @@ namespace NCPA {
 		std::string turbulence_file;
 		gsl_matrix *t_mat1;
 		gsl_vector *t_vec1, *t_vec_mu;
-		// Vec *turbulence_vec1;
 
 
 		std::vector< double > zt;
@@ -263,10 +264,7 @@ namespace NCPA {
 
 		double absorption_layer_mu = 0.1;
 
-		//NCPA::Atmosphere1D *atm_profile;
 		NCPA::Atmosphere2D *atm_profile_2d;
-
-
 	};
 
 }
