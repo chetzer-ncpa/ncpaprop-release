@@ -59,9 +59,9 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	test->addStringParameter( "self" );
 	test->addStringParameter( "gaussian" );
 	test->addStringParameter( "user" );
-	ps->addParameterDescription( "Required Parameters", "--starter", "Starter type: one of { self, gaussian, user }" );
+	ps->addParameterDescription( "Required Parameters", "--starter", "Starter type: one of { self, gaussian, user }.  --self defaults to a point source." );
 	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
-	ps->addParameterDescription( "Required Parameters", "--linesourcefile", "File containing line source as a function of height [n/a]. Columns are #n#Range(km) Elevation(m)#n#by default. Elevation is absolute if --topo is used, ground-relative otherwise. Units can be specified using header: #n#  #% z, km  (for example)");
+	ps->addParameterDescription( "Required Parameters", "--linesourcefile", "With --self, file containing line source as a function of height [n/a]. Columns are #n# Range(km) Elevation(m) #n# by default. Elevation is absolute if --topo is used, ground-relative otherwise. Units can be specified using header: #n#  #% r, m #n# #% z, m  (for example)");
 	ps->addParameter( new NCPA::StringParameter( "linesourcefile", "" ) );
 	ps->resetParameterIndent();
 
