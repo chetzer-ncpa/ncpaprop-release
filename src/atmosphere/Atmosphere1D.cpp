@@ -184,7 +184,14 @@ void NCPA::Atmosphere1D::read_values_from_stream( std::istream& in ) {
 		}
 */
 		if (fields.size() == 4) {
-			tempval = std::stof( deblank(fields[ 3 ]) );
+			try {
+				tempval = std::stod( NCPA::deblank(fields[ 3 ]) );
+			} catch (std::out_of_range &e) {
+				oss << "Error converting data line:" << std::endl << *it
+					<< std::endl << "Value " << fields[3]
+					<< " is out of range for double precision.";
+				throw std::runtime_error( oss.str() );
+			}
 		}
 
 		// add to header vectors
@@ -239,14 +246,22 @@ void NCPA::Atmosphere1D::read_values_from_stream( std::istream& in ) {
 		for ( i = 0; i < ncols; i++ ) {
 			try {
 				double *thiscol = columns[ i ];
-				thiscol[ row ] = std::stof( fields[ i ] );
+				thiscol[ row ] = std::stod( fields[ i ] );
+			} catch (std::out_of_range &e) {
+				oss << "Error converting data line:" << std::endl << *it
+					<< std::endl << "Value " << fields[i]
+					<< " is out of range for double precision.";
+				for (i = 0; i < ncols; i++) {
+					delete [] columns[i];
+				}
+				throw std::runtime_error( oss.str() );
 			} catch (std::invalid_argument &e) {
 				oss << "Error parsing data line:" << std::endl << *it << std::endl
 					<< "Can't parse field " << fields[ i ] << " as a double";
 				for ( i = 0; i < ncols; i++ ) {
 					delete [] columns[ i ];
 				}
-				throw std::invalid_argument( oss.str() );
+				throw std::runtime_error( oss.str() );
 			}
 		}
 		row++;
@@ -332,12 +347,16 @@ void NCPA::Atmosphere1D::read_attenuation_from_file( const std::string &new_key,
 		}
 
 		try {
-			this_z = std::stof( fields[ 0 ] );
-			this_a = std::stof( fields[ 1 ] );
+			this_z = std::stod( fields[ 0 ] );
+			this_a = std::stod( fields[ 1 ] );
 		} catch ( std::invalid_argument &e ) {
 			oss << "Atmosphere1D - Error parsing attenuation line:" << std::endl << line << std::endl 
 				<< "Both fields must be numerical" << std::endl;
 			throw std::invalid_argument( oss.str() );
+		} catch (std::out_of_range &e) {
+			oss << "Error converting data line:" << std::endl << line
+				<< std::endl << "Value  is out of range for double precision.";
+			throw std::runtime_error( oss.str() );
 		}
 		z_a[ i ] = this_z;
 		attn[ i ] = this_a;

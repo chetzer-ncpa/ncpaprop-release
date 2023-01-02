@@ -1411,7 +1411,6 @@ int NCPA::EPadeSolver::solve_with_topography() {
 //					i_spline.push_back( psi_orig[ ii ].imag() );
 //				}
 				ierr = VecDestroy( &psi_o );
-//				interpolate_starter( z_spline, r_spline, i_spline, NZ, z, &psi_o );
 				interpolate_complex( NZ_starter, z_starter, psi_orig, NZ, z, psi_new );
 				ierr = VecCreate( PETSC_COMM_SELF, &psi_o );CHKERRQ(ierr);
 				ierr = VecSetSizes( psi_o, PETSC_DECIDE, NZ );CHKERRQ(ierr);
@@ -1421,7 +1420,6 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				ierr = VecSetValues( psi_o, NZ, z_indices, psi_new, INSERT_VALUES );CHKERRQ(ierr);
 				ierr = VecAssemblyBegin( psi_o );CHKERRQ(ierr);
 				ierr = VecAssemblyEnd( psi_o );CHKERRQ(ierr);
-//				outputVec( psi_o, z, NZ, "starter.postspline.dat" );
 
 				// clean up temp variables
 				delete [] z_starter;

@@ -938,16 +938,20 @@ void NCPA::ProfileGridAtmosphere3D::read_attenuation_from_file( const std::strin
 			oss << "ProfileGridAtmosphere3D - Error parsing attenuation line:" << std::endl << line << std::endl
 				<< "Must be formatted as:" << std::endl
 				<< "altitude  attenuation" << std::endl;
-			throw std::invalid_argument( oss.str() );
+			throw std::runtime_error( oss.str() );
 		}
 
 		try {
-			this_z = std::stof( fields[ 0 ] );
-			this_a = std::stof( fields[ 1 ] );
+			this_z = std::stod( fields[ 0 ] );
+			this_a = std::stod( fields[ 1 ] );
 		} catch ( std::invalid_argument &e ) {
 			oss << "Atmosphere1D - Error parsing attenuation line:" << std::endl << line << std::endl
 				<< "Both fields must be numerical" << std::endl;
-			throw std::invalid_argument( oss.str() );
+			throw std::runtime_error( oss.str() );
+		} catch (std::out_of_range &e) {
+			oss << "Error converting data line:" << std::endl << line
+				<< std::endl << "Value  is out of range for double precision.";
+			throw std::runtime_error( oss.str() );
 		}
 		z_a[ i ] = this_z;
 		attn[ i ] = this_a;
