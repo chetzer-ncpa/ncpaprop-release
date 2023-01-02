@@ -8,6 +8,7 @@ NCPA::StratifiedAtmosphere2D::StratifiedAtmosphere2D( const Atmosphere1D *atm ) 
 	set_insert_range_units( NCPA::Units::fromString( "km" ) );
 	insert_profile( tempatm, 0.0 );
 	sorted_ = true;
+	delete tempatm;
 }
 
 NCPA::StratifiedAtmosphere2D::StratifiedAtmosphere2D( const std::string &filename,
@@ -16,6 +17,7 @@ NCPA::StratifiedAtmosphere2D::StratifiedAtmosphere2D( const std::string &filenam
 	set_insert_range_units( NCPA::Units::fromString( "km" ) );
 	insert_profile( tempatm, 0.0 );
 	sorted_ = true;
+	delete tempatm;
 }
 
 NCPA::StratifiedAtmosphere2D::~StratifiedAtmosphere2D() { }

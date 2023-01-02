@@ -21,12 +21,20 @@
 #define NCPAPROP_EPADE_PE_FILENAME_2D "tloss_2d.pe"
 #endif
 
+#ifndef NCPAPROP_EPADE_PE_2D_OUTPUT_Z_STEP
+#define NCPAPROP_EPADE_PE_2D_OUTPUT_Z_STEP 10
+#endif
+
 #ifndef NCPAPROP_EPADE_PE_FILENAME_MULTIPROP
 #define NCPAPROP_EPADE_PE_FILENAME_MULTIPROP "tloss_multiprop.pe"
 #endif
 
 #ifndef NCPAPROP_EPADE_PE_FILENAME_BROADBAND
 #define NCPAPROP_EPADE_PE_FILENAME_BROADBAND "tloss_broadband.bin"
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_FILENAME_SOURCE
+#define NCPAPROP_EPADE_PE_FILENAME_SOURCE "source.pe"
 #endif
 
 #ifndef NCPAPROP_EPADE_PE_FILENAME_STARTER
@@ -52,6 +60,39 @@
 #ifndef NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR
 #define NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR 0.01
 #endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_Z
+#define NCPAPROP_EPADE_PE_UNITS_Z NCPA::Units::fromString("m")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_R
+#define NCPAPROP_EPADE_PE_UNITS_R NCPA::Units::fromString("m")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_T
+#define NCPAPROP_EPADE_PE_UNITS_T NCPA::Units::fromString("K")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_U
+#define NCPAPROP_EPADE_PE_UNITS_U NCPA::Units::fromString("m/s")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_V
+#define NCPAPROP_EPADE_PE_UNITS_V NCPA::Units::fromString("m/s")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_P
+#define NCPAPROP_EPADE_PE_UNITS_P NCPA::Units::fromString("Pa")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_RHO
+#define NCPAPROP_EPADE_PE_UNITS_RHO NCPA::Units::fromString("kg/m3")
+#endif
+
+#ifndef NCPAPROP_EPADE_PE_UNITS_C
+#define NCPAPROP_EPADE_PE_UNITS_C NCPA::Units::fromString("m/s")
+#endif
+
 
 namespace NCPA {
 
@@ -120,19 +161,25 @@ namespace NCPA {
 
 		// functions to calculate the various starter fields
 		int get_starter_gaussian( size_t NZ, double *z, double zs, double k0, int ground_index, Vec *psi );
-		int get_starter_self( size_t NZ, double *z, double z_source, int ground_index, 
-			double k0, Mat *qpowers, size_t npade, bool absolute, Vec *psi );
+		int get_starter_self( size_t NZ, double *z,
+			std::complex<double> *source, double k0, Mat *qpowers,
+			size_t npade, Vec *psi );
 		int get_starter_user( std::string filename, int NZ, double *z, Vec *psi );
 //		int interpolate_starter( std::deque<double> &z_orig, std::deque<double> &r_orig,
 //			std::deque<double> &i_orig, size_t NZ_new, double *z_new, Vec *psi );
 		void interpolate_complex( size_t NZ_orig,
-				double *z_orig, double *r_orig, double *i_orig,
-				size_t NZ_new, double *z_new, std::complex<double> *c_new );
+			double *z_orig, double *r_orig, double *i_orig,
+			size_t NZ_new, double *z_new, std::complex<double> *c_new );
 		void interpolate_complex( size_t NZ_orig,
-						double *z_orig, std::complex<double> *c_orig,
-						size_t NZ_new, double *z_new, std::complex<double> *c_new );
-		// int get_starter_self_revised( size_t NZ, double *z, double z_source, double rr, 
-		// 	double z_ground, double k0, Mat *qpowers, size_t npade, Vec *psi );
+			double *z_orig, std::complex<double> *c_orig,
+			size_t NZ_new, double *z_new, std::complex<double> *c_new );
+		void make_point_source( size_t NZ, double *z, double zs,
+			double z_ground, std::complex<double> *source );
+		void read_line_source_from_file( size_t NZ, double *z,
+			double z_ground, const std::string &filename,
+			std::complex<double> *source );
+		void write_source( const std::string &filename, const std::complex<double> *source,
+				const double *z, size_t NZ ) const;
 
 		// functions to calculate atmospheric parameters
 		void absorption_layer( double lambda, double *z, int NZ, double *layer );
@@ -183,7 +230,7 @@ namespace NCPA {
 		bool z_ground_specified = false, lossless = false, top_layer = true;
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
-		bool write_atmosphere = false;
+		bool write_atmosphere = false, pointsource = true, _write_source_function = false;
 		double r_max;    // range limits
 		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double zs, zr;  // source height, receiver height
@@ -191,13 +238,13 @@ namespace NCPA {
 		double top_layer_thickness_m;
 		std::complex<double> user_ground_impedence;
 		bool user_ground_impedence_found = false;
-		//double zrcv;
-		//std::string gnd_imp_model;
+
 		std::string starter;
 		std::string attnfile;
 		std::string user_starter_file;
 		std::string topofile;
 		std::string user_tag = "";
+		std::string linesourcefile;
 
 		// turbulence parameters
 		NCPA::Turbulence *turbulence;
@@ -209,7 +256,6 @@ namespace NCPA {
 		std::string turbulence_file;
 		gsl_matrix *t_mat1;
 		gsl_vector *t_vec1, *t_vec_mu;
-		// Vec *turbulence_vec1;
 
 
 		std::vector< double > zt;
@@ -218,10 +264,7 @@ namespace NCPA {
 
 		double absorption_layer_mu = 0.1;
 
-		//NCPA::Atmosphere1D *atm_profile;
 		NCPA::Atmosphere2D *atm_profile_2d;
-
-
 	};
 
 }

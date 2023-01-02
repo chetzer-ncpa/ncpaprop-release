@@ -23,12 +23,15 @@ std::string NCPA::timeAsString(double d) {
     tm* uttime = std::gmtime( &temptime );
     double ipart, fpart;
     fpart = std::modf( d, &ipart);
+    char holder[50];
 
-    char* holder = new char[ 28 ];
-    std::sprintf(holder,"%4d-%02d-%02d %02d:%02d:%02d.%03d GMT",
-            uttime->tm_year+1900, uttime->tm_mon+1, uttime->tm_mday,
-            uttime->tm_hour, uttime->tm_min, uttime->tm_sec,
-            (int)(round(fpart * 1000)) );
+    std::sprintf(holder,"%4d-%02d-%02d %02d:%02d:%06.3f GMT",
+            (unsigned char)(uttime->tm_year)+1900,
+			(unsigned char)(uttime->tm_mon+1),
+			(unsigned char)(uttime->tm_mday),
+            (unsigned char)(uttime->tm_hour),
+			(unsigned char)(uttime->tm_min),
+			(double)(uttime->tm_sec) + fpart );
     std::string s = holder;
     return s;
 }
@@ -321,7 +324,8 @@ void NCPA::read_matrix_from_file( const std::string &filename, double **&content
 }
 
 void NCPA::read_text_columns_from_file( const std::string &filename,
-		std::vector< std::vector< std::string > > &contents, std::string delimiters ) {
+		std::vector< std::vector< std::string > > &contents,
+		std::string delimiters ) {
 
 	// count the rows
 	//size_t nrows = count_rows_arbcol( filename );
@@ -392,4 +396,66 @@ size_t NCPA::nextpow2( size_t v ) {
 		p++;
 	}
 	return p;
+}
+
+
+void NCPA::read_text_columns_from_file_with_header(
+		const std::string &filename,
+		std::vector< std::vector< std::string > > &contents,
+		std::vector< std::string > &headerlines,
+		const std::string &delimiters, const std::string &headerchars ) {
+
+	std::vector< std::string > fields;
+	size_t j, i;
+	contents.clear();
+	headerlines.clear();
+
+	// open and start to read
+	std::ifstream infile( filename );
+	std::string line;
+	NCPA::safe_getline( infile, line );
+	line = NCPA::deblank( line );
+
+	// see if it's a header line.  First non-whitespace character
+	// will be one of headerchars
+//	std::vector<std::string> initvec( 1 );
+	std::vector<std::string> datalines;
+	while (infile.good()) {
+		if (line.find_first_of( headerchars ) == 0) {
+			headerlines.push_back( line );
+		} else {
+			datalines.push_back(line);
+//			fields.clear();
+//			fields = NCPA::split( line, delimiters );
+//			size_t ncols = fields.size();
+//
+//			// if we don't have enough columns, add more
+//			for (i = 0; i < ncols; i++) {
+//				if (contents.size() <= i) {
+//					initvec.resize(datanum+1);
+//					contents.resize( i+i, initvec );
+//					std::cout << "Resizing contents to " << i+1 << std::endl;
+//				}
+//				std::cout << "Trying contents[" << i << "][" << datanum << "] = "
+//						<< fields[i] << std::endl;
+//				contents[ i ][ datanum ] = fields[ i ];
+//			}
+//			++datanum;
+		}
+//		++datanum;
+		NCPA::safe_getline( infile, line );
+		line = NCPA::deblank( line );
+	}
+	infile.close();
+
+	// identify number of columns
+	fields = NCPA::split(datalines[0], delimiters);
+	std::vector<std::string> initvec( datalines.size() );
+	contents.resize( fields.size(), initvec );
+	for (i = 0; i < datalines.size(); i++) {
+		fields = NCPA::split(datalines[i],delimiters);
+		for (j = 0; j < fields.size(); j++) {
+			contents[j][i] = fields[j];
+		}
+	}
 }

@@ -60,7 +60,10 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	test->addStringParameter( "gaussian" );
 	test->addStringParameter( "user" );
 	ps->addParameterDescription( "Required Parameters", "--starter", "Starter type: one of { self, gaussian, user }" );
-	
+	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
+	ps->addParameterDescription( "Required Parameters", "--linesourcefile", "File containing line source as a function of height [n/a]. Columns are #n#Range(km) Elevation(m)#n#by default. Elevation is absolute if --topo is used, ground-relative otherwise. Units can be specified using header: #n#  #% z, km  (for example)");
+	ps->addParameter( new NCPA::StringParameter( "linesourcefile", "" ) );
+	ps->resetParameterIndent();
 
 	ps->addParameter( new NCPA::FloatParameter( "maxrange_km" ) );
 	ps->addTest( new NCPA::RequiredTest( "maxrange_km" ) );
@@ -180,6 +183,8 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	// ps->addParameterDescription( "Flags", "--write_atm_profile", "Output atmospheric profile to atm_profile.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_starter" ) );
 	ps->addParameterDescription( "Flags", "--write_starter", "Output starter to starter.pe" );
+	ps->addParameter( new NCPA::FlagParameter( "write_source" ) );
+	ps->addParameterDescription( "Flags", "--write_source", "Output source function to source.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_topography" ) );
 	ps->addParameterDescription( "Flags", "--write_topography", "Output interpolated topography to topography.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_atm_profile" ) );

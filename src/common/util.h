@@ -327,6 +327,13 @@ namespace NCPA {
 		std::vector< std::vector< std::string > > &contents,
 		std::string delimiters = " \t\r\n" );
 
+	void read_text_columns_from_file_with_header(
+		const std::string &filename,
+		std::vector< std::vector< std::string > > &contents,
+		std::vector< std::string > &headerlines,
+		const std::string &delimiters = " \t\r\n",
+		const std::string &headerchars = "#" );
+
 	/**
 	@brief Returns the lesser of two values.
 	@param a First value.
@@ -480,8 +487,8 @@ namespace NCPA {
 	*/
 	template<typename T>
 	T *zeros( size_t n ) {
-		T *out = new T[ n ];
-		std::memset( out, 0, n*sizeof(T) );
+		T *out = new T[ n ]();
+//		std::memset( out, 0, n*sizeof(T) );
 		return out;
 	}
 
@@ -512,9 +519,25 @@ namespace NCPA {
 	template<typename T>
 	T *index_vector( size_t n ) {
 		T *ivec = new T[ n ];
-		T Tn = (T)n;
-		for (T i = 0; i < Tn; i++) {
-			ivec[ i ] = i;
+		for (size_t i = 0; i < n; i++) {
+			ivec[ i ] = (T)i;
+		}
+		return ivec;
+	}
+
+	/**
+	Dynamically allocates a new array and sets the elements to
+	(a, a+1, a+2, ..., a+n-1).
+	@brief Returns a new array of index values.
+	@param n The size of the array.
+	@param a The offset from zero to use for each value.
+	@returns A pointer to the newly-allocated array.
+	*/
+	template<typename T>
+	T *index_vector( size_t n, T a ) {
+		T *ivec = new T[ n ];
+		for (size_t i = 0; i < n; i++) {
+			ivec[ i ] = (T)i + a;
 		}
 		return ivec;
 	}
@@ -609,8 +632,8 @@ namespace NCPA {
 		T **v;
 		v = new T* [nr];
 		for (size_t i = 0; i < nr; i++) {
-			v[ i ] = new T[ nc ];
-			std::memset( v[ i ], 0, nc * sizeof(T) );
+			v[ i ] = new T[ nc ]();
+			//std::memset( v[ i ], 0, nc * sizeof(T) );
 		}
 		return v;
 	}
