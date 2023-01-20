@@ -218,10 +218,12 @@ namespace NCPA {
 	public:
 		VectorWithUnits();
 		VectorWithUnits( size_t n_points, double *values, units_t units );
+		VectorWithUnits( size_t n_points, double *values, const std::string &units );
 		VectorWithUnits( const VectorWithUnits &source );
 		virtual ~VectorWithUnits();
 
 		virtual void convert_units( units_t new_units );
+		virtual void convert_units( const std::string &new_units );
 		virtual units_t get_units() const;
 		//virtual void revert_units();
 
@@ -244,15 +246,21 @@ namespace NCPA {
 	public:
 		ScalarWithUnits();
 		ScalarWithUnits( double value, units_t property_units );
+		ScalarWithUnits( double value, const std::string &units );
 		ScalarWithUnits( const ScalarWithUnits &source );
 		virtual ~ScalarWithUnits();
 
 		virtual double get() const;
+		virtual double get_as( units_t u ) const;
+		virtual double get_as( const std::string &units ) const;
 		virtual void set_value( double newval );
 		virtual void set_units( units_t new_units );
+		virtual void set_units( const std::string &units );
 		virtual void set( double newval, units_t new_units );
+		virtual void set( double newval, const std::string &units );
 
 		virtual void convert_units( units_t new_units );
+		virtual void convert_units( const std::string &units );
 		virtual units_t get_units() const;
 		//virtual void revert_units();
 

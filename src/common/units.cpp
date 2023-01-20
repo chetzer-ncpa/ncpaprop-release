@@ -364,11 +364,13 @@ NCPA::ScalarWithUnits::ScalarWithUnits() : value_{ 0.0 }, units_{ NCPA::UNITS_NO
 NCPA::ScalarWithUnits::ScalarWithUnits( double value, units_t units ) 
 	: value_{ value }, units_{ units } {}
 
+NCPA::ScalarWithUnits::ScalarWithUnits( double value, const std::string &units )
+	: value_{ value }, units_{ NCPA::Units::fromString( units ) } {}
+
 NCPA::ScalarWithUnits::ScalarWithUnits( const NCPA::ScalarWithUnits &source )
 	: value_{ source.value_ }, units_{ source.units_ } {}
 
 NCPA::ScalarWithUnits::~ScalarWithUnits() { }
-
 
 NCPA::units_t NCPA::ScalarWithUnits::get_units() const {
 	//return units_.top();
@@ -387,6 +389,10 @@ void NCPA::ScalarWithUnits::convert_units( NCPA::units_t new_units ) {
 	//units_.push( new_units );
 }
 
+void NCPA::ScalarWithUnits::convert_units( const std::string &units ) {
+	this->convert_units( NCPA::Units::fromString( units ) );
+}
+
 void NCPA::ScalarWithUnits::do_units_conversion_( NCPA::units_t fromUnits, NCPA::units_t toUnits ) {
 
 	// try to convert
@@ -403,6 +409,14 @@ double NCPA::ScalarWithUnits::get() const {
 	return value_;
 }
 
+double NCPA::ScalarWithUnits::get_as( NCPA::units_t u ) const {
+	return NCPA::Units::convert( value_, units_, u );
+}
+
+double NCPA::ScalarWithUnits::get_as( const std::string &u ) const {
+	return this->get_as( NCPA::Units::fromString( u ) );
+}
+
 void NCPA::ScalarWithUnits::set_value( double newval ) {
 	value_ = newval;
 }
@@ -411,9 +425,17 @@ void NCPA::ScalarWithUnits::set_units( NCPA::units_t new_units ) {
 	units_ = new_units;
 }
 
+void NCPA::ScalarWithUnits::set_units( const std::string &new_units ) {
+	this->set_units( NCPA::Units::fromString( new_units ) );
+}
+
 void NCPA::ScalarWithUnits::set( double newval, NCPA::units_t new_units ) {
 	set_value( newval );
 	set_units( new_units );
+}
+
+void NCPA::ScalarWithUnits::set( double newval, const std::string &new_units ) {
+	this->set( newval, NCPA::Units::fromString( new_units ) );
 }
 
 
@@ -435,10 +457,12 @@ NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, double *property_values
 	: n_{ n_points }, units_{ property_units } {
 	values_ = new double[ n_ ];
 	std::memcpy( values_, property_values, n_points*sizeof(double) );
-	//units_ = property_units;
-	//units_last_ = property_units;
-	//units_.push( property_units );
-	//n_ = n_points;
+}
+
+NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, double *property_values, const std::string &property_units )
+	: n_{ n_points }, units_{ NCPA::Units::fromString(property_units) } {
+	values_ = new double[ n_ ];
+	std::memcpy( values_, property_values, n_points*sizeof(double) );
 }
 
 NCPA::VectorWithUnits::VectorWithUnits( const NCPA::VectorWithUnits &source ) 
@@ -468,6 +492,9 @@ void NCPA::VectorWithUnits::convert_units( NCPA::units_t new_units ) {
 	}
 }
 
+void NCPA::VectorWithUnits::convert_units( const std::string &new_units ) {
+	this->convert_units( NCPA::Units::fromString( new_units ) );
+}
 
 void NCPA::VectorWithUnits::do_units_conversion_( size_t n_points, double *inplace, 
 			NCPA::units_t fromUnits, NCPA::units_t toUnits ) {
