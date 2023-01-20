@@ -57,7 +57,7 @@ int main( int argc, char **argv ) {
 
 	// validate parameters
 	if (! param->validate() ) {
-		cout << "Parameter validation failed:" << endl;
+		cerr << "Parameter validation failed:" << endl;
 		param->printFailedTests( cout );
 		return 0;
 	}
@@ -66,25 +66,24 @@ int main( int argc, char **argv ) {
 	try {
 		solver = new EPadeSolver( param );
 		configure_solver( solver, param );
-		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-		solver->solve();
-		high_resolution_clock::time_point t2 = high_resolution_clock::now();
-		duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-		cout << "Elapsed time: " << time_span.count() << " seconds." << endl;
+		solver->finalize();
+		try {
+			if (solver->ready()) {
+				high_resolution_clock::time_point t1 = high_resolution_clock::now();
+				solver->solve();
+				high_resolution_clock::time_point t2 = high_resolution_clock::now();
+				duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+				cout << "Elapsed time: " << time_span.count() << " seconds." << endl;
+			}
+		} catch (std::runtime_error &e) {
+			std::cerr << "Error in solver: " << e.what() << std::endl;
+		}
 		delete solver;
 	} catch (std::runtime_error& e) {
 		std::cout << "ePape run failed with the following error:"
 				  << endl << e.what() << endl;
 	}
 
-	/*
-	cout << "Writing 1-D output to tloss_1d.pe" << endl;
-	solver->output1DTL( "tloss_1d.pe" );
-	cout << "Writing 2-D output to tloss_2d.pe" << endl;
-	solver->output2DTL( "tloss_2d.pe" );
-	*/
-
-	// delete solver;
 	delete param;
 
 	ierr = PetscFinalize();
@@ -137,11 +136,44 @@ parameter_processing_results_t process_parameters( ParameterSet *param, int argc
 
 
 void configure_solver( EPadeSolver *solver, ParameterSet *param ) {
-	solver->set_max_height( param->getFloat( "maxheight_km" ), "km" );
-	solver->set_source_height( param->getFloat( "sourceheight_km" ), "km" );
-	solver->set_receiver_height( param->getFloat( "receiverheight_km" ), "km" );
-	solver->set_requested_range_steps( param->getInteger( "Nrng_steps" ) );
 	solver->set_frequency( param->getFloat( "freq" ) );
-	solver->set_pade_order( param->getInteger( "npade" ) );
-	solver->set_requested_height_step( param->getFloat( "dz_m" ), "m" );
+	if (param->wasFound("maxheight_km")) {
+		solver->set_max_height( param->getFloat( "maxheight_km" ), "km" );
+	}
+	if (param->wasFound("sourceheight_km")) {
+		solver->set_source_height( param->getFloat( "sourceheight_km" ), "km" );
+	}
+	if (param->wasFound("receiverheight_km")) {
+		solver->set_receiver_height( param->getFloat( "receiverheight_km" ), "km" );
+	}
+	if (param->wasFound("Nrng_steps")) {
+		solver->set_requested_range_steps( param->getInteger( "Nrng_steps" ) );
+	}
+	if (param->wasFound("npade")) {
+		solver->set_pade_order( param->getInteger( "npade" ) );
+	}
+	if (param->wasFound("dz_m")) {
+		solver->set_requested_height_step( param->getFloat( "dz_m" ), "m" );
+	}
+
+	// starter
+	std::string starter = param->getString("starter");
+	if (starter == "self") {
+		solver->set_starter( StarterType::SELF );
+	} else if (starter == "gaussian") {
+		solver->set_starter( StarterType::GAUSSIAN );
+	} else if (starter == "user") {
+		solver->set_starter( StarterType::USER, param->getString( "starterfile" ) );
+	} else {
+		throw std::runtime_error("Unrecognized starter type!");
+	}
+
+	// attenuation
+	if (param->wasFound("lossless")) {
+		solver->set_attenuation(AttenuationType::NONE);
+	} else if (param->wasFound("attnfile") && param->getString("attnfile") != "") {
+		solver->set_attenuation(AttenuationType::USER, param->getString("attnfile"));
+	} else {
+		solver->set_attenuation(AttenuationType::SUTHERLAND_BASS);
+	}
 }

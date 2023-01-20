@@ -74,6 +74,16 @@ void NCPA::EPadeSolver::set_requested_height_step( double dz, const std::string 
 	dz_requested.convert_units( NCPAPROP_EPADE_PE_UNITS_Z );
 }
 
+void NCPA::EPadeSolver::set_starter( NCPA::StarterType st, const std::string &fname ) {
+	starter_type = st;
+	starter_filename_in = fname;
+}
+
+void NCPA::EPadeSolver::set_attenuation( AttenuationType att, const std::string &fname ) {
+	attenuation_type = att;
+	attenuation_filename_in = fname;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Below here is pre-refactor code /////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +98,6 @@ void NCPA::EPadeSolver::set_default_values() {
 	absorption_layer_mu = 0.01;
 	c_underground = 50000000000.0;
 	top_layer = true;
-	calculate_attn = true;
 	write1d = true;
 
 	// null values otherwise.  Pointers:
@@ -108,14 +117,14 @@ void NCPA::EPadeSolver::set_default_values() {
 
 	// bool
 	use_atm_1d = false; use_atm_2d = false; use_atm_toy = false; use_topo = false;
-	z_ground_specified = false; lossless = false;
+	z_ground_specified = false;
 	multiprop = false; write2d = false;
 	broadband = false; write_starter = false; write_topo = false;
 	user_ground_impedence_found = false; write_atmosphere = false;
 	pointsource = true; _write_source_function = false;
 
 	// string
-	starter = ""; attnfile = ""; user_starter_file = ""; topofile = "";
+	topofile = "";
 
 	// turbulence
 	use_turbulence = false;
@@ -149,9 +158,9 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 //  	NR_requested 		= param->getInteger( "Nrng_steps" );
 //  	freq 				= param->getFloat( "freq" );
 //	npade 				= param->getInteger( "npade" );
-	starter 			= param->getString( "starter" );
-	attnfile 			= param->getString( "attnfile" );
-	user_starter_file   = param->getString( "starterfile" );
+//	starter 			= param->getString( "starter" );
+//	attnfile 			= param->getString( "attnfile" );
+//	user_starter_file   = param->getString( "starterfile" );
 	topofile			= param->getString( "topofile" );
 	user_tag			= param->getString( "filetag" );
 	if (user_tag.size() > 0) {
@@ -164,7 +173,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	}
 
 	// flags
-	lossless 				= param->wasFound( "lossless" );
+//	lossless 				= param->wasFound( "lossless" );
 	use_atm_1d				= param->wasFound( "atmosfile" );
 	use_atm_2d				= param->wasFound( "atmosfile2d" );
 	//use_atm_toy			= param->wasFound( "toy" );
@@ -222,11 +231,11 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		azi[ i ] = min_az + i * step_az;
 	}
 
-	if (starter == "user") {
-		if (user_starter_file.size() == 0) {
-			throw std::runtime_error( "No user starter file specified!" );
-		}
-	}
+//	if (starter == "user") {
+//		if (user_starter_file.size() == 0) {
+//			throw std::runtime_error( "No user starter file specified!" );
+//		}
+//	}
 
 	//NCPA::Atmosphere1D *atm_profile_1d;
 	if (use_atm_1d) {
@@ -372,19 +381,6 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
 	}
 
-	// attenuation
-	if ( attnfile.size() > 0 ) {
-		atm_profile_2d->read_attenuation_from_file( "_ALPHA_", param->getString( "attnfile" ) );
-	} else {
-		if (  !(atm_profile_2d->contains_vector(0.0, "T")
-				&& atm_profile_2d->contains_vector(0.0, "P")
-				&& atm_profile_2d->contains_vector(0.0, "RHO") ) ) {
-			std::cout << "At least one of T, P, or RHO is absent, switching to lossless propagation"
-					  << std::endl;
-			lossless = true;
-		}
-	}
-
 	// calculate/check z resolution
 //	dz = param->getFloat( "dz_m" );
 //	double f0 = f_vector[0];
@@ -430,7 +426,61 @@ NCPA::EPadeSolver::~EPadeSolver() {
 		delete atm_profile_2d;
 }
 
+bool NCPA::EPadeSolver::finalize() {
+	// attenuation
+	switch (attenuation_type) {
+		case NCPA::AttenuationType::USER:
+			atm_profile_2d->read_attenuation_from_file( "_ALPHA_", attenuation_filename_in );
+			break;
+		case NCPA::AttenuationType::SUTHERLAND_BASS:
+			if (  !(atm_profile_2d->contains_vector(0.0, "T")
+					&& atm_profile_2d->contains_vector(0.0, "P")
+					&& atm_profile_2d->contains_vector(0.0, "RHO") ) ) {
+				std::cout << "At least one of T, P, or RHO is absent, switching to lossless propagation"
+						  << std::endl;
+				attenuation_type = NCPA::AttenuationType::NONE;
+			}
+			break;
+		default:
+			break;
+	}
+
+	if (z_max.get_units() == NCPA::UNITS_NONE) {
+		double minmax, maxmax;
+		atm_profile_2d->get_maximum_altitude_limits( minmax, maxmax );
+		z_max.set( minmax, atm_profile_2d->get_altitude_units(0.0) );
+	}
+
+	_ready = true;
+	std::ostringstream errors;
+
+	// do checks
+	if (atm_profile_2d == NULL) {
+		errors << "No valid atmosphere provided!" << std::endl;
+		_ready = false;
+	}
+	if (starter_type == NCPA::StarterType::NONE) {
+		errors << "No valid starter indicated!" << std::endl;
+		_ready = false;
+	}
+	if (r_max.get_units() == NCPA::UNITS_NONE) {
+		errors << "No propagation range set!" << std::endl;
+		_ready = false;
+	}
+	if (!_ready) {
+		throw std::runtime_error( errors.str() );
+	}
+	return _ready;
+}
+
+bool NCPA::EPadeSolver::ready() {
+	return _ready;
+}
+
 int NCPA::EPadeSolver::solve() {
+	if (!_ready) {
+		throw std::runtime_error("Solver not ready!");
+	}
 	if (use_topo) {
 		return solve_with_topography();
 	} else {
@@ -597,7 +647,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	std::complex<double> *n = NCPA::zeros<std::complex<double>>( NZ );
 
 	std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
-	if (starter == "self") {
+	if (starter_type == NCPA::StarterType::SELF) {
 		if (pointsource) {
 			std::cout << "Generating point source at " << z_source.get() << "m" << std::endl;
 			make_point_source( NZ, z, z_source.get(), 0.0, source );
@@ -640,7 +690,8 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			std::cout << "Infrasound PE code at f = " << *freq << " Hz, azi = "
 						<< calc_az << " deg" << std::endl;
 
-			if ( (!lossless) && (attnfile.length() == 0)) {
+//			if ( (!lossless) && (attnfile.length() == 0)) {
+			if (attenuation_type == NCPA::AttenuationType::SUTHERLAND_BASS) {
 				atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", *freq );
 			}
 
@@ -678,7 +729,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			}
 
 			//std::cout << "Using atmosphere index " << profile_index << std::endl;
-			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, lossless, 
+			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, attenuation_type,
 				top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
 
 			// calculate turbulence
@@ -696,7 +747,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			create_matrix_polynomial( pade_order+1, &q, &qpowers );
 			ierr = MatDestroy( &q );CHKERRQ(ierr);
 
-			if (starter == "self") {
+			if (starter_type == NCPA::StarterType::SELF) {
 				Mat q_starter;
 				build_operator_matrix_without_topography( NZ, z, k0, h2, ground_impedence_factor,
 					n, pade_order+1, 0, &q_starter );
@@ -707,13 +758,13 @@ int NCPA::EPadeSolver::solve_without_topography() {
 					pade_order, &psi_o );
 				
 				ierr = MatDestroy( &q_starter );CHKERRQ(ierr);
-			} else if (starter == "gaussian") {
+			} else if (starter_type == NCPA::StarterType::GAUSSIAN) {
 				qpowers_starter = qpowers;
 				get_starter_gaussian( NZ, z, z_source.get(), k0, ground_index, &psi_o );
-			} else if (starter == "user") {
-				get_starter_user( user_starter_file, NZ, z, &psi_o );
+			} else if (starter_type == NCPA::StarterType::USER) {
+				get_starter_user( starter_filename_in, NZ, z, &psi_o );
 			} else {
-				std::cerr << "Unrecognized starter type: " << starter << std::endl;
+				std::cerr << "Unrecognized starter type" << std::endl;
 				exit(0);
 			}
 
@@ -742,7 +793,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				if (((int)(atm_profile_2d->get_profile_index( rr ))) != profile_index) {
 				
 					profile_index = atm_profile_2d->get_profile_index( rr );
-					calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground, lossless, top_layer, *freq,
+					calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground, attenuation_type, top_layer, *freq,
 						use_topo, k0, c0, c, a_t, k, n );
 					delete_matrix_polynomial( pade_order+1, &qpowers );
 					build_operator_matrix_without_topography( NZ, z, k0, h2, 
@@ -860,11 +911,12 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 			delete_matrix_polynomial( pade_order+1, &qpowers );
 
-			if (starter == "self") {
+			if (starter_type == NCPA::StarterType::SELF) {
 				delete_matrix_polynomial( pade_order+1, &qpowers_starter );
 				// delete [] qpowers_starter;
 			}
-			if (attnfile.length() == 0) {
+//			if (attnfile.length() == 0) {
+			if (attenuation_type != NCPA::AttenuationType::USER) {
 				atm_profile_2d->remove_property( "_ALPHA_" );
 			}
 			delete [] r;
@@ -1349,7 +1401,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	std::complex<double> *n = NCPA::zeros<std::complex<double>>( NZ );
 
 	std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
-	if (starter == "self") {
+	// @todo account for unspecified z_source being on the ground, which could be at a negative elevation instead of 0
+	if (starter_type == NCPA::StarterType::SELF) {
 		if (pointsource) {
 			std::cout << "Generating point source at " << z_source.get() << "m" << std::endl;
 			make_point_source( NZ, z, z_source.get() + z_ground, z_ground, source );
@@ -1395,7 +1448,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 						<< calc_az << " deg" << std::endl;
 
 			// calculate attenuation as a function of frequency if not externally supplied
-			if ( (!lossless) && (attnfile.length() == 0)) {
+//			if ( (!lossless) && (attnfile.length() == 0)) {
+			if (attenuation_type == NCPA::AttenuationType::SUTHERLAND_BASS) {
 				atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", *freq );
 			}
 
@@ -1434,7 +1488,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				std::cout << "Using default rigid ground with Lamb BC" << std::endl;
 			}
 
-			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, lossless, 
+			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, attenuation_type,
 				top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
 			
 			// calculate turbulence
@@ -1445,7 +1499,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			}
 
 			// build appropriate starter
-			if (starter == "self") {
+			if (starter_type == NCPA::StarterType::SELF) {
 
 				// for now build the non-topographic starter
 				// revisit when time and funding permit
@@ -1468,7 +1522,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 
 				calculate_atmosphere_parameters( atm_profile_2d, NZ_starter, z_starter,
-					0.0, z_ground, lossless, top_layer, *freq, false, k0_starter,
+					0.0, z_ground, attenuation_type, top_layer, *freq, false, k0_starter,
 					c0_starter, c_starter, a_starter, k_starter, n_starter );
 
 				Mat q_starter = PETSC_NULL;
@@ -1526,7 +1580,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				create_matrix_polynomial( pade_order+1, &q, &qpowers );
 				
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
-			} else if (starter == "gaussian") {
+			} else if (starter_type == NCPA::StarterType::GAUSSIAN) {
 				// qpowers_starter = qpowers;
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
 					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
@@ -1535,15 +1589,15 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
 				get_starter_gaussian( NZ, z, z_source.get()+z_ground, k0,
 					ground_index, &psi_o );
-			} else if (starter == "user" ) {
+			} else if (starter_type == NCPA::StarterType::USER) {
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
 					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
 					&q, true );
 				create_matrix_polynomial( pade_order+1, &q, &qpowers );
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
-				get_starter_user( user_starter_file, NZ, z, &psi_o );
+				get_starter_user( starter_filename_in, NZ, z, &psi_o );
 			} else {
-				std::cerr << "Unrecognized starter type: " << starter << std::endl;
+				std::cerr << "Unrecognized starter type:" << std::endl;
 				exit(0);
 			}
 
@@ -1572,7 +1626,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		  			grid_tolerance,
 		  			atm_profile_2d->get_interpolated_ground_elevation( rr ) );
 				calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground,
-					lossless, top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
+					attenuation_type, top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
 				Mat last_q;
 				ierr = MatConvert( qpowers[0], MATSAME, MAT_INITIAL_MATRIX, &last_q );CHKERRQ(ierr);
 				delete_matrix_polynomial( pade_order+1, &qpowers );
@@ -1707,10 +1761,11 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			std::cout << std::endl;
 
 			delete_matrix_polynomial( pade_order+1, &qpowers );
-			if (starter == "self") {
+			if (starter_type == NCPA::StarterType::SELF) {
 				delete_matrix_polynomial( pade_order+1, &qpowers_starter );
 			}
-			if (attnfile.length() == 0) {
+//			if (attnfile.length() == 0) {
+			if (attenuation_type != NCPA::AttenuationType::USER) {
 				atm_profile_2d->remove_property( "_ALPHA_" );
 			}
 			delete [] r;
@@ -1785,7 +1840,7 @@ int NCPA::EPadeSolver::delete_matrix_polynomial( size_t nterms, Mat **qpowers ) 
 // Calculate and return k0, c0, c, a, k, and n
 void NCPA::EPadeSolver::calculate_atmosphere_parameters(
 	NCPA::Atmosphere2D *atm, int NZvec, double *z_vec,
-	double r, double z_g, bool use_lossless, bool use_top_layer, double freq, bool absolute, 
+	double r, double z_g, NCPA::AttenuationType attntype, bool use_top_layer, double freq, bool absolute,
 	double &k0, double &c0, double *c_vec, double *a_vec, std::complex<double> *k_vec, 
 	std::complex<double> *n_vec ) {
 
@@ -1806,7 +1861,8 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
 	}
 	c0 = atm->get( r, "_CEFF_", z_g );
 
-	if (!use_lossless) {
+//	if (!use_lossless) {
+	if (attntype != NCPA::AttenuationType::NONE) {
 		if (absolute) {
 			fill_atm_vector_absolute( atm, r, NZvec, z_vec, "_ALPHA_", 0.0, a_vec );
 		} else {
