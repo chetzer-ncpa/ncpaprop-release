@@ -1,11 +1,12 @@
 #include "ncpaprop_petsc.h"
 #include <iostream>
+#include <fstream>
 #include <complex>
 
 #include "petscvec.h"
 #include "petscmat.h"
 
-void outputVec( Vec &v, double *z, size_t n, const std::string &filename ) const {
+void NCPA::outputVec( Vec &v, double *z, size_t n, const std::string &filename ) {
 	PetscScalar *array;
 	std::ofstream out( filename );
 	out.precision( 12 );
@@ -24,7 +25,7 @@ void outputVec( Vec &v, double *z, size_t n, const std::string &filename ) const
 	out.close();
 }
 
-void outputSparseMat( Mat &m, size_t nrows, const std::string &filename ) const {
+void NCPA::outputSparseMat( Mat &m, size_t nrows, const std::string &filename ) {
 	PetscInt ncols;
 	const PetscInt *cols;
 	const PetscScalar *vals;

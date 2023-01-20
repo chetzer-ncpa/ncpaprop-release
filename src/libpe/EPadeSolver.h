@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <deque>
+#include <map>
 
 #include "petscksp.h"
 
@@ -12,6 +13,7 @@
 
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
+#include "ncpaprop_petsc.h"
 
 #ifndef NCPAPROP_EPADE_PE_FILENAME_1D
 #define NCPAPROP_EPADE_PE_FILENAME_1D "tloss_1d.pe"
@@ -96,8 +98,14 @@
 
 namespace NCPA {
 
+	enum class StarterType {
+		SELF,
+		USER,
+		GAUSSIAN
+	};
 
 	class EPadeSolver : public AtmosphericTransferFunctionSolver {
+
 
 	public:
 		EPadeSolver();
@@ -107,14 +115,29 @@ namespace NCPA {
 		virtual void output1DTL( std::string filename, bool append = false );
 		virtual void output2DTL( std::string filename );
 
+		void set_max_range( double r, const std::string &u );
+		void set_max_height( double z, const std::string &u );
+		void set_source_height( double z, const std::string &u );
+		void set_receiver_height( double z, const std::string &u );
+		void set_requested_range_steps( size_t n );
+		void set_requested_height_step( double dz, const std::string &u );
+		void set_frequency( double f );
+		void set_pade_order( size_t n );
+		void set_starter_type( const std::string &s, const std::string &fname = "" );
+
+		ScalarWithUnits 	r_max,					// maximum range (m)
+							z_max,					// maximum height (m)
+							dz_requested,			// requested height step (m)
+							z_source,				// source height (m)
+							z_receiver;				// receiver height (m)
+		size_t 				nr_requested = 0,		// Requested number of range steps
+							pade_order = 0;			// Order of Pade approximation
+		std::vector<double>	f_vector;				// Frequencies for analysis
+		StarterType			starter_type;
+
 	protected:
 
 		void set_default_values();
-
-		void outputVec( Vec &v, double *z, int n,
-			std::string filename ) const;
-		void outputSparseMat( Mat &m, size_t nrows,
-			const std::string &filename ) const;
 
 		// solve using the appropriate method
 		virtual int solve_with_topography();
@@ -218,22 +241,21 @@ namespace NCPA {
 
 		std::string tag_filename( std::string basename );
 
-		double *z = NULL, *z_abs = NULL, *r = NULL, *f = NULL, calc_az;
+		double *z = NULL, *z_abs = NULL, *r = NULL, calc_az;
 		std::complex< double > **tl;
 		int *zgi_r = NULL;   // ground height index
-		double freq;         // current active frequency
+//		double freq;         // current active frequency
 		double *azi;
-		size_t NZ, NR, NR_requested, NAz, NF;
-		double dz;
-		size_t npade;
+		size_t NZ, NR, NAz;
+//		double dz;
+
 		bool use_atm_1d = false, use_atm_2d = false, use_atm_toy = false, use_topo = false;
 		bool z_ground_specified = false, lossless = false, top_layer = true;
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
 		bool write_atmosphere = false, pointsource = true, _write_source_function = false;
-		double r_max;    // range limits
-		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
-		double zs, zr;  // source height, receiver height
+//		double r_max;    // range limits
+		double z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double c_underground;
 		double top_layer_thickness_m;
 		std::complex<double> user_ground_impedence;

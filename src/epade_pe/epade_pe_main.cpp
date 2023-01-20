@@ -25,10 +25,20 @@
 using namespace std;
 using namespace NCPA;
 
+enum parameter_processing_results_t {
+	CONTINUE_OK,
+	EXIT_OK,
+	EXIT_ERROR
+};
+
+void configure_solver( EPadeSolver *solver, ParameterSet *param );
+parameter_processing_results_t process_parameters( ParameterSet *param, int argc, char **argv );
+
+
 int main( int argc, char **argv ) {
-	
+
 	using namespace std::chrono;
-	
+
 	std::string help = "ePade Parabolic Equation Solver";
 	//PetscErrorCode ierr = PetscInitialize( &argc, &argv, (char *)0, help.c_str());CHKERRQ(ierr);
 	PetscErrorCode ierr = PetscInitializeNoArguments();CHKERRQ(ierr);
@@ -36,46 +46,16 @@ int main( int argc, char **argv ) {
 
 	// object to process the options
 	ParameterSet *param = new ParameterSet();
-	configure_epade_pe_parameter_set( param );
-	try {
-		param->parseCommandLine( argc, argv );
-	} catch (std::invalid_argument &e) {
-		std::cout << "Argument parsing from command line failed:"
-			<< std::endl << e.what() << std::endl;
-		return 0;
+	switch (process_parameters( param, argc, argv )) {
+		case EXIT_OK:
+			return 1;
+		case EXIT_ERROR:
+			return 0;
+		default:
+			break;
 	}
 
-	// check for help text
-	if (param->wasFound( "help" ) || param->wasFound("h") ) {
-		param->printUsage( cout );
-		return 1;
-	}
-
-	// See if an options file was specified
-	string paramFile = param->getString( "paramfile" );
-	try {
-		param->parseFile( paramFile );
-	} catch (std::invalid_argument &e) {
-		std::cout << "Argument parsing from " << paramFile
-			<< " failed: " << std::endl << e.what() << std::endl;
-		return 0;
-	}
-
-	// parse command line again, to override file options
-	try {
-		param->parseCommandLine( argc, argv );
-	} catch (std::invalid_argument &e) {
-		std::cout << "Argument parsing from command line failed:"
-			<< std::endl << e.what() << std::endl;
-		return 0;
-	}
-
-	// see if we want a parameter summary
-	if (param->wasFound( "printparams" ) ) {
-		param->printParameters();
-	}
-
-	// run parameter checks
+	// validate parameters
 	if (! param->validate() ) {
 		cout << "Parameter validation failed:" << endl;
 		param->printFailedTests( cout );
@@ -85,6 +65,7 @@ int main( int argc, char **argv ) {
 	EPadeSolver *solver;
 	try {
 		solver = new EPadeSolver( param );
+		configure_solver( solver, param );
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 		solver->solve();
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -109,4 +90,58 @@ int main( int argc, char **argv ) {
 	ierr = PetscFinalize();
 
 	return 1;
+}
+
+parameter_processing_results_t process_parameters( ParameterSet *param, int argc, char **argv ) {
+	configure_epade_pe_parameter_set( param );
+	try {
+		param->parseCommandLine( argc, argv );
+	} catch (std::invalid_argument &e) {
+		std::cout << "Argument parsing from command line failed:"
+			<< std::endl << e.what() << std::endl;
+		return EXIT_ERROR;
+	}
+
+	// check for help text
+	if (param->wasFound( "help" ) || param->wasFound("h") ) {
+		param->printUsage( cout );
+		return EXIT_OK;
+	}
+
+	// See if an options file was specified
+	string paramFile = param->getString( "paramfile" );
+	try {
+		param->parseFile( paramFile );
+	} catch (std::invalid_argument &e) {
+		std::cout << "Argument parsing from " << paramFile
+			<< " failed: " << std::endl << e.what() << std::endl;
+		return EXIT_ERROR;
+	}
+
+	// parse command line again, to override file options
+	try {
+		param->parseCommandLine( argc, argv );
+	} catch (std::invalid_argument &e) {
+		std::cout << "Argument parsing from command line failed:"
+			<< std::endl << e.what() << std::endl;
+		return EXIT_ERROR;
+	}
+
+	// see if we want a parameter summary
+	if (param->wasFound( "printparams" ) ) {
+		param->printParameters();
+	}
+
+	return CONTINUE_OK;
+}
+
+
+void configure_solver( EPadeSolver *solver, ParameterSet *param ) {
+	solver->set_max_height( param->getFloat( "maxheight_km" ), "km" );
+	solver->set_source_height( param->getFloat( "sourceheight_km" ), "km" );
+	solver->set_receiver_height( param->getFloat( "receiverheight_km" ), "km" );
+	solver->set_requested_range_steps( param->getInteger( "Nrng_steps" ) );
+	solver->set_frequency( param->getFloat( "freq" ) );
+	solver->set_pade_order( param->getInteger( "npade" ) );
+	solver->set_requested_height_step( param->getFloat( "dz_m" ), "m" );
 }

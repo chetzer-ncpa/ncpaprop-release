@@ -7,22 +7,32 @@ include sources.make
 
 INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
 
-OBJS=$(SOURCES:.cpp=.o)
-TARGET=libncpapetsc.a
+OBJS_REAL=$(SOURCES:.cpp=.real.o)
+OBJS_COMPLEX=$(SOURCES:.cpp=.complex.o)
+TARGET_REAL=libncpapetsc_real.a
+TARGET_COMPLEX=libncpapetsc_complex.a
 
 
-all: $(TARGET)
+real: $(TARGET_REAL)
+complex: $(TARGET_COMPLEX)
 
 .PHONY: clean
 
 # link	
-$(TARGET): $(OBJS)
+$(TARGET_REAL): $(OBJS_REAL)
+	ar curv $@ $^
+	cp $@ ../../lib
+	
+$(TARGET_COMPLEX): $(OBJS_COMPLEX)
 	ar curv $@ $^
 	cp $@ ../../lib
 	
 # compile 
-%.o: %.cpp
+%.real.o: %.cpp
+	${CXX} ${INCPATHS} @CXXFLAGS@ ${CXX_FLAGS} @WARNINGFLAGS@ -o $@ $<
+	
+%.complex.o: %.cpp
 	${CXX} ${INCPATHS} @CXXFLAGS@ ${CXX_FLAGS} @WARNINGFLAGS@ -o $@ $<
 
 clean::
-	-$(RM) -rf $(OBJS) $(TARGET)
+	-$(RM) -rf $(OBJS) $(TARGET_REAL) $(TARGET_COMPLEX)

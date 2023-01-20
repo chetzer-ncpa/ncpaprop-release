@@ -21,9 +21,9 @@
 #include "gsl/gsl_version.h"
 #include "gsl/gsl_blas.h"
 
-#include "Atmosphere1D.h"
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
+#include "ncpaprop_petsc.h"
 
 
 #ifndef PI
@@ -32,38 +32,51 @@
 
 #define RHO_B 5000.0
 
-void NCPA::EPadeSolver::outputVec( Vec &v, double *z, int n, std::string filename ) const {
-	PetscScalar *array;
-	std::ofstream out( filename );
-	out.precision( 12 );
-	VecGetArray(v,&array);
-	for (int i = 0; i < n; i++) {
-		if (z != NULL) {
-			out << z[i] << "  ";
-		}
-		out << array[i].real() << "  " << array[i].imag() << std::endl;
-	}
-	VecRestoreArray(v,&array);
-	out.close();
+//////////////////////////////////////////////////////////////////////////////
+// Setter methods for calculation parameters
+//////////////////////////////////////////////////////////////////////////////
+
+void NCPA::EPadeSolver::set_max_range( double r, const std::string &u ) {
+	r_max.set( r, u );
+	r_max.convert_units( NCPAPROP_EPADE_PE_UNITS_R );
 }
 
-void NCPA::EPadeSolver::outputSparseMat( Mat &m, size_t nrows,
-	const std::string &filename ) const {
-	PetscInt ncols;
-	const PetscInt *cols;
-	const PetscScalar *vals;
-	std::ofstream out( filename );
-	out << nrows << std::endl;
-	for (size_t i = 0; i < nrows; i++) {
-		MatGetRow( m, (PetscInt)i, &ncols, &cols, &vals );
-		for (PetscInt j = 0; j < ncols; j++) {
-			out << i << " " << cols[j] << " " << vals[j].real() << " " << vals[j].imag()
-				<< std::endl;
-		}
-		MatRestoreRow( m, (PetscInt)i, &ncols, &cols, &vals );
-	}
-	out.close();
+void NCPA::EPadeSolver::set_max_height( double z, const std::string &u ) {
+	z_max.set( z, u );
+	z_max.convert_units( NCPAPROP_EPADE_PE_UNITS_Z );
 }
+
+void NCPA::EPadeSolver::set_source_height( double z, const std::string &u ) {
+	z_source.set( z, u );
+	z_source.convert_units( NCPAPROP_EPADE_PE_UNITS_Z );
+}
+
+void NCPA::EPadeSolver::set_receiver_height( double z, const std::string &u ) {
+	z_receiver.set( z, u );
+	z_receiver.convert_units( NCPAPROP_EPADE_PE_UNITS_Z );
+}
+
+void NCPA::EPadeSolver::set_requested_range_steps( size_t n ) {
+	nr_requested = n;
+}
+
+void NCPA::EPadeSolver::set_frequency( double f ) {
+	f_vector.clear();
+	f_vector.push_back( f );
+}
+
+void NCPA::EPadeSolver::set_pade_order( size_t n ) {
+	pade_order = n;
+}
+
+void NCPA::EPadeSolver::set_requested_height_step( double dz, const std::string &u ) {
+	dz_requested.set( dz, u );
+	dz_requested.convert_units( NCPAPROP_EPADE_PE_UNITS_Z );
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Below here is pre-refactor code /////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 NCPA::EPadeSolver::EPadeSolver() {
@@ -79,19 +92,19 @@ void NCPA::EPadeSolver::set_default_values() {
 	write1d = true;
 
 	// null values otherwise.  Pointers:
-	z = NULL; z_abs = NULL; r = NULL; f = NULL; tl = NULL;
+	z = NULL; z_abs = NULL; r = NULL; tl = NULL;
 	zgi_r = NULL; azi = NULL; atm_profile_2d = NULL;
 
 	// doubles
-	freq = 0.0; dz = 0.0; r_max = 0.0; z_max = 0.0; z_min = 0.0; z_ground = 0.0;
-	z_bottom = 0.0; zs = 0.0; zr = 0.0; calc_az = 0.0;
+	z_min = 0.0; z_ground = 0.0;
+	z_bottom = 0.0; calc_az = 0.0;
 	top_layer_thickness_m = -1.0;
 
 	// complex
 	user_ground_impedence = 0.0;
 
 	// int
-	NZ = 0; NR = 0; NR_requested = 0; NAz = 0; NF = 0; npade = 0; nzplot = 0;
+	NZ = 0; NR = 0; NAz = 0; nzplot = 0;
 
 	// bool
 	use_atm_1d = false; use_atm_2d = false; use_atm_toy = false; use_topo = false;
@@ -124,16 +137,18 @@ std::string NCPA::EPadeSolver::tag_filename( std::string basename ) {
 NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 	set_default_values();
+	set_max_range( param->getFloat( "maxrange_km" ), "km" );
 
 	// obtain the parameter values from the user's options
 	// @todo add units to input scalar quantities
-	r_max	 			= param->getFloat( "maxrange_km" ) * 1000.0;
-  	z_max	 			= param->getFloat( "maxheight_km" ) * 1000.0;      // @todo fix elsewhere that m is required
-  	zs			 		= param->getFloat( "sourceheight_km" ) * 1000.0;
-  	zr 					= param->getFloat( "receiverheight_km" ) * 1000.0;
-  	NR_requested 		= param->getInteger( "Nrng_steps" );
-  	freq 				= param->getFloat( "freq" );
-	npade 				= param->getInteger( "npade" );
+//	r_max	 			= param->getFloat( "maxrange_km" ) * 1000.0;
+//	z_max.set( param->getFloat( "maxheight_km" ), UNITS_DISTANCE_KILOMETERS );
+//  	z_max	 			= param->getFloat( "maxheight_km" ) * 1000.0;      // @todo fix elsewhere that m is required
+//  	zs			 		= param->getFloat( "sourceheight_km" ) * 1000.0;
+//  	zr 					= param->getFloat( "receiverheight_km" ) * 1000.0;
+//  	NR_requested 		= param->getInteger( "Nrng_steps" );
+//  	freq 				= param->getFloat( "freq" );
+//	npade 				= param->getInteger( "npade" );
 	starter 			= param->getString( "starter" );
 	attnfile 			= param->getString( "attnfile" );
 	user_starter_file   = param->getString( "starterfile" );
@@ -207,37 +222,6 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		azi[ i ] = min_az + i * step_az;
 	}
 
-  	if (broadband) {
-  		if (write2d) {
-			std::cout << "Broadband propagation requested, disabling 2-D output" << std::endl;
-			write2d = false;
-		}
-		if (use_topo) {
-			std::cout << "Broadband propagation requested, disabling topography flag" << std::endl;
-			use_topo = false;
-		}
-		double f_min, f_step, f_max;
-      	f_min = param->getFloat( "f_min" );
-      	f_step = param->getFloat( "f_step" );
-      	f_max = param->getFloat( "f_max" );
-
-      	// sanity checks
-      	if (f_min >= f_max) {
-      		throw std::runtime_error( "f_min must be less than f_max!" );
-      	}
-
-      	NF = (size_t)(std::floor((f_max - f_min) / f_step)) + 1;
-      	f = NCPA::zeros<double>( NF );
-      	for (size_t fi = 0; fi < NF; fi++) {
-      		f[ fi ] = f_min + ((double)fi) * f_step;
-      	}
-	} else {
-		freq = param->getFloat( "freq" );
-		f = NCPA::zeros<double>( 1 );
-		f[ 0 ] = freq;
-		NF = 1;
-	}
-
 	if (starter == "user") {
 		if (user_starter_file.size() == 0) {
 			throw std::runtime_error( "No user starter file specified!" );
@@ -258,8 +242,8 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		exit(0);
 	}
 	atm_profile_2d->convert_range_units( NCPAPROP_EPADE_PE_UNITS_R );
-	if (r_max > atm_profile_2d->get_maximum_valid_range() ) {
-		atm_profile_2d->set_maximum_valid_range( r_max );
+	if (r_max.get() > atm_profile_2d->get_maximum_valid_range() ) {
+		atm_profile_2d->set_maximum_valid_range( r_max.get() );
 	}
 
 	// altitude units
@@ -345,29 +329,29 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 
 	// calculate derived quantities
-	double c0;
-	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
-		 it != atm_profile_2d->last_profile(); ++it) {
-		if ( (*it)->contains_vector( "C0" ) ) {
-			(*it)->convert_property_units( "C0", NCPAPROP_EPADE_PE_UNITS_C );
-			(*it)->copy_vector_property( "C0", "_C0_" );
-			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-		} else {
-			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
-				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", 
-						NCPAPROP_EPADE_PE_UNITS_C );
-				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-			} else if ( (*it)->contains_vector("T") ) {
-				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
-						NCPAPROP_EPADE_PE_UNITS_C );
-				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-			} else if ( (*it)->contains_vector( "CEFF" ) ) {
-				c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
-			} else {
-				throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
-			}
-		}
-	}
+//	double c0;
+//	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
+//		 it != atm_profile_2d->last_profile(); ++it) {
+//		if ( (*it)->contains_vector( "C0" ) ) {
+//			(*it)->convert_property_units( "C0", NCPAPROP_EPADE_PE_UNITS_C );
+//			(*it)->copy_vector_property( "C0", "_C0_" );
+//			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+//		} else {
+//			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
+//				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
+//						NCPAPROP_EPADE_PE_UNITS_C );
+//				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+//			} else if ( (*it)->contains_vector("T") ) {
+//				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
+//						NCPAPROP_EPADE_PE_UNITS_C );
+//				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+//			} else if ( (*it)->contains_vector( "CEFF" ) ) {
+//				c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
+//			} else {
+//				throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
+//			}
+//		}
+//	}
 
 	// wind speed
 	if (atm_profile_2d->contains_vector(0,"WS")) {
@@ -402,20 +386,21 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	}
 
 	// calculate/check z resolution
-	dz = param->getFloat( "dz_m" );
-	double lambda0 = c0 / freq;
-  	if (dz <= 0.0) {
-  		dz = lambda0 / 20.0;
-  		double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
-  		double factor = std::floor( dz / nearestpow10 );
-  		dz = nearestpow10 * factor;
-  		std::cout << "Setting dz to " << dz << " m" << std::endl;
-  	}
-  	if (dz > (c0 / freq / 10.0) ) {
-  		std::ostringstream oss;
-		oss << "Altitude resolution is too coarse.  Must be <= " << lambda0 / 10.0 << " meters.";
-  		throw std::runtime_error( oss.str() );
-  	}
+//	dz = param->getFloat( "dz_m" );
+//	double f0 = f_vector[0];
+//	double lambda0 = c0 / f_vector[0];
+//  	if (dz <= 0.0) {
+//  		dz = lambda0 / 20.0;
+//  		double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
+//  		double factor = std::floor( dz / nearestpow10 );
+//  		dz = nearestpow10 * factor;
+//  		std::cout << "Setting dz to " << dz << " m" << std::endl;
+//  	}
+//  	if (dz > (c0 / f_vector[0] / 10.0) ) {
+//  		std::ostringstream oss;
+//		oss << "Altitude resolution is too coarse.  Must be <= " << lambda0 / 10.0 << " meters.";
+//  		throw std::runtime_error( oss.str() );
+//  	}
 
   	// calculate ground impedence
   	if (param->wasFound( "ground_impedence_real" ) || param->wasFound( "ground_impedence_imag" ) ) {
@@ -476,7 +461,8 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	int profile_index;
 	double minlimit, maxlimit;
 	atm_profile_2d->get_maximum_altitude_limits( minlimit, maxlimit );
-	z_max = NCPA::min( z_max, minlimit );    // lowest valid top value
+//	z_max = NCPA::min( z_max, minlimit );    // lowest valid top value
+	z_max.set_value( NCPA::min( z_max.get(), minlimit ) );
 	int ground_index = 0;
 	std::complex<double> ground_impedence_factor( 0.0, 0.0 );
 
@@ -488,10 +474,57 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	}
 
 	// truncate 1-D if necessary
-	if (broadband) {
-		std::ofstream ofs( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D),
-			std::ofstream::out | std::ofstream::trunc );
-		ofs.close();
+//	if (broadband) {
+//		std::ofstream ofs( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D),
+//			std::ofstream::out | std::ofstream::trunc );
+//		ofs.close();
+//	}
+
+	if (r_max.get() > atm_profile_2d->get_maximum_valid_range() ) {
+		atm_profile_2d->set_maximum_valid_range( r_max.get() );
+	}
+
+	double c0;
+	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
+		 it != atm_profile_2d->last_profile(); ++it) {
+		if ( (*it)->contains_vector( "C0" ) ) {
+			(*it)->convert_property_units( "C0", NCPAPROP_EPADE_PE_UNITS_C );
+			(*it)->copy_vector_property( "C0", "_C0_" );
+			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+		} else {
+			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
+				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
+						NCPAPROP_EPADE_PE_UNITS_C );
+				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+			} else if ( (*it)->contains_vector("T") ) {
+				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
+						NCPAPROP_EPADE_PE_UNITS_C );
+				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+			} else if ( (*it)->contains_vector( "CEFF" ) ) {
+				c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
+			} else {
+				throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
+			}
+		}
+	}
+
+	// calculate/check z resolution
+//	dz = param->getFloat( "dz_m" );
+//	double f0 = f_vector[0];
+	// @todo move this into f loop for future broadband use
+	double dz;
+	double lambda0 = c0 / f_vector[0];
+	if (dz_requested.get() <= 0.0) {
+		dz = lambda0 / 20.0;
+		double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
+		double factor = std::floor( dz / nearestpow10 );
+		dz = nearestpow10 * factor;
+		std::cout << "Setting dz to " << dz << " m" << std::endl;
+	}
+	if (dz > (c0 / f_vector[0] / 10.0) ) {
+		std::ostringstream oss;
+		oss << "Altitude resolution is too coarse.  Must be <= " << lambda0 / 10.0 << " meters.";
+		throw std::runtime_error( oss.str() );
 	}
 
 	atm_profile_2d->get_minimum_altitude_limits( minlimit, z_min );
@@ -509,7 +542,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
   	z_bottom = z_min;
 	// fill and convert to SI units
 	//double dz       = (z_max - z_ground)/(NZ - 1);	// the z-grid spacing
-	NZ = ((int)std::floor((z_max - z_ground) / dz)) + 1;
+	NZ = ((int)std::floor((z_max.get() - z_ground) / dz)) + 1;
 	z = NCPA::zeros<double>( NZ );
 	z_abs = NCPA::zeros<double>( NZ );
 	indices = NCPA::zeros<PetscInt>( NZ );
@@ -518,7 +551,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 		z_abs[ i ] = z[ i ] + z_ground;
 		indices[ i ] = i;
 	}
-	size_t zr_i = NCPA::find_closest_index<double>( z, NZ, zr );
+	size_t zr_i = NCPA::find_closest_index<double>( z, NZ, z_receiver.get() );
 //	std::cout << "zr_i for zr=" << zr << " is " << zr_i << std::endl;
 
 	if (use_turbulence) {
@@ -557,7 +590,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	double dr;
 
 	// set up for source atmosphere
-	double k0 = 0.0, c0 = 0.0;
+	double k0 = 0.0; c0 = 0.0;
 	double *c = NCPA::zeros<double>( NZ );
 	double *a_t = NCPA::zeros<double>( NZ );
 	std::complex<double> *k = NCPA::zeros<std::complex<double>>( NZ );
@@ -566,8 +599,8 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
 	if (starter == "self") {
 		if (pointsource) {
-			std::cout << "Generating point source at " << zs << "m" << std::endl;
-			make_point_source( NZ, z, zs, 0.0, source );
+			std::cout << "Generating point source at " << z_source.get() << "m" << std::endl;
+			make_point_source( NZ, z, z_source.get(), 0.0, source );
 		} else {
 			std::cout << "Reading line source from " << linesourcefile << std::endl;
 			read_line_source_from_file( NZ, z, z_ground,
@@ -583,18 +616,16 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	}
 
 	// write broadband header for testing
-	if (broadband) {
-		write_broadband_header( tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
-			azi, NAz, f, NF, 1.0e8 );
-	}
+//	if (broadband) {
+//		write_broadband_header( tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
+//			azi, NAz, f, NF, 1.0e8 );
+//	}
 
 	// freq and calc_az hold the current values of azimuth and frequency, respectively
 	// these are used in the output routines, so make sure they get set correctly
 	// whenever you change frequencies and azimuths
 	for (size_t azind = 0; azind < NAz; azind++) {
 		calc_az = azi[ azind ];
-		std::cout << "Infrasound PE code at f = " << freq << " Hz, azi = " 
-			<< calc_az << " deg" << std::endl;
 
 		profile_index = -1;
 		calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
@@ -602,19 +633,23 @@ int NCPA::EPadeSolver::solve_without_topography() {
 		// 	calc_az );
 		// atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
 
-		for (size_t freqind = 0; freqind < NF; freqind++) {
+		for (std::vector<double>::const_iterator freq = f_vector.cbegin();
+				freq != f_vector.cend(); ++freq) {
 
-			freq = f[ freqind ];
+//			freq = f[ freqind ];
+			std::cout << "Infrasound PE code at f = " << *freq << " Hz, azi = "
+						<< calc_az << " deg" << std::endl;
+
 			if ( (!lossless) && (attnfile.length() == 0)) {
-				atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
+				atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", *freq );
 			}
 
-			if (NR_requested == 0) {
-		  		dr = 340.0 / freq;
-				NR = (int)ceil( r_max / dr );
+			if (nr_requested == 0) {
+		  		dr = 340.0 / *freq;
+				NR = (int)std::ceil( r_max.get() / dr );
 		  	} else {
-		  		NR = NR_requested;
-		  		dr = r_max / NR;
+		  		NR = nr_requested;
+		  		dr = r_max.get() / NR;
 		  	}
 
 		  	std::cout << "Setting dr to " << dr << " meters." << std::endl;
@@ -632,7 +667,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			double lambBC = atm_profile_2d->get_first_derivative( 0.0, "RHO", z_ground ) / (2.0 * rho0);
 			//lambBC = 0.0;
 			if (user_ground_impedence_found) {
-				ground_impedence_factor = I * 2.0 * PI * freq * rho0 / user_ground_impedence + lambBC;
+				ground_impedence_factor = *freq * I * 2.0 * PI * rho0 / user_ground_impedence + lambBC;
 				std::cout << "Using user ground impedence of " << user_ground_impedence << std::endl;
 				//		<< " results in calculated A factor of " << ground_impedence_factor << std::endl;
 			} else {
@@ -644,7 +679,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 			//std::cout << "Using atmosphere index " << profile_index << std::endl;
 			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, lossless, 
-				top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
+				top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
 
 			// calculate turbulence
 			if (use_turbulence) {
@@ -656,25 +691,25 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			// calculate q matrices
 			Mat q;
 			build_operator_matrix_without_topography( NZ, z, k0, h2, ground_impedence_factor,
-				n, npade+1, 0, &q );
+				n, pade_order+1, 0, &q );
 			// outputSparseMat( q, NZ, "Q_orig.dat" );
-			create_matrix_polynomial( npade+1, &q, &qpowers );
+			create_matrix_polynomial( pade_order+1, &q, &qpowers );
 			ierr = MatDestroy( &q );CHKERRQ(ierr);
 
 			if (starter == "self") {
 				Mat q_starter;
 				build_operator_matrix_without_topography( NZ, z, k0, h2, ground_impedence_factor,
-					n, npade+1, 0, &q_starter );
-				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
+					n, pade_order+1, 0, &q_starter );
+				create_matrix_polynomial( pade_order+1, &q_starter, &qpowers_starter );
 
 				// source function calculated earlier
 				get_starter_self( NZ, z, source, k0, qpowers_starter,
-					npade, &psi_o );
+					pade_order, &psi_o );
 				
 				ierr = MatDestroy( &q_starter );CHKERRQ(ierr);
 			} else if (starter == "gaussian") {
 				qpowers_starter = qpowers;
-				get_starter_gaussian( NZ, z, zs, k0, ground_index, &psi_o );
+				get_starter_gaussian( NZ, z, z_source.get(), k0, ground_index, &psi_o );
 			} else if (starter == "user") {
 				get_starter_user( user_starter_file, NZ, z, &psi_o );
 			} else {
@@ -684,14 +719,14 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 			if (write_starter) {
 				std::cout << "Outputting starter..." << std::endl;
-				outputVec( psi_o, z, NZ, tag_filename(NCPAPROP_EPADE_PE_FILENAME_STARTER) );
+				NCPA::outputVec( psi_o, z, NZ, tag_filename(NCPAPROP_EPADE_PE_FILENAME_STARTER) );
 			}
 
 			std::cout << "Finding ePade coefficients..." << std::endl;
 			std::vector< std::complex<double> > P, Q;
-			std::vector< PetscScalar > taylor = taylor_exp_id_sqrt_1pQ_m1( 2*npade, k0*dr );
-			calculate_pade_coefficients( &taylor, npade, npade+1, &P, &Q );
-			generate_polymatrices( qpowers_starter, npade, NZ, P, Q, &B, &C );
+			std::vector< PetscScalar > taylor = taylor_exp_id_sqrt_1pQ_m1( 2*pade_order, k0*dr );
+			calculate_pade_coefficients( &taylor, pade_order, pade_order+1, &P, &Q );
+			generate_polymatrices( qpowers_starter, pade_order, NZ, P, Q, &B, &C );
 
 			std::cout << "Marching out field..." << std::endl;
 			ierr = VecDuplicate( psi_o, &Bpsi_o );CHKERRQ(ierr);
@@ -707,20 +742,20 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				if (((int)(atm_profile_2d->get_profile_index( rr ))) != profile_index) {
 				
 					profile_index = atm_profile_2d->get_profile_index( rr );
-					calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground, lossless, top_layer, freq, 
+					calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground, lossless, top_layer, *freq,
 						use_topo, k0, c0, c, a_t, k, n );
-					delete_matrix_polynomial( npade+1, &qpowers );
+					delete_matrix_polynomial( pade_order+1, &qpowers );
 					build_operator_matrix_without_topography( NZ, z, k0, h2, 
-						ground_impedence_factor, n, npade+1, 0, &q );
-					create_matrix_polynomial( npade+1, &q, &qpowers );
+						ground_impedence_factor, n, pade_order+1, 0, &q );
+					create_matrix_polynomial( pade_order+1, &q, &qpowers );
 					ierr = MatDestroy( &q );
 
 					taylor.clear();
-					taylor = taylor_exp_id_sqrt_1pQ_m1( 2*npade, k0*dr );
-					calculate_pade_coefficients( &taylor, npade, npade+1, &P, &Q );
+					taylor = taylor_exp_id_sqrt_1pQ_m1( 2*pade_order, k0*dr );
+					calculate_pade_coefficients( &taylor, pade_order, pade_order+1, &P, &Q );
 					ierr = MatZeroEntries( B );CHKERRQ(ierr);
 					ierr = MatZeroEntries( C );CHKERRQ(ierr);
-					generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
+					generate_polymatrices( qpowers, pade_order, NZ, P, Q, &B, &C );
 					std::cout << "Switching to atmosphere index " << profile_index 
 						<< " at range = " << rr/1000.0 << " km" << std::endl;
 				}
@@ -792,11 +827,11 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			}
 
 			// write broadband body for testing
-			if (broadband) {
-				write_broadband_results(
-					tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
-					calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
-			}
+//			if (broadband) {
+//				write_broadband_results(
+//					tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
+//					calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
+//			}
 
 			if (write_atmosphere) {
 				std::cout << "Writing source atmosphere to "
@@ -823,10 +858,10 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				cleanup_turbulence();
 			}
 
-			delete_matrix_polynomial( npade+1, &qpowers );
+			delete_matrix_polynomial( pade_order+1, &qpowers );
 
 			if (starter == "self") {
-				delete_matrix_polynomial( npade+1, &qpowers_starter );
+				delete_matrix_polynomial( pade_order+1, &qpowers_starter );
 				// delete [] qpowers_starter;
 			}
 			if (attnfile.length() == 0) {
@@ -1162,9 +1197,13 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	int profile_index;
 	double minlimit, maxlimit;
 	atm_profile_2d->get_maximum_altitude_limits( minlimit, maxlimit );
-	z_max = NCPA::min( z_max, minlimit );    // lowest valid top value
+//	z_max = NCPA::min( z_max, minlimit );    // lowest valid top value
+	z_max.set_value( NCPA::min( z_max.get(), minlimit ) );
 	int ground_index = 0;
 	std::complex<double> ground_impedence_factor( 0.0, 0.0 );
+	if (r_max.get() > atm_profile_2d->get_maximum_valid_range() ) {
+			atm_profile_2d->set_maximum_valid_range( r_max.get() );
+		}
 
 	// truncate multiprop file if needed
 	if (write2d) {
@@ -1173,12 +1212,12 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		ofs.close();
 	}
 
-	// truncate 1-D if necessary
-	if (broadband) {
-		std::ofstream ofs( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D),
-			std::ofstream::out | std::ofstream::trunc );
-		ofs.close();
-	}
+//	// truncate 1-D if necessary
+//	if (broadband) {
+//		std::ofstream ofs( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D),
+//			std::ofstream::out | std::ofstream::trunc );
+//		ofs.close();
+//	}
 
 	// truncate topography if necessary
 	if (write_topo) {
@@ -1187,12 +1226,55 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		ofs.close();
 	}
 
+	double c0;
+	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
+		 it != atm_profile_2d->last_profile(); ++it) {
+		if ( (*it)->contains_vector( "C0" ) ) {
+			(*it)->convert_property_units( "C0", NCPAPROP_EPADE_PE_UNITS_C );
+			(*it)->copy_vector_property( "C0", "_C0_" );
+			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+		} else {
+			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
+				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
+						NCPAPROP_EPADE_PE_UNITS_C );
+				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+			} else if ( (*it)->contains_vector("T") ) {
+				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
+						NCPAPROP_EPADE_PE_UNITS_C );
+				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
+			} else if ( (*it)->contains_vector( "CEFF" ) ) {
+				c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
+			} else {
+				throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
+			}
+		}
+	}
+
+	// calculate/check z resolution
+//	dz = param->getFloat( "dz_m" );
+//	double f0 = f_vector[0];
+	// @todo move this into f loop for future broadband use
+	double dz;
+	double lambda0 = c0 / f_vector[0];
+	if (dz_requested.get() <= 0.0) {
+		dz = lambda0 / 20.0;
+		double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
+		double factor = std::floor( dz / nearestpow10 );
+		dz = nearestpow10 * factor;
+		std::cout << "Setting dz to " << dz << " m" << std::endl;
+	}
+	if (dz > (c0 / f_vector[0] / 10.0) ) {
+		std::ostringstream oss;
+		oss << "Altitude resolution is too coarse.  Must be <= " << lambda0 / 10.0 << " meters.";
+		throw std::runtime_error( oss.str() );
+	}
+
 	/* @todo move this into constructor as much as possible */
 	z_bottom = -NCPAPROP_EPADE_PE_BASEMENT_THICKNESS;    // make this eventually depend on frequency
 	z_bottom -= fmod( z_bottom, dz );
 	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 	z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
-	NZ = ((int)std::floor((z_max - z_bottom) / dz)) + 1;
+	NZ = ((int)std::floor((z_max.get() - z_bottom) / dz)) + 1;
 	z = NCPA::zeros<double>( NZ );
 	z_abs = NCPA::zeros<double>( NZ );
 	indices = NCPA::zeros<PetscInt>( NZ );
@@ -1205,7 +1287,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		dz * NCPAPROP_EPADE_PE_GRID_COINCIDENCE_TOLERANCE_FACTOR;
 	z_ground = check_ground_height_coincidence_with_grid(
 		z, NZ, grid_tolerance, z_ground );
-	double zs_abs = z_ground + zs;
+	double zs_abs = z_ground + z_source.get();
 	// zs = NCPA::max( zs, z_ground );
 
 	// define ground_index, which is J in @notes
@@ -1217,7 +1299,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	// adjust source height if it falls within 5% of a ground point
 	int closest_source_grid_point =
 		(int)(NCPA::find_closest_index( z, NZ, zs_abs ));
-	if (fabs(zs_abs - z[ closest_source_grid_point ])
+	if (std::fabs(zs_abs - z[ closest_source_grid_point ])
 			< grid_tolerance) {
 		zs_abs = z[ closest_source_grid_point ] + grid_tolerance;
 		std::cout << "Adjusting source height to " << zs_abs-z_ground
@@ -1260,7 +1342,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	double dr;
 
 	// set up for source atmosphere
-	double k0 = 0.0, c0 = 0.0;
+	double k0 = 0.0; c0 = 0.0;
 	double *c = NCPA::zeros<double>( NZ );
 	double *a_t = NCPA::zeros<double>( NZ );
 	std::complex<double> *k = NCPA::zeros<std::complex<double>>( NZ );
@@ -1269,8 +1351,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
 	if (starter == "self") {
 		if (pointsource) {
-			std::cout << "Generating point source at " << zs << "m" << std::endl;
-			make_point_source( NZ, z, zs+z_ground, z_ground, source );
+			std::cout << "Generating point source at " << z_source.get() << "m" << std::endl;
+			make_point_source( NZ, z, z_source.get() + z_ground, z_ground, source );
 		} else {
 			std::cout << "Reading line source from " << linesourcefile << std::endl;
 			read_line_source_from_file( NZ, z, z_ground,
@@ -1286,18 +1368,16 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	}
 
 	// write broadband header for testing
-	if (broadband) {
-		write_broadband_header( tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
-			azi, NAz, f, NF, 1.0e8 );
-	}
+//	if (broadband) {
+//		write_broadband_header( tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
+//			azi, NAz, f, NF, 1.0e8 );
+//	}
 
 	// freq and calc_az hold the current values of azimuth and frequency, respectively
 	// these are used in the output routines, so make sure they get set correctly
 	// whenever you change frequencies and azimuths
 	for (size_t azind = 0; azind < NAz; azind++) {
 		calc_az = azi[ azind ];
-		std::cout << "Infrasound PE code at f = " << freq << " Hz, azi = " 
-			<< calc_az << " deg" << std::endl;
 
 		profile_index = -1;
 		calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
@@ -1306,22 +1386,26 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		// 	calc_az );
 		// atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
 
-		for (size_t freqind = 0; freqind < NF; freqind++) {
+//		for (size_t freqind = 0; freqind < NF; freqind++) {
+		for (std::vector<double>::const_iterator freq = f_vector.cbegin();
+				freq != f_vector.cend(); ++freq) {
 
-			freq = f[ freqind ];
+//			freq = f[ freqind ];
+			std::cout << "Infrasound PE code at f = " << *freq << " Hz, azi = "
+						<< calc_az << " deg" << std::endl;
 
 			// calculate attenuation as a function of frequency if not externally supplied
 			if ( (!lossless) && (attnfile.length() == 0)) {
-				atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
+				atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", *freq );
 			}
 
 			// Set up range vector
-			if (NR_requested == 0) {
-		  		dr = 340.0 / freq;
-				NR = (int)ceil( r_max / dr );
+			if (nr_requested == 0) {
+		  		dr = 340.0 / *freq;
+				NR = (int)std::ceil( r_max.get() / dr );
 		  	} else {
-		  		NR = NR_requested;
-		  		dr = r_max / NR;
+		  		NR = nr_requested;
+		  		dr = r_max.get() / NR;
 		  	}
 		  	r = NCPA::zeros<double>( NR );
 		  	zgi_r = NCPA::zeros<int>( NR );
@@ -1342,7 +1426,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			double lambBC = atm_profile_2d->get_first_derivative( 0.0, "RHO", z_ground ) / (2.0 * rho0);
 			//lambBC = 0.0;
 			if (user_ground_impedence_found) {
-				ground_impedence_factor = I * 2.0 * PI * freq * rho0 / user_ground_impedence + lambBC;
+				ground_impedence_factor = *freq * I * 2.0 * PI * rho0 / user_ground_impedence + lambBC;
 				std::cout << "Using user ground impedence of " << user_ground_impedence << std::endl;
 			} else {
 				ground_impedence_factor.real( lambBC );
@@ -1351,7 +1435,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			}
 
 			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, lossless, 
-				top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
+				top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
 			
 			// calculate turbulence
 			if (use_turbulence) {
@@ -1384,17 +1468,17 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 
 				calculate_atmosphere_parameters( atm_profile_2d, NZ_starter, z_starter,
-					0.0, z_ground, lossless, top_layer, freq, false, k0_starter, 
+					0.0, z_ground, lossless, top_layer, *freq, false, k0_starter,
 					c0_starter, c_starter, a_starter, k_starter, n_starter );
 
 				Mat q_starter = PETSC_NULL;
 				Mat *qpowers_starter = PETSC_NULL;
 				build_operator_matrix_without_topography( NZ_starter, z_starter, 
-					k0_starter, h2, ground_impedence_factor, n_starter, npade+1, 0, 
+					k0_starter, h2, ground_impedence_factor, n_starter, pade_order+1, 0,
 					&q_starter );
-				create_matrix_polynomial( npade+1, &q_starter, &qpowers_starter );
+				create_matrix_polynomial( pade_order+1, &q_starter, &qpowers_starter );
 				get_starter_self( NZ_starter, z_starter, source_starter, k0_starter,
-					qpowers_starter, npade, &psi_o );
+					qpowers_starter, pade_order, &psi_o );
 //				outputVec( psi_o, z_starter, NZ_starter,
 //						"starter.prespline.dat" );
 
@@ -1432,14 +1516,14 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				delete [] psi_orig;
 				delete [] psi_new;
 				ierr = MatDestroy( &q_starter );CHKERRQ(ierr);
-				delete_matrix_polynomial( npade+1, &qpowers_starter );
+				delete_matrix_polynomial( pade_order+1, &qpowers_starter );
 
 
 				// set up for future calculations
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
 					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
 					&q, true );
-				create_matrix_polynomial( npade+1, &q, &qpowers );
+				create_matrix_polynomial( pade_order+1, &q, &qpowers );
 				
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
 			} else if (starter == "gaussian") {
@@ -1447,15 +1531,15 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
 					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
 					&q, true );
-				create_matrix_polynomial( npade+1, &q, &qpowers );
+				create_matrix_polynomial( pade_order+1, &q, &qpowers );
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
-				get_starter_gaussian( NZ, z, zs+z_ground, k0,
+				get_starter_gaussian( NZ, z, z_source.get()+z_ground, k0,
 					ground_index, &psi_o );
 			} else if (starter == "user" ) {
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
 					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
 					&q, true );
-				create_matrix_polynomial( npade+1, &q, &qpowers );
+				create_matrix_polynomial( pade_order+1, &q, &qpowers );
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
 				get_starter_user( user_starter_file, NZ, z, &psi_o );
 			} else {
@@ -1465,14 +1549,14 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 			if (write_starter) {
 				std::cout << "Outputting starter..." << std::endl;
-				outputVec( psi_o, z, NZ, tag_filename(NCPAPROP_EPADE_PE_FILENAME_STARTER) );
+				NCPA::outputVec( psi_o, z, NZ, tag_filename(NCPAPROP_EPADE_PE_FILENAME_STARTER) );
 			}
 
 			std::cout << "Finding ePade coefficients..." << std::endl;
 			std::vector< PetscScalar > P, Q;
-			std::vector< PetscScalar > taylor = taylor_exp_id_sqrt_1pQ_m1( 2*npade, k0*dr );
-			calculate_pade_coefficients( &taylor, npade, npade+1, &P, &Q );
-			generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
+			std::vector< PetscScalar > taylor = taylor_exp_id_sqrt_1pQ_m1( 2*pade_order, k0*dr );
+			calculate_pade_coefficients( &taylor, pade_order, pade_order+1, &P, &Q );
+			generate_polymatrices( qpowers, pade_order, NZ, P, Q, &B, &C );
 
 			std::cout << "Marching out field..." << std::endl;
 			ierr = VecDuplicate( psi_o, &Bpsi_o );CHKERRQ(ierr);
@@ -1488,24 +1572,24 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		  			grid_tolerance,
 		  			atm_profile_2d->get_interpolated_ground_elevation( rr ) );
 				calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground,
-					lossless, top_layer, freq, use_topo, k0, c0, c, a_t, k, n );
+					lossless, top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
 				Mat last_q;
 				ierr = MatConvert( qpowers[0], MATSAME, MAT_INITIAL_MATRIX, &last_q );CHKERRQ(ierr);
-				delete_matrix_polynomial( npade+1, &qpowers );
+				delete_matrix_polynomial( pade_order+1, &qpowers );
 				
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, rr, k, 
 					k0, h2, z_ground, ground_impedence_factor, n, ground_index, 
 					last_q, &q );
-				create_matrix_polynomial( npade+1, &q, &qpowers );
+				create_matrix_polynomial( pade_order+1, &q, &qpowers );
 				
 				ierr = MatDestroy( &last_q );CHKERRQ(ierr);
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
 
-				taylor = taylor_exp_id_sqrt_1pQ_m1( 2*npade, k0*dr );
-				calculate_pade_coefficients( &taylor, npade, npade+1, &P, &Q );
+				taylor = taylor_exp_id_sqrt_1pQ_m1( 2*pade_order, k0*dr );
+				calculate_pade_coefficients( &taylor, pade_order, pade_order+1, &P, &Q );
 				ierr = MatZeroEntries( B );CHKERRQ(ierr);
 				ierr = MatZeroEntries( C );CHKERRQ(ierr);
-				generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
+				generate_polymatrices( qpowers, pade_order, NZ, P, Q, &B, &C );
 				
 				// apply turbulence
 				ierr = VecGetValues( psi_o, NZ, indices, contents );
@@ -1547,7 +1631,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 
 				// make sure the receiver height is above ground
-				double z0g = z_ground + zr;
+				double z0g = z_ground + z_receiver.get();
 				// z0g = NCPA::max( z0g, zr );
 				zgi_r[ ir ] = (int)(NCPA::find_closest_index( z, NZ, z0g ));
 				while ( z[ zgi_r[ ir ] ] <= z_ground ) {
@@ -1593,10 +1677,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			}
 
 			// write broadband body for testing
-			if (broadband) {
-				write_broadband_results( tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
-					calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
-			}
+//			if (broadband) {
+//				write_broadband_results( tag_filename(NCPAPROP_EPADE_PE_FILENAME_BROADBAND),
+//					calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
+//			}
 
 			if (write_atmosphere) {
 				std::cout << "Writing source atmosphere to "
@@ -1622,9 +1706,9 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			
 			std::cout << std::endl;
 
-			delete_matrix_polynomial( npade+1, &qpowers );
+			delete_matrix_polynomial( pade_order+1, &qpowers );
 			if (starter == "self") {
-				delete_matrix_polynomial( npade+1, &qpowers_starter );
+				delete_matrix_polynomial( pade_order+1, &qpowers_starter );
 			}
 			if (attnfile.length() == 0) {
 				atm_profile_2d->remove_property( "_ALPHA_" );
@@ -1637,7 +1721,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		if (write_topo) {
 			write_topography(
 				tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY),
-				calc_az, r_max, 1000.0 );
+				calc_az, r_max.get(), 1000.0 );
 		}
 		
 		atm_profile_2d->remove_property( "_CEFF_" );
@@ -2297,7 +2381,7 @@ void NCPA::EPadeSolver::absorption_layer( double lambda, double *z, int NZ, doub
 	}
 }
 
-
+// @todo make static
 int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z,
 	double zs, double k0, int ground_index, Vec *psi ) {
 
@@ -2323,6 +2407,7 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z,
 	return 1;
 }
 
+// @todo make static
 void NCPA::EPadeSolver::make_point_source( size_t NZ, double *z, double zs,
 		double z_ground, std::complex<double> *source ) {
 //	std::memset( source, 0, NZ * sizeof(std::complex<double>) );
@@ -2874,8 +2959,9 @@ int NCPA::EPadeSolver::zero_below_ground( Mat *q, int NZ, PetscInt ground_index 
 	return 1;
 }
 
+// @todo make static
 void NCPA::EPadeSolver::write_topography( std::string filename,
-	double azimuth, double r_max, double dr ) {
+	double azimuth, double max_range, double dr ) {
 
 	double r;
 	std::ofstream outfile( filename, std::ofstream::out | std::ofstream::app );
@@ -2883,7 +2969,7 @@ void NCPA::EPadeSolver::write_topography( std::string filename,
 		throw std::runtime_error( "Error opening file " + filename + " to write topography" );
 	}
 
-	for (r = 0.0; r <= r_max; r += dr) {
+	for (r = 0.0; r <= max_range; r += dr) {
 		outfile << azimuth << " " << r / 1000.0 << " "
 				<< atm_profile_2d->get_interpolated_ground_elevation( r ) 
 				<< std::endl;

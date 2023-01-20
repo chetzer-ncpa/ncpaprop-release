@@ -6,9 +6,9 @@
 
 namespace NCPA {
 	void outputVec( Vec &v, double *z, size_t n,
-		const std::string &filename ) const;
+		const std::string &filename );
 	void outputSparseMat( Mat &m, size_t nrows,
-		const std::string &filename ) const;
+		const std::string &filename );
 }
 
 
