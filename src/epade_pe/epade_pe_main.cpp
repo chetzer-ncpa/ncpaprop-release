@@ -156,6 +156,16 @@ void configure_solver( EPadeSolver *solver, ParameterSet *param ) {
 		solver->set_requested_height_step( param->getFloat( "dz_m" ), "m" );
 	}
 
+	// azimuths
+	if (param->wasFound("multiprop")) {
+		solver->set_azimuths(
+				param->getFloat("azimuth_start"),
+				param->getFloat("azimuth_end"),
+				param->getFloat("azimuth_step"));
+	} else {
+		solver->set_azimuth( param->getFloat("azimuth"));
+	}
+
 	// starter
 	std::string starter = param->getString("starter");
 	if (starter == "self") {

@@ -84,6 +84,21 @@ void NCPA::EPadeSolver::set_attenuation( AttenuationType att, const std::string 
 	attenuation_filename_in = fname;
 }
 
+void NCPA::EPadeSolver::set_azimuth( double a ) {
+	az_vector.clear();
+	az_vector.push_back(NCPA::normalizeAzimuth(a));
+}
+
+void NCPA::EPadeSolver::set_azimuths( double start_az, double end_az, double daz ) {
+	while (start_az > end_az) {
+		start_az -= 360.0;
+	}
+	az_vector.clear();
+	for (double a = start_az; a <= end_az; a += daz) {
+		az_vector.push_back(NCPA::normalizeAzimuth(a));
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Below here is pre-refactor code /////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -102,24 +117,24 @@ void NCPA::EPadeSolver::set_default_values() {
 
 	// null values otherwise.  Pointers:
 	z = NULL; z_abs = NULL; r = NULL; tl = NULL;
-	zgi_r = NULL; azi = NULL; atm_profile_2d = NULL;
+	zgi_r = NULL; atm_profile_2d = NULL;
 
 	// doubles
 	z_min = 0.0; z_ground = 0.0;
-	z_bottom = 0.0; calc_az = 0.0;
+	z_bottom = 0.0;
 	top_layer_thickness_m = -1.0;
 
 	// complex
 	user_ground_impedence = 0.0;
 
 	// int
-	NZ = 0; NR = 0; NAz = 0; nzplot = 0;
+	NZ = 0; NR = 0; nzplot = 0;
 
 	// bool
 	use_atm_1d = false; use_atm_2d = false; use_atm_toy = false; use_topo = false;
 	z_ground_specified = false;
-	multiprop = false; write2d = false;
-	broadband = false; write_starter = false; write_topo = false;
+	write2d = false;
+	write_starter = false; write_topo = false;
 	user_ground_impedence_found = false; write_atmosphere = false;
 	pointsource = true; _write_source_function = false;
 
@@ -182,54 +197,53 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	write2d 				= param->wasFound( "write_2d_tloss" );
 	write_starter       	= param->wasFound( "write_starter" );
 	_write_source_function 	= param->wasFound( "write_source" );
-	multiprop 				= param->wasFound( "multiprop" );
 	write_topo 		 		= param->wasFound( "write_topography" );
 	write_atmosphere 		= param->wasFound( "write_atm_profile" );
 
-	// Handle differences based on single vs multiprop
-	double min_az, max_az, step_az;
-	if (multiprop) {
-		if (use_atm_2d) {
-			std::cerr << "Range-dependent 2-D atmosphere incompatible with multiple azimuth propagation"
-					  << std::endl;
-			exit(0);
-		}
-		if (write2d) {
-			std::cout << "Multi-azimuth propagation requested, disabling 2-D output" << std::endl;
-			write2d = false;
-		}
-		if (use_topo) {
-			std::cout << "Multi-azimuth propagation requested, disabling topography flag" << std::endl;
-			use_topo = false;
-		}
-		min_az 			= param->getFloat( "azimuth_start" );
-		max_az 			= param->getFloat( "azimuth_end" );
-		step_az 		= param->getFloat( "azimuth_step" );
-
-		// set up azimuth vector
-		while (min_az > max_az) {
-			// crossover the zero azimuth point
-			min_az -= 360.0;
-		}
-		NAz 			= (int) ((max_az - min_az)/step_az) + 1;
-
-		// initialize output file
-		std::cout << "Initializing file "
-			<< tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP) << std::endl;
-		std::ofstream truncator( tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP),
-			std::ofstream::out | std::ofstream::trunc );
-		truncator.close();
-
-	} else {
-		NAz 			= 1;
-		min_az 			= param->getFloat( "azimuth" );
-		max_az 			= min_az;
-		step_az 		= 0;
-	}
-	azi = NCPA::zeros<double>( NAz );
-	for (size_t i = 0; i < NAz; i++) {
-		azi[ i ] = min_az + i * step_az;
-	}
+//	// Handle differences based on single vs multiprop
+//	double min_az, max_az, step_az;
+//	if (multiprop) {
+//		if (use_atm_2d) {
+//			std::cerr << "Range-dependent 2-D atmosphere incompatible with multiple azimuth propagation"
+//					  << std::endl;
+//			exit(0);
+//		}
+//		if (write2d) {
+//			std::cout << "Multi-azimuth propagation requested, disabling 2-D output" << std::endl;
+//			write2d = false;
+//		}
+//		if (use_topo) {
+//			std::cout << "Multi-azimuth propagation requested, disabling topography flag" << std::endl;
+//			use_topo = false;
+//		}
+//		min_az 			= param->getFloat( "azimuth_start" );
+//		max_az 			= param->getFloat( "azimuth_end" );
+//		step_az 		= param->getFloat( "azimuth_step" );
+//
+//		// set up azimuth vector
+//		while (min_az > max_az) {
+//			// crossover the zero azimuth point
+//			min_az -= 360.0;
+//		}
+//		NAz 			= (int) ((max_az - min_az)/step_az) + 1;
+//
+//		// initialize output file
+//		std::cout << "Initializing file "
+//			<< tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP) << std::endl;
+//		std::ofstream truncator( tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP),
+//			std::ofstream::out | std::ofstream::trunc );
+//		truncator.close();
+//
+//	} else {
+//		NAz 			= 1;
+//		min_az 			= param->getFloat( "azimuth" );
+//		max_az 			= min_az;
+//		step_az 		= 0;
+//	}
+//	azi = NCPA::zeros<double>( NAz );
+//	for (size_t i = 0; i < NAz; i++) {
+//		azi[ i ] = min_az + i * step_az;
+//	}
 
 //	if (starter == "user") {
 //		if (user_starter_file.size() == 0) {
@@ -306,35 +320,35 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 
 
-	// set units
-	if (atm_profile_2d->contains_vector(0,"U")) {
-		atm_profile_2d->convert_property_units( "U", NCPAPROP_EPADE_PE_UNITS_U );
-	}
-	if (atm_profile_2d->contains_vector(0,"V")) {
-		atm_profile_2d->convert_property_units( "V", NCPAPROP_EPADE_PE_UNITS_V );
-	}
-	if (atm_profile_2d->contains_vector(0,"T")) {
-		atm_profile_2d->convert_property_units( "T", NCPAPROP_EPADE_PE_UNITS_T );
-	}
-	if (atm_profile_2d->contains_vector(0,"P")) {
-		atm_profile_2d->convert_property_units( "P", NCPAPROP_EPADE_PE_UNITS_P );
-	}
-
-	// need density
-	if (atm_profile_2d->contains_vector(0,"RHO")) {
-		atm_profile_2d->convert_property_units( "RHO", NCPAPROP_EPADE_PE_UNITS_RHO );
-	} else {
-		std::cout << "No density provided, calculating from temperature and pressure" << std::endl;
-		for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
-			it != atm_profile_2d->last_profile(); ++it) {
-			if ( (*it)->contains_vector("T") && (*it)->contains_vector("P") ) {
-				(*it)->calculate_density_from_temperature_and_pressure(
-					"RHO", "T", "P", NCPAPROP_EPADE_PE_UNITS_RHO );
-			} else {
-				throw std::runtime_error( "No RHO provided, and at least one of T and P is missing." );
-			}
-		}
-	}
+//	// set units
+//	if (atm_profile_2d->contains_vector(0,"U")) {
+//		atm_profile_2d->convert_property_units( "U", NCPAPROP_EPADE_PE_UNITS_U );
+//	}
+//	if (atm_profile_2d->contains_vector(0,"V")) {
+//		atm_profile_2d->convert_property_units( "V", NCPAPROP_EPADE_PE_UNITS_V );
+//	}
+//	if (atm_profile_2d->contains_vector(0,"T")) {
+//		atm_profile_2d->convert_property_units( "T", NCPAPROP_EPADE_PE_UNITS_T );
+//	}
+//	if (atm_profile_2d->contains_vector(0,"P")) {
+//		atm_profile_2d->convert_property_units( "P", NCPAPROP_EPADE_PE_UNITS_P );
+//	}
+//
+//	// need density
+//	if (atm_profile_2d->contains_vector(0,"RHO")) {
+//		atm_profile_2d->convert_property_units( "RHO", NCPAPROP_EPADE_PE_UNITS_RHO );
+//	} else {
+//		std::cout << "No density provided, calculating from temperature and pressure" << std::endl;
+//		for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
+//			it != atm_profile_2d->last_profile(); ++it) {
+//			if ( (*it)->contains_vector("T") && (*it)->contains_vector("P") ) {
+//				(*it)->calculate_density_from_temperature_and_pressure(
+//					"RHO", "T", "P", NCPAPROP_EPADE_PE_UNITS_RHO );
+//			} else {
+//				throw std::runtime_error( "No RHO provided, and at least one of T and P is missing." );
+//			}
+//		}
+//	}
 	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 
 	// calculate derived quantities
@@ -362,24 +376,24 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 //		}
 //	}
 
-	// wind speed
-	if (atm_profile_2d->contains_vector(0,"WS")) {
-		atm_profile_2d->convert_property_units("WS", NCPAPROP_EPADE_PE_UNITS_U );
-		atm_profile_2d->copy_vector_property( "WS", "_WS_" );
-	} else if (atm_profile_2d->contains_vector(0,"U")
-		&& atm_profile_2d->contains_vector(0,"V")) {
-		atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
-	}
-
-	// wind direction
-	if (atm_profile_2d->contains_vector(0,"WD")) {
-		atm_profile_2d->convert_property_units("WD",
-			NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
-		atm_profile_2d->copy_vector_property( "WD", "_WD_" );
-	} else if (atm_profile_2d->contains_vector(0,"U")
-		&& atm_profile_2d->contains_vector(0,"V")) {
-		atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
-	}
+//	// wind speed
+//	if (atm_profile_2d->contains_vector(0,"WS")) {
+//		atm_profile_2d->convert_property_units("WS", NCPAPROP_EPADE_PE_UNITS_U );
+//		atm_profile_2d->copy_vector_property( "WS", "_WS_" );
+//	} else if (atm_profile_2d->contains_vector(0,"U")
+//		&& atm_profile_2d->contains_vector(0,"V")) {
+//		atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
+//	}
+//
+//	// wind direction
+//	if (atm_profile_2d->contains_vector(0,"WD")) {
+//		atm_profile_2d->convert_property_units("WD",
+//			NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
+//		atm_profile_2d->copy_vector_property( "WD", "_WD_" );
+//	} else if (atm_profile_2d->contains_vector(0,"U")
+//		&& atm_profile_2d->contains_vector(0,"V")) {
+//		atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
+//	}
 
 	// calculate/check z resolution
 //	dz = param->getFloat( "dz_m" );
@@ -418,15 +432,85 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 }
 
 NCPA::EPadeSolver::~EPadeSolver() {
-	// delete [] z;
-	// delete [] z_abs;
-	if (azi != NULL)
-		delete [] azi;
 	if (atm_profile_2d != NULL)
 		delete atm_profile_2d;
 }
 
 bool NCPA::EPadeSolver::finalize() {
+
+	// Handle differences based on single vs multiprop
+	if (az_vector.size() > 1) {
+		if (use_atm_2d) {
+			std::cerr << "Range-dependent 2-D atmosphere incompatible with multiple azimuth propagation"
+					  << std::endl;
+			exit(0);
+		}
+		if (write2d) {
+			std::cout << "Multi-azimuth propagation requested, disabling 2-D output" << std::endl;
+			write2d = false;
+		}
+		if (use_topo) {
+			std::cout << "Multi-azimuth propagation requested, disabling topography flag" << std::endl;
+			use_topo = false;
+		}
+
+		// initialize output file
+		std::cout << "Initializing file "
+			<< tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP) << std::endl;
+		std::ofstream truncator( tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP),
+			std::ofstream::out | std::ofstream::trunc );
+		truncator.close();
+	}
+
+	// set units
+	if (atm_profile_2d->contains_vector(0,"U")) {
+		atm_profile_2d->convert_property_units( "U", NCPAPROP_EPADE_PE_UNITS_U );
+	}
+	if (atm_profile_2d->contains_vector(0,"V")) {
+		atm_profile_2d->convert_property_units( "V", NCPAPROP_EPADE_PE_UNITS_V );
+	}
+	if (atm_profile_2d->contains_vector(0,"T")) {
+		atm_profile_2d->convert_property_units( "T", NCPAPROP_EPADE_PE_UNITS_T );
+	}
+	if (atm_profile_2d->contains_vector(0,"P")) {
+		atm_profile_2d->convert_property_units( "P", NCPAPROP_EPADE_PE_UNITS_P );
+	}
+
+	// need density
+	if (atm_profile_2d->contains_vector(0,"RHO")) {
+		atm_profile_2d->convert_property_units( "RHO", NCPAPROP_EPADE_PE_UNITS_RHO );
+	} else {
+		std::cout << "No density provided, calculating from temperature and pressure" << std::endl;
+		for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
+			it != atm_profile_2d->last_profile(); ++it) {
+			if ( (*it)->contains_vector("T") && (*it)->contains_vector("P") ) {
+				(*it)->calculate_density_from_temperature_and_pressure(
+					"RHO", "T", "P", NCPAPROP_EPADE_PE_UNITS_RHO );
+			} else {
+				throw std::runtime_error( "No RHO provided, and at least one of T and P is missing." );
+			}
+		}
+	}
+
+	// wind speed
+	if (atm_profile_2d->contains_vector(0,"WS")) {
+		atm_profile_2d->convert_property_units("WS", NCPAPROP_EPADE_PE_UNITS_U );
+		atm_profile_2d->copy_vector_property( "WS", "_WS_" );
+	} else if (atm_profile_2d->contains_vector(0,"U")
+		&& atm_profile_2d->contains_vector(0,"V")) {
+		atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
+	}
+
+	// wind direction
+	if (atm_profile_2d->contains_vector(0,"WD")) {
+		atm_profile_2d->convert_property_units("WD",
+			NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
+		atm_profile_2d->copy_vector_property( "WD", "_WD_" );
+	} else if (atm_profile_2d->contains_vector(0,"U")
+		&& atm_profile_2d->contains_vector(0,"V")) {
+		atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
+	}
+
 	// attenuation
 	switch (attenuation_type) {
 		case NCPA::AttenuationType::USER:
@@ -465,6 +549,10 @@ bool NCPA::EPadeSolver::finalize() {
 	}
 	if (r_max.get_units() == NCPA::UNITS_NONE) {
 		errors << "No propagation range set!" << std::endl;
+		_ready = false;
+	}
+	if (az_vector.size() == 0) {
+		errors << "No azimuths set!" << std::endl;
 		_ready = false;
 	}
 	if (!_ready) {
@@ -674,11 +762,12 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	// freq and calc_az hold the current values of azimuth and frequency, respectively
 	// these are used in the output routines, so make sure they get set correctly
 	// whenever you change frequencies and azimuths
-	for (size_t azind = 0; azind < NAz; azind++) {
-		calc_az = azi[ azind ];
+//	for (size_t azind = 0; azind < NAz; azind++) {
+	for (std::vector<double>::const_iterator az = az_vector.cbegin(); az != az_vector.cend(); ++az) {
+//		calc_az = azi[ azind ];
 
 		profile_index = -1;
-		calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
+		calculate_effective_sound_speed( atm_profile_2d, *az, "_CEFF_" );
 		// atm_profile_2d->calculate_wind_component( "_WC_", "_WS_", "_WD_",
 		// 	calc_az );
 		// atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
@@ -688,7 +777,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 //			freq = f[ freqind ];
 			std::cout << "Infrasound PE code at f = " << *freq << " Hz, azi = "
-						<< calc_az << " deg" << std::endl;
+						<< *az << " deg" << std::endl;
 
 //			if ( (!lossless) && (attnfile.length() == 0)) {
 			if (attenuation_type == NCPA::AttenuationType::SUTHERLAND_BASS) {
@@ -840,13 +929,13 @@ int NCPA::EPadeSolver::solve_without_topography() {
 					ierr = VecAssemblyEnd( psi_o );CHKERRQ(ierr);
 				}
 
-				hank = sqrt( 2.0 / ( PI * k0 * rr ) ) * exp( I * ( k0 * rr - PI/4.0 ) );
+				hank = std::sqrt( 2.0 / ( PI * k0 * rr ) ) * exp( I * ( k0 * rr - PI/4.0 ) );
 				for (i = 0; i < NZ; i++) {
 					tl[ i ][ ir ] = contents[ i ] * hank;
 				}
 				zgi_r[ ir ] = zr_i;  // constant receiver height
 
-				if ( fmod( rr, 1.0e5 ) < dr) {
+				if ( std::fmod( rr, 1.0e5 ) < dr) {
 					std::cout << " -> Range " << rr/1000.0 << " km" << std::endl;
 				}
 
@@ -858,17 +947,17 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 			
 
-			if (multiprop) {
+			if (az_vector.size() > 1) {
 				if (write1d) {
 					std::cout << "Writing 1-D output to "
 						<< tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP) << std::endl;
-					output1DTL( tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP), true );
+					output1DTL( tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP), *az, true );
 				}
 			} else { 
 				if (write1d) {
 					std::cout << "Writing 1-D output to "
 						<< tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D) << std::endl;
-					output1DTL( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D), broadband );
+					output1DTL( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D), *az, false );
 				}
 				if (write2d) {
 					std::cout << "Writing 2-D output to "
@@ -1323,7 +1412,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 	/* @todo move this into constructor as much as possible */
 	z_bottom = -NCPAPROP_EPADE_PE_BASEMENT_THICKNESS;    // make this eventually depend on frequency
-	z_bottom -= fmod( z_bottom, dz );
+	z_bottom -= std::fmod( z_bottom, dz );
 	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
 	z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
 	NZ = ((int)std::floor((z_max.get() - z_bottom) / dz)) + 1;
@@ -1429,11 +1518,13 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	// freq and calc_az hold the current values of azimuth and frequency, respectively
 	// these are used in the output routines, so make sure they get set correctly
 	// whenever you change frequencies and azimuths
-	for (size_t azind = 0; azind < NAz; azind++) {
-		calc_az = azi[ azind ];
+	for (std::vector<double>::const_iterator az = az_vector.cbegin(); az != az_vector.cend(); ++az) {
+//	for (size_t azind = 0; azind < NAz; azind++) {
+//		calc_az = azi[ azind ];
+//		calc_az = *az;
 
 		profile_index = -1;
-		calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
+		calculate_effective_sound_speed( atm_profile_2d, *az, "_CEFF_" );
 
 		// atm_profile_2d->calculate_wind_component( "_WC_", "_WS_", "_WD_",
 		// 	calc_az );
@@ -1445,7 +1536,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 //			freq = f[ freqind ];
 			std::cout << "Infrasound PE code at f = " << *freq << " Hz, azi = "
-						<< calc_az << " deg" << std::endl;
+						<< *az << " deg" << std::endl;
 
 			// calculate attenuation as a function of frequency if not externally supplied
 //			if ( (!lossless) && (attnfile.length() == 0)) {
@@ -1679,7 +1770,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					ierr = VecAssemblyEnd( psi_o );CHKERRQ(ierr);
 				}
 
-				hank = sqrt( 2.0 / ( PI * k0 * rr ) ) * exp( I * ( k0 * rr - PI/4.0 ) );
+				hank = std::sqrt( 2.0 / ( PI * k0 * rr ) ) * exp( I * ( k0 * rr - PI/4.0 ) );
 				for (i = 0; i < NZ; i++) {
 					tl[ i ][ ir ] = contents[ i ] * hank;
 				}
@@ -1697,7 +1788,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 //				zgi_r[ir]++;
 				
-				if ( fmod( rr, 1.0e5 ) < dr) {
+				if ( std::fmod( rr, 1.0e5 ) < dr) {
 					std::cout << " -> Range " << rr/1000.0 << " km" << std::endl;
 				}
 
@@ -1711,17 +1802,17 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 			
 
-			if (multiprop) {
+			if (az_vector.size() > 1) {
 				if (write1d) {
 					std::cout << "Writing 1-D output to "
 						<< tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP) << std::endl;
-					output1DTL( tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP), true );
+					output1DTL( tag_filename(NCPAPROP_EPADE_PE_FILENAME_MULTIPROP), *az, true );
 				}
 			} else { 
 				if (write1d) {
 					std::cout << "Writing 1-D output to "
 						<< tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D) << std::endl;
-					output1DTL( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D), broadband );
+					output1DTL( tag_filename(NCPAPROP_EPADE_PE_FILENAME_1D), *az, false );
 				}
 				if (write2d) {
 					std::cout << "Writing 2-D output to "
@@ -1776,7 +1867,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		if (write_topo) {
 			write_topography(
 				tag_filename(NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY),
-				calc_az, r_max.get(), 1000.0 );
+				*az, r_max.get(), 1000.0 );
 		}
 		
 		atm_profile_2d->remove_property( "_CEFF_" );
@@ -2817,7 +2908,7 @@ std::vector<PetscScalar> NCPA::EPadeSolver::taylor_1pQpid_n025( int N, double de
 
 
 
-void NCPA::EPadeSolver::output1DTL( std::string filename, bool append ) {
+void NCPA::EPadeSolver::output1DTL( std::string filename, double calc_az, bool append ) {
 	std::ofstream out_1d;
 	if (append) {
 		out_1d.open( filename, std::ofstream::out | std::ofstream::app );

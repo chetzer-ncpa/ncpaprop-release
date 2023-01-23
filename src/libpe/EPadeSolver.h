@@ -45,7 +45,7 @@ namespace NCPA {
 		EPadeSolver( NCPA::ParameterSet *param );
 		virtual ~EPadeSolver();
 		virtual int solve();
-		virtual void output1DTL( std::string filename, bool append = false );
+		virtual void output1DTL( std::string filename, double calc_az, bool append = false );
 		virtual void output2DTL( std::string filename );
 
 		void set_max_range( double r, const std::string &u );
@@ -58,6 +58,8 @@ namespace NCPA {
 		void set_pade_order( size_t n );
 		void set_starter( StarterType st, const std::string &fname = "" );
 		void set_attenuation( AttenuationType att, const std::string &fname = "" );
+		void set_azimuth( double a );
+		void set_azimuths( double azmin, double azmax, double daz );
 
 		ScalarWithUnits 	r_max,						// maximum range (m)
 							z_max,						// maximum height (m)
@@ -67,7 +69,8 @@ namespace NCPA {
 							z_receiver;					// receiver height (m)
 		size_t 				nr_requested = 0,			// Requested number of range steps
 							pade_order = 4;				// Order of Pade approximation
-		std::vector<double>	f_vector;					// Frequencies for analysis
+		std::vector<double>	az_vector,					// Azimuths
+							f_vector;					// Frequencies for analysis
 		std::string			starter_filename_in,		// User-supplied starter
 							attenuation_filename_in;	// User-supplied attenuation profile
 
@@ -183,18 +186,17 @@ namespace NCPA {
 
 		std::string tag_filename( std::string basename );
 
-		double *z = NULL, *z_abs = NULL, *r = NULL, calc_az;
+		double *z = NULL, *z_abs = NULL, *r = NULL;  // @todo eliminate calc_az
 		std::complex< double > **tl;
 		int *zgi_r = NULL;   // ground height index
 //		double freq;         // current active frequency
-		double *azi;
-		size_t NZ, NR, NAz;
+		size_t NZ, NR;
 //		double dz;
 
 		bool use_atm_1d = false, use_atm_2d = false, use_atm_toy = false, use_topo = false;
 		bool z_ground_specified = false, top_layer = true;
-		bool multiprop = false, write1d = true, write2d = false;
-		bool broadband = false, write_starter = false, write_topo = false;
+		bool write1d = true, write2d = false;
+		bool write_starter = false, write_topo = false;
 		bool write_atmosphere = false, pointsource = true, _write_source_function = false;
 //		double r_max;    // range limits
 		double z_min, z_ground, z_bottom;  // atmosphere profile limits
