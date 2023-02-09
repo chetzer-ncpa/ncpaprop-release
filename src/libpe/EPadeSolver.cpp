@@ -23,7 +23,7 @@
 
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
-#include "ncpaprop_petsc.h"
+//#include "ncpaprop_petsc.h"
 
 
 #ifndef PI
@@ -31,6 +31,48 @@
 #endif
 
 #define RHO_B 5000.0
+
+void NCPA::outputVec( Vec &v, double *z, size_t n, const std::string &filename ) {
+	PetscScalar *array;
+	std::ofstream out( filename );
+	out.precision( 12 );
+	VecGetArray(v,&array);
+	for (size_t i = 0; i < n; i++) {
+		if (z != NULL) {
+			out << z[i] << "  ";
+		}
+#ifdef PETSC_USE_COMPLEX
+		out << array[i].real() << "  " << array[i].imag() << std::endl;
+#else
+		out << array[i] << std::endl;
+#endif
+	}
+	VecRestoreArray(v,&array);
+	out.close();
+}
+
+void NCPA::outputSparseMat( Mat &m, size_t nrows, const std::string &filename ) {
+	PetscInt ncols;
+	const PetscInt *cols;
+	const PetscScalar *vals;
+	std::ofstream out( filename );
+	out << nrows << std::endl;
+	for (size_t i = 0; i < nrows; i++) {
+		MatGetRow( m, (PetscInt)i, &ncols, &cols, &vals );
+		for (PetscInt j = 0; j < ncols; j++) {
+			out 	<< i << " " << cols[j] << " "
+#ifdef PETSC_USE_COMPLEX
+					<< vals[j].real() << " " << vals[j].imag()
+#else
+					<< vals[j]
+#endif
+				<< std::endl;
+		}
+		MatRestoreRow( m, (PetscInt)i, &ncols, &cols, &vals );
+	}
+	out.close();
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 // Setter methods for calculation parameters
@@ -84,6 +126,17 @@ void NCPA::EPadeSolver::set_attenuation( AttenuationType att, const std::string 
 	attenuation_filename_in = fname;
 }
 
+void NCPA::EPadeSolver::set_topography_treatment( TopographyTreatment tt, const std::string &fname ) {
+	topography_treatment = tt;
+	topography_filename_in = fname;
+}
+
+void NCPA::EPadeSolver::set_topography_treatment( TopographyTreatment tt, double zs, NCPA::units_t units ) {
+	topography_treatment = tt;
+	ground_height_specified.set( zs, units );
+	ground_height_specified.convert_units( NCPAPROP_EPADE_PE_UNITS_Z );
+}
+
 void NCPA::EPadeSolver::set_azimuth( double a ) {
 	az_vector.clear();
 	az_vector.push_back(NCPA::normalizeAzimuth(a));
@@ -131,15 +184,11 @@ void NCPA::EPadeSolver::set_default_values() {
 	NZ = 0; NR = 0; nzplot = 0;
 
 	// bool
-	use_atm_1d = false; use_atm_2d = false; use_atm_toy = false; use_topo = false;
-	z_ground_specified = false;
+	use_atm_1d = false; use_atm_2d = false; use_atm_toy = false;
 	write2d = false;
 	write_starter = false; write_topo = false;
 	user_ground_impedence_found = false; write_atmosphere = false;
 	pointsource = true; _write_source_function = false;
-
-	// string
-	topofile = "";
 
 	// turbulence
 	use_turbulence = false;
@@ -176,7 +225,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 //	starter 			= param->getString( "starter" );
 //	attnfile 			= param->getString( "attnfile" );
 //	user_starter_file   = param->getString( "starterfile" );
-	topofile			= param->getString( "topofile" );
+//	topofile			= param->getString( "topofile" );
 	user_tag			= param->getString( "filetag" );
 	if (user_tag.size() > 0) {
 		user_tag += ".";
@@ -193,7 +242,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	use_atm_2d				= param->wasFound( "atmosfile2d" );
 	//use_atm_toy			= param->wasFound( "toy" );
 	top_layer				= !(param->wasFound( "disable_top_layer" ));
-	use_topo				= param->wasFound( "topo" );
+//	use_topo				= param->wasFound( "topo" );
 	write2d 				= param->wasFound( "write_2d_tloss" );
 	write_starter       	= param->wasFound( "write_starter" );
 	_write_source_function 	= param->wasFound( "write_source" );
@@ -272,47 +321,100 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	// altitude units
 	atm_profile_2d->convert_altitude_units( NCPAPROP_EPADE_PE_UNITS_Z );
 
-	// Ground height is treated differently depending on whether we're
-	// using topography or not
-	if (use_topo) {
-		// first, do we get topography from a file?
-		if ( topofile.size() > 0 ) {
-			atm_profile_2d->remove_property("Z0");
-			atm_profile_2d->read_elevation_from_file( topofile );
-			z_ground_specified = true;
-		} else if (param->wasFound("groundheight_km")) {
-			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
-			z_ground_specified = true;
-			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
-			    << " m" << std::endl;
-			atm_profile_2d->remove_property("Z0");
-			atm_profile_2d->add_property( "Z0", z_ground,
-					NCPAPROP_EPADE_PE_UNITS_Z );
-			atm_profile_2d->finalize_elevation_from_profiles();
-		} else {
-			atm_profile_2d->finalize_elevation_from_profiles();
-		}
-		z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
-	} else {
-		// constant elevation
-		if (param->wasFound("groundheight_km")) {
-			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
-			z_ground_specified = true;
+	// Modify atmosphere as needed for ground height
+	switch (topography_treatment) {
 
-			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
-			     << " m" << std::endl;
-			atm_profile_2d->remove_property("Z0");
-			atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
-		} else {
+		// Default case: No topography, get Z from atmosphere
+		case TopographyTreatment::NO_TOPOGRAPHY_Z_FROM_ATMOSPHERE:
+			// set Z0 property if it doesn't already exist
 			if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
 				z_ground = atm_profile_2d->get_minimum_altitude( 0.0 );
 				atm_profile_2d->add_property("Z0",z_ground,
 					atm_profile_2d->get_altitude_units(0.0));
 			}
-		}
-		atm_profile_2d->convert_property_units( "Z0", NCPAPROP_EPADE_PE_UNITS_Z );
-		z_ground = atm_profile_2d->get( 0.0, "Z0" );
+			atm_profile_2d->convert_property_units( "Z0", NCPAPROP_EPADE_PE_UNITS_Z );
+			z_ground = atm_profile_2d->get( 0.0, "Z0" );
+			break;
+
+		// No topography, but override atmosphere ground height
+		case TopographyTreatment::NO_TOPOGRAPHY_Z_OVERRIDDEN:
+			z_ground = ground_height_specified.get();
+			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
+			     << " m" << std::endl;
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
+			break;
+
+		// Use topography, read it from user-supplied file
+		case TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_FILE:
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->read_elevation_from_file(topography_filename_in);
+			z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
+			break;
+
+		// use topography, but set the ground height to a specified constant
+		case TopographyTreatment::USE_TOPOGRAPHY_Z_OVERRIDDEN:
+			z_ground = ground_height_specified.get();
+			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
+			     << " m" << std::endl;
+			atm_profile_2d->remove_property("Z0");
+			atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
+			atm_profile_2d->finalize_elevation_from_profiles();
+			z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
+			break;
+
+		// use topography, and get the ground height values from the atmospheres
+		case TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_ATMOSPHERE:
+			atm_profile_2d->finalize_elevation_from_profiles();
+			z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
+			break;
+
+		default:
+			throw std::runtime_error("Invalid or unrecognized topographic treatment");
+
 	}
+
+	// Ground height is treated differently depending on whether we're
+	// using topography or not
+//	if (use_topo) {
+//		// first, do we get topography from a file?
+//		if ( topofile.size() > 0 ) {
+//			atm_profile_2d->remove_property("Z0");
+//			atm_profile_2d->read_elevation_from_file( topofile );
+//			z_ground_specified = true;
+//		} else if (param->wasFound("groundheight_km")) {
+//			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
+//			z_ground_specified = true;
+//			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
+//			    << " m" << std::endl;
+//			atm_profile_2d->remove_property("Z0");
+//			atm_profile_2d->add_property( "Z0", z_ground,
+//					NCPAPROP_EPADE_PE_UNITS_Z );
+//			atm_profile_2d->finalize_elevation_from_profiles();
+//		} else {
+//			atm_profile_2d->finalize_elevation_from_profiles();
+//		}
+//		z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
+//	} else {
+//		// constant elevation
+//		if (param->wasFound("groundheight_km")) {
+//			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
+//			z_ground_specified = true;
+//
+//			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
+//			     << " m" << std::endl;
+//			atm_profile_2d->remove_property("Z0");
+//			atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
+//		} else {
+//			if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
+//				z_ground = atm_profile_2d->get_minimum_altitude( 0.0 );
+//				atm_profile_2d->add_property("Z0",z_ground,
+//					atm_profile_2d->get_altitude_units(0.0));
+//			}
+//		}
+//		atm_profile_2d->convert_property_units( "Z0", NCPAPROP_EPADE_PE_UNITS_Z );
+//		z_ground = atm_profile_2d->get( 0.0, "Z0" );
+//	}
 
 	// z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
 	// z_ground = z_min;
@@ -449,10 +551,31 @@ bool NCPA::EPadeSolver::finalize() {
 			std::cout << "Multi-azimuth propagation requested, disabling 2-D output" << std::endl;
 			write2d = false;
 		}
-		if (use_topo) {
-			std::cout << "Multi-azimuth propagation requested, disabling topography flag" << std::endl;
-			use_topo = false;
+//		if (use_topo) {
+//			std::cout << "Multi-azimuth propagation requested, disabling topography flag" << std::endl;
+//			use_topo = false;
+//		}
+		// can't use topography for multiprop because it's inherently 2-D
+		switch (topography_treatment) {
+			case TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_ATMOSPHERE:
+				std::cout << "Multi-azimuth propagation requested, disabling topography treatment" << std::endl;
+				z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
+				atm_profile_2d->remove_property("Z0");
+				atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
+				topography_treatment = TopographyTreatment::NO_TOPOGRAPHY_Z_FROM_ATMOSPHERE;
+				break;
+
+			case TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_FILE:
+			case TopographyTreatment::USE_TOPOGRAPHY_Z_OVERRIDDEN:
+				std::cout << "Multi-azimuth propagation requested, disabling topography treatment" << std::endl;
+				z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
+				ground_height_specified.set(z_ground,NCPAPROP_EPADE_PE_UNITS_Z);
+				atm_profile_2d->remove_property("Z0");
+				atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
+				break;
+
 		}
+
 
 		// initialize output file
 		std::cout << "Initializing file "
@@ -569,11 +692,23 @@ int NCPA::EPadeSolver::solve() {
 	if (!_ready) {
 		throw std::runtime_error("Solver not ready!");
 	}
-	if (use_topo) {
-		return solve_with_topography();
-	} else {
-		return solve_without_topography();
+//	if (use_topo) {
+//		return solve_with_topography();
+//	} else {
+//		return solve_without_topography();
+//	}
+	switch(topography_treatment) {
+		case TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_ATMOSPHERE:
+		case TopographyTreatment::USE_TOPOGRAPHY_Z_OVERRIDDEN:
+		case TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_FILE:
+			return solve_with_topography();
+			break;
+		case TopographyTreatment::NO_TOPOGRAPHY_Z_FROM_ATMOSPHERE:
+		case TopographyTreatment::NO_TOPOGRAPHY_Z_OVERRIDDEN:
+			return solve_without_topography();
+			break;
 	}
+
 }
 
 int NCPA::EPadeSolver::solve_without_topography() {
@@ -819,7 +954,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
 			//std::cout << "Using atmosphere index " << profile_index << std::endl;
 			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, attenuation_type,
-				top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
+				top_layer, *freq, false, k0, c0, c, a_t, k, n );
 
 			// calculate turbulence
 			if (use_turbulence) {
@@ -883,7 +1018,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 				
 					profile_index = atm_profile_2d->get_profile_index( rr );
 					calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground, attenuation_type, top_layer, *freq,
-						use_topo, k0, c0, c, a_t, k, n );
+						false, k0, c0, c, a_t, k, n );
 					delete_matrix_polynomial( pade_order+1, &qpowers );
 					build_operator_matrix_without_topography( NZ, z, k0, h2, 
 						ground_impedence_factor, n, pade_order+1, 0, &q );
@@ -1580,7 +1715,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			}
 
 			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, attenuation_type,
-				top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
+				top_layer, *freq, true, k0, c0, c, a_t, k, n );
 			
 			// calculate turbulence
 			if (use_turbulence) {
@@ -1717,7 +1852,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 		  			grid_tolerance,
 		  			atm_profile_2d->get_interpolated_ground_elevation( rr ) );
 				calculate_atmosphere_parameters( atm_profile_2d, NZ, z, rr, z_ground,
-					attenuation_type, top_layer, *freq, use_topo, k0, c0, c, a_t, k, n );
+					attenuation_type, top_layer, *freq, true, k0, c0, c, a_t, k, n );
 				Mat last_q;
 				ierr = MatConvert( qpowers[0], MATSAME, MAT_INITIAL_MATRIX, &last_q );CHKERRQ(ierr);
 				delete_matrix_polynomial( pade_order+1, &qpowers );

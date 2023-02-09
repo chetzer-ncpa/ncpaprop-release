@@ -186,4 +186,24 @@ void configure_solver( EPadeSolver *solver, ParameterSet *param ) {
 	} else {
 		solver->set_attenuation(AttenuationType::SUTHERLAND_BASS);
 	}
+
+	// topography
+	if (!param->wasFound("topo")) {
+		if (param->wasFound("sourceheight_km")) {
+			solver->set_topography_treatment( TopographyTreatment::NO_TOPOGRAPHY_Z_OVERRIDDEN,
+					param->getFloat("sourceheight_km"), Units::fromString("km") );
+		} else {
+			solver->set_topography_treatment( TopographyTreatment::NO_TOPOGRAPHY_Z_FROM_ATMOSPHERE );
+		}
+	} else {
+		if (param->getString("topofile") != "") {
+			solver->set_topography_treatment( TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_FILE,
+					param->getString("topofile") );
+		} else if (param->wasFound("sourceheight_km")) {
+			solver->set_topography_treatment( TopographyTreatment::USE_TOPOGRAPHY_Z_OVERRIDDEN,
+					param->getFloat("sourceheight_km"), Units::fromString("km") );
+		} else {
+			solver->set_topography_treatment( TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_ATMOSPHERE );
+		}
+	}
 }

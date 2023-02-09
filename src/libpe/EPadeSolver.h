@@ -13,11 +13,16 @@
 
 #include "ncpaprop_common.h"
 #include "ncpaprop_atmosphere.h"
-#include "ncpaprop_petsc.h"
+//#include "ncpaprop_petsc.h"
 
 
 
 namespace NCPA {
+
+	void outputVec( Vec &v, double *z, size_t n,
+		const std::string &filename );
+	void outputSparseMat( Mat &m, size_t nrows,
+		const std::string &filename );
 
 	enum class StarterType {
 		NONE,
@@ -32,9 +37,18 @@ namespace NCPA {
 		USER
 	};
 
-	enum class GroundHeightType {
-		CONSTANT,
-		FROM_FILE
+	// Possibilities:
+	// 1. Ignore topography, get ground height from first atmosphere profile
+	// 2. Ignore topography, get ground height from parameters
+	// 3. Use topography, get ground height from atmosphere
+	// 4. Use topography, get ground height from file
+	// 5. Use topography, get ground height from parameters (constant)
+	enum class TopographyTreatment {
+		NO_TOPOGRAPHY_Z_FROM_ATMOSPHERE,
+		NO_TOPOGRAPHY_Z_OVERRIDDEN,
+		USE_TOPOGRAPHY_Z_FROM_ATMOSPHERE,
+		USE_TOPOGRAPHY_Z_FROM_FILE,
+		USE_TOPOGRAPHY_Z_OVERRIDDEN
 	};
 
 	class EPadeSolver : public AtmosphericTransferFunctionSolver {
@@ -58,24 +72,28 @@ namespace NCPA {
 		void set_pade_order( size_t n );
 		void set_starter( StarterType st, const std::string &fname = "" );
 		void set_attenuation( AttenuationType att, const std::string &fname = "" );
+		void set_topography_treatment( TopographyTreatment tt, const std::string &fname = "" );
+		void set_topography_treatment( TopographyTreatment tt, double groundheight, units_t height_units );
 		void set_azimuth( double a );
 		void set_azimuths( double azmin, double azmax, double daz );
 
 		ScalarWithUnits 	r_max,						// maximum range (m)
 							z_max,						// maximum height (m)
 							dz_requested,				// requested height step (m)
-							ground_height_requested,	// requested ground height (m)
+							ground_height_specified,	// requested ground height (m)
 							z_source,					// source height (m)
 							z_receiver;					// receiver height (m)
 		size_t 				nr_requested = 0,			// Requested number of range steps
 							pade_order = 4;				// Order of Pade approximation
 		std::vector<double>	az_vector,					// Azimuths
 							f_vector;					// Frequencies for analysis
-		std::string			starter_filename_in,		// User-supplied starter
+		std::string			topography_filename_in,		// User-supplied orography
+							starter_filename_in,		// User-supplied starter
 							attenuation_filename_in;	// User-supplied attenuation profile
 
 		StarterType			starter_type = StarterType::NONE;
 		AttenuationType		attenuation_type = AttenuationType::SUTHERLAND_BASS;
+		TopographyTreatment	topography_treatment = TopographyTreatment::NO_TOPOGRAPHY_Z_FROM_ATMOSPHERE;
 
 		bool finalize();		// do any preprocessing necessary
 		bool ready();
@@ -193,8 +211,8 @@ namespace NCPA {
 		size_t NZ, NR;
 //		double dz;
 
-		bool use_atm_1d = false, use_atm_2d = false, use_atm_toy = false, use_topo = false;
-		bool z_ground_specified = false, top_layer = true;
+		bool use_atm_1d = false, use_atm_2d = false, use_atm_toy = false;
+		bool top_layer = true;
 		bool write1d = true, write2d = false;
 		bool write_starter = false, write_topo = false;
 		bool write_atmosphere = false, pointsource = true, _write_source_function = false;
@@ -205,7 +223,6 @@ namespace NCPA {
 		std::complex<double> user_ground_impedence;
 		bool user_ground_impedence_found = false;
 
-		std::string topofile;
 		std::string user_tag = "";
 		std::string linesourcefile;
 
