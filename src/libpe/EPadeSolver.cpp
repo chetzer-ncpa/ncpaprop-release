@@ -152,6 +152,13 @@ void NCPA::EPadeSolver::set_azimuths( double start_az, double end_az, double daz
 	}
 }
 
+void NCPA::EPadeSolver::set_ground_impedence_type( GroundImpedenceType gt, std::complex<double> gi ) {
+	ground_impedence_type = gt;
+	if (gt == GroundImpedenceType::USER) {
+		ground_impedence_specified = gi;
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Below here is pre-refactor code /////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,7 +185,7 @@ void NCPA::EPadeSolver::set_default_values() {
 	top_layer_thickness_m = -1.0;
 
 	// complex
-	user_ground_impedence = 0.0;
+//	user_ground_impedence = 0.0;
 
 	// int
 	NZ = 0; NR = 0; nzplot = 0;
@@ -187,7 +194,7 @@ void NCPA::EPadeSolver::set_default_values() {
 	use_atm_1d = false; use_atm_2d = false; use_atm_toy = false;
 	write2d = false;
 	write_starter = false; write_topo = false;
-	user_ground_impedence_found = false; write_atmosphere = false;
+	write_atmosphere = false;
 	pointsource = true; _write_source_function = false;
 
 	// turbulence
@@ -374,152 +381,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 	}
 
-	// Ground height is treated differently depending on whether we're
-	// using topography or not
-//	if (use_topo) {
-//		// first, do we get topography from a file?
-//		if ( topofile.size() > 0 ) {
-//			atm_profile_2d->remove_property("Z0");
-//			atm_profile_2d->read_elevation_from_file( topofile );
-//			z_ground_specified = true;
-//		} else if (param->wasFound("groundheight_km")) {
-//			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
-//			z_ground_specified = true;
-//			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
-//			    << " m" << std::endl;
-//			atm_profile_2d->remove_property("Z0");
-//			atm_profile_2d->add_property( "Z0", z_ground,
-//					NCPAPROP_EPADE_PE_UNITS_Z );
-//			atm_profile_2d->finalize_elevation_from_profiles();
-//		} else {
-//			atm_profile_2d->finalize_elevation_from_profiles();
-//		}
-//		z_ground = atm_profile_2d->get_interpolated_ground_elevation(0.0);
-//	} else {
-//		// constant elevation
-//		if (param->wasFound("groundheight_km")) {
-//			z_ground = param->getFloat( "groundheight_km" ) * 1000.0;
-//			z_ground_specified = true;
-//
-//			std::cout << "Overriding profile Z0 value with command-line value " << z_ground
-//			     << " m" << std::endl;
-//			atm_profile_2d->remove_property("Z0");
-//			atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
-//		} else {
-//			if (!(atm_profile_2d->contains_scalar(0,"Z0"))) {
-//				z_ground = atm_profile_2d->get_minimum_altitude( 0.0 );
-//				atm_profile_2d->add_property("Z0",z_ground,
-//					atm_profile_2d->get_altitude_units(0.0));
-//			}
-//		}
-//		atm_profile_2d->convert_property_units( "Z0", NCPAPROP_EPADE_PE_UNITS_Z );
-//		z_ground = atm_profile_2d->get( 0.0, "Z0" );
-//	}
 
-	// z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
-	// z_ground = z_min;
-
-
-
-
-//	// set units
-//	if (atm_profile_2d->contains_vector(0,"U")) {
-//		atm_profile_2d->convert_property_units( "U", NCPAPROP_EPADE_PE_UNITS_U );
-//	}
-//	if (atm_profile_2d->contains_vector(0,"V")) {
-//		atm_profile_2d->convert_property_units( "V", NCPAPROP_EPADE_PE_UNITS_V );
-//	}
-//	if (atm_profile_2d->contains_vector(0,"T")) {
-//		atm_profile_2d->convert_property_units( "T", NCPAPROP_EPADE_PE_UNITS_T );
-//	}
-//	if (atm_profile_2d->contains_vector(0,"P")) {
-//		atm_profile_2d->convert_property_units( "P", NCPAPROP_EPADE_PE_UNITS_P );
-//	}
-//
-//	// need density
-//	if (atm_profile_2d->contains_vector(0,"RHO")) {
-//		atm_profile_2d->convert_property_units( "RHO", NCPAPROP_EPADE_PE_UNITS_RHO );
-//	} else {
-//		std::cout << "No density provided, calculating from temperature and pressure" << std::endl;
-//		for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
-//			it != atm_profile_2d->last_profile(); ++it) {
-//			if ( (*it)->contains_vector("T") && (*it)->contains_vector("P") ) {
-//				(*it)->calculate_density_from_temperature_and_pressure(
-//					"RHO", "T", "P", NCPAPROP_EPADE_PE_UNITS_RHO );
-//			} else {
-//				throw std::runtime_error( "No RHO provided, and at least one of T and P is missing." );
-//			}
-//		}
-//	}
-	// z_ground = atm_profile_2d->get( 0.0, "Z0" );
-
-	// calculate derived quantities
-//	double c0;
-//	for (std::vector< NCPA::Atmosphere1D * >::iterator it = atm_profile_2d->first_profile();
-//		 it != atm_profile_2d->last_profile(); ++it) {
-//		if ( (*it)->contains_vector( "C0" ) ) {
-//			(*it)->convert_property_units( "C0", NCPAPROP_EPADE_PE_UNITS_C );
-//			(*it)->copy_vector_property( "C0", "_C0_" );
-//			c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-//		} else {
-//			if ( (*it)->contains_vector("P") && (*it)->contains_vector("RHO") ) {
-//				(*it)->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO",
-//						NCPAPROP_EPADE_PE_UNITS_C );
-//				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-//			} else if ( (*it)->contains_vector("T") ) {
-//				(*it)->calculate_sound_speed_from_temperature( "_C0_", "T",
-//						NCPAPROP_EPADE_PE_UNITS_C );
-//				c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-//			} else if ( (*it)->contains_vector( "CEFF" ) ) {
-//				c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
-//			} else {
-//				throw std::runtime_error( "Cannot calculate static sound speed: None of CEFF, C0, T, or (P and RHO) are specified in atmosphere.");
-//			}
-//		}
-//	}
-
-//	// wind speed
-//	if (atm_profile_2d->contains_vector(0,"WS")) {
-//		atm_profile_2d->convert_property_units("WS", NCPAPROP_EPADE_PE_UNITS_U );
-//		atm_profile_2d->copy_vector_property( "WS", "_WS_" );
-//	} else if (atm_profile_2d->contains_vector(0,"U")
-//		&& atm_profile_2d->contains_vector(0,"V")) {
-//		atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
-//	}
-//
-//	// wind direction
-//	if (atm_profile_2d->contains_vector(0,"WD")) {
-//		atm_profile_2d->convert_property_units("WD",
-//			NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
-//		atm_profile_2d->copy_vector_property( "WD", "_WD_" );
-//	} else if (atm_profile_2d->contains_vector(0,"U")
-//		&& atm_profile_2d->contains_vector(0,"V")) {
-//		atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
-//	}
-
-	// calculate/check z resolution
-//	dz = param->getFloat( "dz_m" );
-//	double f0 = f_vector[0];
-//	double lambda0 = c0 / f_vector[0];
-//  	if (dz <= 0.0) {
-//  		dz = lambda0 / 20.0;
-//  		double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
-//  		double factor = std::floor( dz / nearestpow10 );
-//  		dz = nearestpow10 * factor;
-//  		std::cout << "Setting dz to " << dz << " m" << std::endl;
-//  	}
-//  	if (dz > (c0 / f_vector[0] / 10.0) ) {
-//  		std::ostringstream oss;
-//		oss << "Altitude resolution is too coarse.  Must be <= " << lambda0 / 10.0 << " meters.";
-//  		throw std::runtime_error( oss.str() );
-//  	}
-
-  	// calculate ground impedence
-  	if (param->wasFound( "ground_impedence_real" ) || param->wasFound( "ground_impedence_imag" ) ) {
-  		user_ground_impedence.real( param->getFloat( "ground_impedence_real" ) );
-  		user_ground_impedence.imag( param->getFloat( "ground_impedence_imag" ) );
-  		user_ground_impedence_found = true;
-  	}
 
   	// create turbulence
 	use_turbulence = param->wasFound( "turbulence" );
@@ -573,7 +435,8 @@ bool NCPA::EPadeSolver::finalize() {
 				atm_profile_2d->remove_property("Z0");
 				atm_profile_2d->add_property( "Z0", z_ground, NCPAPROP_EPADE_PE_UNITS_Z );
 				break;
-
+			default:
+				break;
 		}
 
 
@@ -707,6 +570,8 @@ int NCPA::EPadeSolver::solve() {
 		case TopographyTreatment::NO_TOPOGRAPHY_Z_OVERRIDDEN:
 			return solve_without_topography();
 			break;
+		default:
+			throw std::runtime_error("Undefined topography treatment specified");
 	}
 
 }
@@ -738,6 +603,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	z_max.set_value( NCPA::min( z_max.get(), minlimit ) );
 	int ground_index = 0;
 	std::complex<double> ground_impedence_factor( 0.0, 0.0 );
+
 
 	// truncate multiprop file if needed
 	if (write2d) {
@@ -941,16 +807,29 @@ int NCPA::EPadeSolver::solve_without_topography() {
 			double rho0 = atm_profile_2d->get( 0.0, "RHO", z_ground );
 			double lambBC = atm_profile_2d->get_first_derivative( 0.0, "RHO", z_ground ) / (2.0 * rho0);
 			//lambBC = 0.0;
-			if (user_ground_impedence_found) {
-				ground_impedence_factor = *freq * I * 2.0 * PI * rho0 / user_ground_impedence + lambBC;
-				std::cout << "Using user ground impedence of " << user_ground_impedence << std::endl;
-				//		<< " results in calculated A factor of " << ground_impedence_factor << std::endl;
-			} else {
-				ground_impedence_factor.real( lambBC );
-				ground_impedence_factor.imag( 0.0 );
-				std::cout << "Using default rigid ground with Lamb BC" << std::endl;
-				//: A factor = " << ground_impedence_factor << std::endl;
+			switch (ground_impedence_type) {
+				case GroundImpedenceType::USER:
+					ground_impedence_factor = *freq * I * 2.0 * PI * rho0 / ground_impedence_specified + lambBC;
+					std::cout << "Using user ground impedence of " << ground_impedence_specified << std::endl;
+					break;
+				case GroundImpedenceType::LAMB:
+					ground_impedence_factor.real( lambBC );
+					ground_impedence_factor.imag( 0.0 );
+					std::cout << "Using default rigid ground with Lamb BC" << std::endl;
+					break;
+				default:
+					throw std::runtime_error("Invalid ground impedence type specified");
 			}
+//			if (user_ground_impedence_found) {
+//				ground_impedence_factor = *freq * I * 2.0 * PI * rho0 / user_ground_impedence + lambBC;
+//				std::cout << "Using user ground impedence of " << user_ground_impedence << std::endl;
+//				//		<< " results in calculated A factor of " << ground_impedence_factor << std::endl;
+//			} else {
+//				ground_impedence_factor.real( lambBC );
+//				ground_impedence_factor.imag( 0.0 );
+//				std::cout << "Using default rigid ground with Lamb BC" << std::endl;
+//				//: A factor = " << ground_impedence_factor << std::endl;
+//			}
 
 			//std::cout << "Using atmosphere index " << profile_index << std::endl;
 			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, attenuation_type,
@@ -1705,13 +1584,26 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			double rho0 = atm_profile_2d->get( 0.0, "RHO", z_ground );
 			double lambBC = atm_profile_2d->get_first_derivative( 0.0, "RHO", z_ground ) / (2.0 * rho0);
 			//lambBC = 0.0;
-			if (user_ground_impedence_found) {
-				ground_impedence_factor = *freq * I * 2.0 * PI * rho0 / user_ground_impedence + lambBC;
-				std::cout << "Using user ground impedence of " << user_ground_impedence << std::endl;
-			} else {
-				ground_impedence_factor.real( lambBC );
-				ground_impedence_factor.imag( 0.0 );
-				std::cout << "Using default rigid ground with Lamb BC" << std::endl;
+//			if (user_ground_impedence_found) {
+//				ground_impedence_factor = *freq * I * 2.0 * PI * rho0 / user_ground_impedence + lambBC;
+//				std::cout << "Using user ground impedence of " << user_ground_impedence << std::endl;
+//			} else {
+//				ground_impedence_factor.real( lambBC );
+//				ground_impedence_factor.imag( 0.0 );
+//				std::cout << "Using default rigid ground with Lamb BC" << std::endl;
+//			}
+			switch (ground_impedence_type) {
+				case GroundImpedenceType::USER:
+					ground_impedence_factor = *freq * I * 2.0 * PI * rho0 / ground_impedence_specified + lambBC;
+					std::cout << "Using user ground impedence of " << ground_impedence_specified << std::endl;
+					break;
+				case GroundImpedenceType::LAMB:
+					ground_impedence_factor.real( lambBC );
+					ground_impedence_factor.imag( 0.0 );
+					std::cout << "Using default rigid ground with Lamb BC" << std::endl;
+					break;
+				default:
+					throw std::runtime_error("Invalid ground impedence type specified");
 			}
 
 			calculate_atmosphere_parameters( atm_profile_2d, NZ, z, 0.0, z_ground, attenuation_type,

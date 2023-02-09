@@ -37,6 +37,11 @@ namespace NCPA {
 		USER
 	};
 
+	enum class GroundImpedenceType {
+		LAMB,
+		USER
+	};
+
 	// Possibilities:
 	// 1. Ignore topography, get ground height from first atmosphere profile
 	// 2. Ignore topography, get ground height from parameters
@@ -76,6 +81,7 @@ namespace NCPA {
 		void set_topography_treatment( TopographyTreatment tt, double groundheight, units_t height_units );
 		void set_azimuth( double a );
 		void set_azimuths( double azmin, double azmax, double daz );
+		void set_ground_impedence_type( GroundImpedenceType gt, std::complex<double> gi = 0.0 );
 
 		ScalarWithUnits 	r_max,						// maximum range (m)
 							z_max,						// maximum height (m)
@@ -90,10 +96,12 @@ namespace NCPA {
 		std::string			topography_filename_in,		// User-supplied orography
 							starter_filename_in,		// User-supplied starter
 							attenuation_filename_in;	// User-supplied attenuation profile
+		std::complex<double>	ground_impedence_specified;	// User-supplied ground impedence
 
 		StarterType			starter_type = StarterType::NONE;
 		AttenuationType		attenuation_type = AttenuationType::SUTHERLAND_BASS;
 		TopographyTreatment	topography_treatment = TopographyTreatment::NO_TOPOGRAPHY_Z_FROM_ATMOSPHERE;
+		GroundImpedenceType	ground_impedence_type = GroundImpedenceType::LAMB;
 
 		bool finalize();		// do any preprocessing necessary
 		bool ready();
@@ -220,8 +228,8 @@ namespace NCPA {
 		double z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double c_underground;
 		double top_layer_thickness_m;
-		std::complex<double> user_ground_impedence;
-		bool user_ground_impedence_found = false;
+//		std::complex<double> user_ground_impedence;
+//		bool user_ground_impedence_found = false;
 
 		std::string user_tag = "";
 		std::string linesourcefile;

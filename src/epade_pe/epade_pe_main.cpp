@@ -206,4 +206,9 @@ void configure_solver( EPadeSolver *solver, ParameterSet *param ) {
 			solver->set_topography_treatment( TopographyTreatment::USE_TOPOGRAPHY_Z_FROM_ATMOSPHERE );
 		}
 	}
+
+	if (param->wasFound( "ground_impedence_real" ) || param->wasFound( "ground_impedence_imag" ) ) {
+		std::complex<double> gi( param->getFloat( "ground_impedence_real" ), param->getFloat( "ground_impedence_imag" ) );
+		solver->set_ground_impedence_type( GroundImpedenceType::USER, gi );
+	}
 }
