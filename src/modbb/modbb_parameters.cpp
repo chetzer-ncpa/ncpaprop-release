@@ -228,6 +228,7 @@ void NCPA::configure_modbb_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::FlagParameter( "write_phase_speeds" ) );
 	ps->addParameter( new NCPA::FlagParameter( "write_speeds" ) );
 	ps->addParameter( new NCPA::FlagParameter( "write_modes" ) );
+	ps->addParameter( new NCPA::FlagParameter( "write_lossless" ) );
 	ps->addParameter( new NCPA::FlagParameter( "multiprop" ) );
 	ps->addParameter( new NCPA::FlagParameter( "turnoff_WKB" ) );
 	ps->addParameter( new NCPA::StringParameter( "filetag", "" ) );
