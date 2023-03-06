@@ -1,0 +1,7 @@
+NCPAProp Changelog
+
+
+2023-03-06: 
+* Added dummy --write_lossless flag to ModBB because Modess parameter list
+  expects it, and I can't deal with it using exception handling because 
+  clang on MacOS doesn't like exceptions.
