@@ -1,0 +1,14 @@
+#ifndef NCPA__ATTENUATIONMODELFACTORY_H_INCLUDED
+#define NCPA__ATTENUATIONMODELFACTORY_H_INCLUDED
+
+#include "AttenuationModel.h"
+
+namespace NCPA {
+	enum attenuation_model_t : unsigned int {
+		ATTENUATION_MODEL_NONE = 0,
+		ATTENUATION_MODEL_SUTHERLAND_BASS,
+		ATTENUATION_MODEL_CUSTOM
+	};
+}
+
+#endif

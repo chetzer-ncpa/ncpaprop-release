@@ -9,17 +9,17 @@ namespace NCPA {
 	};
 
 
-	class Messenger {
+	class Messager {
 
 		public:
-			Messenger();
-			Messenger(NCPA::VerbosityLevel v);
-			Messenger(NCPA::VerbosityLevel v,
+			Messager();
+			Messager(NCPA::VerbosityLevel v);
+			Messager(NCPA::VerbosityLevel v,
 					std::ostream &errorstr );
-			Messenger(NCPA::VerbosityLevel v,
+			Messager(NCPA::VerbosityLevel v,
 					std::ostream &errorstr,
 					std::ostream &infostr );
-			Messenger(NCPA::VerbosityLevel v,
+			Messager(NCPA::VerbosityLevel v,
 					std::ostream &errorstr,
 					std::ostream &infostr,
 					std::ostream &debugstr );

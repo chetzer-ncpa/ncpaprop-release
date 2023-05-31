@@ -2,6 +2,7 @@
 #define NCPA_VECTORWITHUNITS_H_INCLUDED
 
 #include "units.h"
+#include "ScalarWithUnits.h"
 
 
 namespace NCPA {
@@ -16,8 +17,9 @@ namespace NCPA {
 
 		public:
 			VectorWithUnits();
-			VectorWithUnits( size_t n_points, double *values, units_t units );
-			VectorWithUnits( size_t n_points, double *values, const std::string &units );
+			VectorWithUnits( size_t n_points, const double *values, units_t units );
+			VectorWithUnits( size_t n_points, const double *values, const std::string &units );
+			VectorWithUnits( size_t n_points, const ScalarWithUnits *values );
 			VectorWithUnits( const VectorWithUnits &source );
 			virtual ~VectorWithUnits();
 

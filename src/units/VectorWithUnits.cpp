@@ -7,16 +7,25 @@
 NCPA::VectorWithUnits::VectorWithUnits() : n_{ 0 }, values_{ NULL }, units_{ NCPA::UNITS_NONE } {}
 
 
-NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, double *property_values, units_t property_units )
+NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, const double *property_values, units_t property_units )
 	: n_{ n_points }, units_{ property_units } {
 	values_ = new double[ n_ ];
 	std::memcpy( values_, property_values, n_points*sizeof(double) );
 }
 
-NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, double *property_values, const std::string &property_units )
+NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, const double *property_values, const std::string &property_units )
 	: n_{ n_points }, units_{ NCPA::Units::fromString(property_units) } {
 	values_ = new double[ n_ ];
 	std::memcpy( values_, property_values, n_points*sizeof(double) );
+}
+
+NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, const NCPA::ScalarWithUnits *scalarvalues ) {
+	n_ = n_points;
+	units_ = scalarvalues[0].get_units();
+	values_ = new double[ n_ ];
+	for (size_t i = 0; i < n_; i++) {
+		values_[i] = NCPA::Units::convert( scalar_values[i].get(), scalar_values[i].get_units, units_ );
+	}
 }
 
 NCPA::VectorWithUnits::VectorWithUnits( const NCPA::VectorWithUnits &source )
