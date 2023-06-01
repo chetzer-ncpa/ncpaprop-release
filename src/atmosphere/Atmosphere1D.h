@@ -10,6 +10,9 @@
 #include <stack>
 #include <fstream>
 
+typedef std::map< std::string, NCPA::AtmosphericProperty1D * > vector_atmospheric_property_map_t;
+typedef std::map< std::string, NCPA::ScalarWithUnits * > scalar_atmospheric_property_map_t;
+
 namespace NCPA {
 
 	/**
@@ -111,9 +114,10 @@ namespace NCPA {
 		void copy_vector_property( const std::string &old_key, const std::string &new_key );
 		void copy_scalar_property( const std::string &old_key, const std::string &new_key );
 
-		NCPA::AtmosphericProperty1D *get_vector_property_object(
-			const std::string &key ) const;
-		NCPA::ScalarWithUnits *get_scalar_property_object( const std::string &key ) const;
+		NCPA::AtmosphericProperty1D *get_vector_property_object( const std::string &key );
+		const NCPA::AtmosphericProperty1D * const get_const_vector_property_object( const std::string &key ) const;
+		NCPA::ScalarWithUnits *get_scalar_property_object( const std::string &key );
+		const NCPA::ScalarWithUnits * const get_const_scalar_property_object( const std::string &key ) const;
 
 		/**
 		Removes a scalar or vector property from the atmosphere.  Has no effect if the property does not exist.
@@ -202,13 +206,13 @@ namespace NCPA {
 
 	protected:
 		// internal storage
-		std::map< std::string, NCPA::AtmosphericProperty1D * > contents_;
-		std::map< std::string, NCPA::ScalarWithUnits * > scalar_contents_;
+		vector_atmospheric_property_map_t contents_;
+		scalar_atmospheric_property_map_t scalar_contents_;
 		
 		//double *z_;
 		//size_t nz_;
 		//std::stack< units_t > z_units_;
-		NCPA::VectorWithUnits *z_;
+		NCPA::VectorWithUnits z_;
 		std::vector< std::string > headerlines;
 
 		void cleanup();

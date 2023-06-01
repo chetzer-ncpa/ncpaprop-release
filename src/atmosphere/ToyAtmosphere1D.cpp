@@ -48,7 +48,7 @@ NCPA::ToyAtmosphere1D::ToyAtmosphere1D() : NCPA::Atmosphere1D() {
 	}
 
 	// add parameters
-	z_ = new NCPA::VectorWithUnits( n, alt, NCPA::Units::fromString( "km" ) );
+	z_ = NCPA::VectorWithUnits( n, alt, NCPA::Units::fromString( "km" ) );
 	add_property( "Z0", 0.0, NCPA::Units::fromString( "km" ) );
 	add_property( "T", n, T, NCPA::Units::fromString( "K" ) );
 	add_property( "V", n, mw, NCPA::Units::fromString( "m/s" ) );
@@ -76,7 +76,7 @@ void NCPA::ToyAtmosphere1D::make_gaussian_parameter_( const std::string &new_key
 	double gaussarg;
 	double *newprop = new double[ nz() ];
 	for (size_t i=0; i < nz(); i++) {
-		double z = (*z_)[ i ];
+		double z = z_[ i ];
 		double alt_m = NCPA::Units::convert( z, get_altitude_units(), NCPA::Units::fromString( "m" ) );
 	    gaussarg   = -( alt_m - height ) * ( alt_m - height ) / ( 2 * width * width );
 	    newprop[i] = amplitude * std::exp( gaussarg );
