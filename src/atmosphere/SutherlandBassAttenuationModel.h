@@ -33,7 +33,6 @@ namespace NCPA {
 		const double theta[4] = { 2239.1, 3352.0, 915.0, 1037.0 };
 
 		const std::vector<attenuation_model_parameter_label_t> required_parameters = {
-				ATTENUATION_MODEL_PARAMETER_ALTITUDE,
 				ATTENUATION_MODEL_PARAMETER_TEMPERATURE,
 				ATTENUATION_MODEL_PARAMETER_DENSITY,
 				ATTENUATION_MODEL_PARAMETER_PRESSURE

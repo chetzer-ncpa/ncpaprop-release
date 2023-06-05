@@ -44,8 +44,10 @@ void NCPA::ISO9613_1AttenuationModel::attenuation(
 
 	// get units right
 	for (auto it = get_required_parameters().cbegin(); it != get_required_parameters().cend(); ++it) {
-		this->parameter_map[*it]->convert_units( this->get_calculation_units[ *it ] );
+		this->parameter_map[*it]->convert_units( this->get_calculation_units( *it ) );
+		this->parameter_map[*it]->convert_altitude_units( this->get_calculation_units(ATTENUATION_MODEL_PARAMETER_ALTITUDE) );
 	}
+//	z_vector_.convert_altitude_units( this->get_calculation_units(ATTENUATION_MODEL_PARAMETER_ALTITUDE) );
 
 	for (size_t i = 0; i < n; i++) {
 		double z = NCPA::Units::convert(zvec[i],z_units,

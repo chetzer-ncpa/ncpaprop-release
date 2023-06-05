@@ -5,6 +5,9 @@
 #include <map>
 #include <vector>
 
+// internal to this package
+#include "AtmosphericProperty1D.h"
+
 // Other packages
 #include "NCPAUnits.h"
 
@@ -30,6 +33,7 @@
 
 namespace NCPA {
 
+	// typedefs and enums
 	enum attenuation_model_parameter_label_t : unsigned int {
 		ATTENUATION_MODEL_PARAMETER_ALTITUDE,		// default km
 		ATTENUATION_MODEL_PARAMETER_TEMPERATURE,	// default K
@@ -37,24 +41,25 @@ namespace NCPA {
 		ATTENUATION_MODEL_PARAMETER_HUMIDITY,		// default pct
 		ATTENUATION_MODEL_PARAMETER_PRESSURE		// default Pa
 	};
-
-	typedef NCPA::
-
-	typedef std::pair<attenuation_model_parameter_label_t,NCPA::VectorWithUnits *> attenuation_parameter_pair_t;
-	typedef std::map<NCPA::attenuation_model_parameter_label_t, NCPA::VectorWithUnits *> attenuation_parameter_map_t;
+	typedef NCPA::AtmosphericProperty1D* attenuation_model_parameter_t;
+	typedef std::pair<attenuation_model_parameter_label_t,attenuation_model_parameter_t> attenuation_parameter_pair_t;
+	typedef std::map<attenuation_model_parameter_label_t,attenuation_model_parameter_t> attenuation_parameter_map_t;
 
 	class AttenuationModel {
 		public:
 
 			virtual ~AttenuationModel();
 
-			virtual void set_vertical_scale(size_t nz, const double *z, NCPA::units_t units = NCPA_ATTENUATION_DEFAULT_UNITS_Z);
+			virtual void set_vertical_scale(size_t nz, const double *z,
+					NCPA::units_t units = NCPA_ATTENUATION_DEFAULT_UNITS_Z);
 			virtual void set_vertical_scale(const NCPA::VectorWithUnits &z);
 
-			virtual void set_vertical_parameter(attenuation_model_parameter_label_t param, size_t nz, const double *p,
-					NCPA::units_t units);
+			virtual void set_vertical_parameter(attenuation_model_parameter_label_t param, size_t nz,
+					const double *p, NCPA::units_t units);
 			virtual void set_vertical_parameter(attenuation_model_parameter_label_t param,
 					const NCPA::VectorWithUnits &p);
+			virtual void set_vertical_parameter(attenuation_model_parameter_label_t param,
+					const attenuation_model_parameter_t p);
 
 			// pure virtual methods: must be overridden
 			virtual double attenuation(double f, double z, NCPA::units_t z_units = UNITS_NONE) = 0;
@@ -64,7 +69,8 @@ namespace NCPA {
 
 		protected:
 			attenuation_parameter_map_t parameter_map;
-			void _set_parameter(attenuation_model_parameter_label_t param, NCPA::VectorWithUnits *p);
+			void set_parameter_(attenuation_model_parameter_label_t param, attenuation_model_parameter_t p);
+			VectorWithUnits z_vector_;
 	};
 }
 

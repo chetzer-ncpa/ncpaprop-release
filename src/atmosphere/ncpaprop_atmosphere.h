@@ -19,4 +19,10 @@
 
 #include "Turbulence.h"
 
+#include "AttenuationModel.h"
+#include "AttenuationModelFactory.h"
+#include "LosslessAttenuationModel.h"
+#include "SutherlandBassAttenuationModel.h"
+#include "ISO9613_1AttenuationModel.h"
+
 #endif

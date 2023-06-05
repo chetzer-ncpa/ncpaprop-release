@@ -37,7 +37,7 @@ double NCPA::SutherlandBassAttenuationModel::attenuation(
 }
 
 void NCPA::SutherlandBassAttenuationModel::attenuation(
-		size_t n, double f, double *zvec, double *alpha, NCPA::units_t z_units) {
+		size_t n, double freq, double *zvec, double *alpha, NCPA::units_t z_units) {
 	if (z_units == NCPA::UNITS_NONE) {
 		z_units = this->get_calculation_units(ATTENUATION_MODEL_PARAMETER_ALTITUDE);
 	}
@@ -45,6 +45,7 @@ void NCPA::SutherlandBassAttenuationModel::attenuation(
 	// get units right
 	for (auto it = get_required_parameters().cbegin(); it != get_required_parameters().cend(); ++it) {
 		this->parameter_map[*it]->convert_units( this->get_calculation_units( *it ) );
+		this->parameter_map[*it]->convert_altitude_units( this->get_calculation_units( ATTENUATION_MODEL_PARAMETER_ALTITUDE ) );
 	}
 
 	for (size_t i = 0; i < n; i++) {

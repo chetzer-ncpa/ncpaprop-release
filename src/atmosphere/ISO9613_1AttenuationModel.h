@@ -15,7 +15,7 @@ namespace NCPA {
 		virtual void attenuation(size_t n, double f, double *z, double *alpha,
 				NCPA::units_t z_units = UNITS_NONE);
 		virtual units_t get_calculation_units( attenuation_model_parameter_label_t param ) const;
-		virtual std::vector<attenuation_model_parameter_label_t> get_required_parameters() const;
+		virtual const std::vector<attenuation_model_parameter_label_t> get_required_parameters() const;
 
 	protected:
 
@@ -23,7 +23,6 @@ namespace NCPA {
 		const double To  = 293.15;      // reference Temperature
 
 		const std::vector<attenuation_model_parameter_label_t> required_parameters = {
-				ATTENUATION_MODEL_PARAMETER_ALTITUDE,
 				ATTENUATION_MODEL_PARAMETER_TEMPERATURE,
 				ATTENUATION_MODEL_PARAMETER_HUMIDITY,
 				ATTENUATION_MODEL_PARAMETER_PRESSURE

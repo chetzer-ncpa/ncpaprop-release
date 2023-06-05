@@ -18,6 +18,12 @@ NCPA::AtmosphericProperty1D::AtmosphericProperty1D() {
 //	z_ = NULL;
 }
 
+NCPA::AtmosphericProperty1D::AtmosphericProperty1D( NCPA::VectorWithUnits zvector,
+		NCPA::VectorWithUnits propvector ) {
+	this->first = zvector;
+	this->second = propvector;
+}
+
 NCPA::AtmosphericProperty1D::AtmosphericProperty1D( size_t n_points, double *altitude_points, units_t altitude_units,
 			double *property_values, units_t property_units ) {
 
@@ -60,6 +66,10 @@ NCPA::units_t NCPA::AtmosphericProperty1D::get_altitude_units() const {
 NCPA::units_t NCPA::AtmosphericProperty1D::get_units() const {
 //	return z_units_;
 	return this->second.get_units();
+}
+
+size_t NCPA::AtmosphericProperty1D::size() const {
+	return this->first.size();
 }
 
 void NCPA::AtmosphericProperty1D::convert_altitude_units( NCPA::units_t new_units ) {

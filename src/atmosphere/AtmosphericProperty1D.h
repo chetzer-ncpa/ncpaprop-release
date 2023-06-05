@@ -17,6 +17,30 @@
 namespace NCPA {
 
 	class AtmosphericProperty1D : public std::pair< NCPA::VectorWithUnits, NCPA::VectorWithUnits > {
+	public:
+		AtmosphericProperty1D();
+		AtmosphericProperty1D( size_t n_points, double *altitude_points, units_t altitude_units,
+			double *property_values, units_t property_units );
+		AtmosphericProperty1D( NCPA::VectorWithUnits zvector, NCPA::VectorWithUnits propvector );
+		AtmosphericProperty1D( const AtmosphericProperty1D &source );
+		virtual ~AtmosphericProperty1D();
+
+		void convert_altitude_units( units_t new_units );
+		units_t get_altitude_units() const;
+		units_t get_units() const;
+		virtual void convert_units( units_t new_units );
+		size_t size() const;
+
+		void resample( double new_dz );
+
+		void get_altitude_vector( double *buffer, units_t *buffer_units ) const;
+		void get_altitude_vector( double *buffer ) const;
+		void get_vector( double *buffer, units_t *buffer_units ) const;
+		void get_vector( double *buffer ) const;
+		double get( double altitude ) const;
+		double get_first_derivative( double altitude ) const;
+		double get_second_derivative( double altitude ) const;
+
 	protected:
 //		double *z_;
 		gsl_interp_accel *accel_ = NULL;
@@ -29,27 +53,7 @@ namespace NCPA {
 		void build_splines_();
 		void delete_splines_();
 
-	public:
-		AtmosphericProperty1D();
-		AtmosphericProperty1D( size_t n_points, double *altitude_points, units_t altitude_units,
-			double *property_values, units_t property_units );
-		AtmosphericProperty1D( const AtmosphericProperty1D &source );
-		virtual ~AtmosphericProperty1D();
 
-		void convert_altitude_units( units_t new_units );
-		units_t get_altitude_units() const;
-		units_t get_units() const;
-		virtual void convert_units( units_t new_units );
-
-		void resample( double new_dz );
-
-		void get_altitude_vector( double *buffer, units_t *buffer_units ) const;
-		void get_altitude_vector( double *buffer ) const;
-		void get_vector( double *buffer, units_t *buffer_units ) const;
-		void get_vector( double *buffer ) const;
-		double get( double altitude ) const;
-		double get_first_derivative( double altitude ) const;
-		double get_second_derivative( double altitude ) const;
 	};
 
 }

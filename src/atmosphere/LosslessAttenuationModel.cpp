@@ -15,7 +15,7 @@ NCPA::units_t NCPA::LosslessAttenuationModel::get_calculation_units( attenuation
 	return NCPA::UNITS_NONE;
 }
 
-std::vector<NCPA::attenuation_model_parameter_label_t>
+const std::vector<NCPA::attenuation_model_parameter_label_t>
 NCPA::LosslessAttenuationModel::get_required_parameters() const {
 	return std::vector<NCPA::attenuation_model_parameter_label_t>();
 }
