@@ -1,0 +1,1 @@
+SOURCES=AttenuationModel.cpp AttenuationModelFactory.cpp LosslessAttenuationModel.cpp SutherlandBassAttenuationModel.cpp ISO9613_1AttenuationModel.cpp
