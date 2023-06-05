@@ -1,1 +1,2 @@
-SOURCES=binaryreader.cpp geographic.cpp util.cpp parameterset.cpp LANLInterpolation.cpp ncpa_fft.cpp messaging.cpp
+SOURCES=src/binaryreader.cpp src/geographic.cpp src/util.cpp src/parameterset.cpp \
+src/LANLInterpolation.cpp src/ncpa_fft.cpp src/messaging.cpp

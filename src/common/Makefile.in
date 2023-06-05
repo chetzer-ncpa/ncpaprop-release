@@ -1,14 +1,14 @@
-include @PETSC_INCLUDE_FILE_GENERIC@
-include @SLEPC_INCLUDE_FILE_GENERIC@
+#include @PETSC_INCLUDE_FILE_GENERIC@
+#include @SLEPC_INCLUDE_FILE_GENERIC@
 include sources.make
 
 # the following provides CCPPFLAGS, CLINKER, CC_INCLUDES, SLEPC_INCLUDE, SLEPC_LIB
 #include $(SLEPC_DIR)/conf/slepc_common
 
-INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
+INCPATHS = -Iinclude @INCLUDEFLAGS@ #${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
 
 OBJS=$(SOURCES:.cpp=.o)
-TARGET=libcommon.a
+TARGET=lib/libncpacommon.a
 
 
 all: $(TARGET)
@@ -17,8 +17,9 @@ all: $(TARGET)
 
 # link	
 $(TARGET): $(OBJS)
+	mkdir -p lib
 	ar curv $@ $^
-	cp $@ ../../lib
+#	cp $@ ../../lib
 	
 # compile 
 %.o: %.cpp

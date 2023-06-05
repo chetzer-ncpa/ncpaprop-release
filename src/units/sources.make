@@ -1,1 +1,1 @@
-SOURCES=units.cpp ScalarWithUnits.cpp VectorWithUnits.cpp
+SOURCES=src/units.cpp src/ScalarWithUnits.cpp src/VectorWithUnits.cpp

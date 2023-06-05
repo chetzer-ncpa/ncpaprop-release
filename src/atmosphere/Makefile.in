@@ -1,14 +1,15 @@
-include @PETSC_INCLUDE_FILE_GENERIC@
-include @SLEPC_INCLUDE_FILE_GENERIC@
+#include @PETSC_INCLUDE_FILE_GENERIC@
+#include @SLEPC_INCLUDE_FILE_GENERIC@
 include sources.make
 
 # the following provides CCPPFLAGS, CLINKER, CC_INCLUDES, SLEPC_INCLUDE, SLEPC_LIB
 #include $(SLEPC_DIR)/conf/slepc_common
 
-INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
-#SOURCES=AtmosphericModel.cpp AtmosphericProperty1D.cpp Atmosphere1D.cpp ToyAtmosphere1D.cpp Atmosphere2D.cpp StratifiedAtmosphere2D.cpp ProfileSeriesAtmosphere2D.cpp AtmosphericProperty3D.cpp Atmosphere3D.cpp StratifiedAtmosphere3D.cpp ProfileGridAtmosphere3D.cpp Turbulence.cpp
+#INCPATHS = -Iinclude @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
+INCPATHS = -Iinclude @INCLUDEFLAGS@
+
 OBJS=$(SOURCES:.cpp=.o)
-TARGET=libatmosphere.a
+TARGET=lib/libncpaatmosphere.a
 
 
 all: $(TARGET)
@@ -17,8 +18,8 @@ all: $(TARGET)
 
 # link	
 $(TARGET): $(OBJS)
+	mkdir -p lib
 	ar curv $@ $^
-	cp $@ ../../lib
 	
 # compile 
 %.o: %.cpp

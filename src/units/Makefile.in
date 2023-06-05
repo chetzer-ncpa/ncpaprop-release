@@ -3,10 +3,10 @@
 include sources.make
 
 #INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
-INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
+INCPATHS = -Iinclude @INCLUDEFLAGS@
 
 OBJS=$(SOURCES:.cpp=.o)
-TARGET=libunits.a
+TARGET=lib/libncpaunits.a
 
 
 all: $(TARGET)
@@ -15,8 +15,9 @@ all: $(TARGET)
 
 # link	
 $(TARGET): $(OBJS)
+	mkdir -p lib/
 	ar curv $@ $^
-	cp $@ ../../lib
+#	cp $@ ../../lib
 	
 # compile 
 %.o: %.cpp

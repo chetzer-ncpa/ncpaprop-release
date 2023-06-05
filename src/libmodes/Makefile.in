@@ -5,9 +5,9 @@ include sources.make
 # the following provides CCPPFLAGS, CLINKER, CC_INCLUDES, SLEPC_INCLUDE, SLEPC_LIB
 #include $(SLEPC_DIR)/conf/slepc_common
 
-INCPATHS = @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
+INCPATHS = include @INCLUDEFLAGS@ ${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
 OBJS=$(SOURCES:.cpp=.o)
-TARGET=libmodes.a
+TARGET=libncpamodes.a
 
 
 all: $(TARGET)
