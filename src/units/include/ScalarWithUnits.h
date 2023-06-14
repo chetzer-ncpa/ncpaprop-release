@@ -3,8 +3,11 @@
 
 #include "units.h"
 
+// forward declarations
+namespace NCPA { class ScalarWithUnits; }
+void swap( NCPA::ScalarWithUnits&, NCPA::ScalarWithUnits& ) noexcept;
 
-
+// class definitions
 namespace NCPA {
 	class ScalarWithUnits {
 		protected:
@@ -17,10 +20,21 @@ namespace NCPA {
 			ScalarWithUnits();
 			ScalarWithUnits( double value, units_t property_units );
 			ScalarWithUnits( double value, const std::string &units );
+
+			// copy constructor
 			ScalarWithUnits( const ScalarWithUnits &source );
+
+			// move constructor
+			ScalarWithUnits( ScalarWithUnits&& that) noexcept;
+
+			// destructor
 			virtual ~ScalarWithUnits();
 
+			// swap
+			friend void ::swap(ScalarWithUnits &first, ScalarWithUnits &second) noexcept;
+
 			virtual double get() const;
+			virtual units_t get_units() const;
 			virtual double get_as( units_t u ) const;
 			virtual double get_as( const std::string &units ) const;
 			virtual void set_value( double newval );
@@ -31,17 +45,20 @@ namespace NCPA {
 
 			virtual void convert_units( units_t new_units );
 			virtual void convert_units( const std::string &units );
-			virtual units_t get_units() const;
 			//virtual void revert_units();
 
-			friend ScalarWithUnits operator+( ScalarWithUnits first, ScalarWithUnits const &second );
-			friend ScalarWithUnits operator-( ScalarWithUnits first, ScalarWithUnits const &D );
+			ScalarWithUnits &operator=(ScalarWithUnits other);
+			ScalarWithUnits operator+( const ScalarWithUnits &second ) const;
+			ScalarWithUnits operator-( const ScalarWithUnits &D ) const;
+
 			ScalarWithUnits operator+=( ScalarWithUnits const &second );
 			ScalarWithUnits operator-=( ScalarWithUnits const &second );
 
 
 		};
 		std::ostream &operator<<( std::ostream &output, const ScalarWithUnits &D );
+//		ScalarWithUnits operator+( ScalarWithUnits first, ScalarWithUnits const &second );
+//		ScalarWithUnits operator-( ScalarWithUnits first, ScalarWithUnits const &D );
 
 }
 

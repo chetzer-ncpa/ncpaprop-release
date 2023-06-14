@@ -1,4 +1,4 @@
-#include "units.h"
+#include "NCPACommon.h"
 #include "util.h"
 #include <map>
 #include <vector>
@@ -7,6 +7,7 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 
 // initialize static members
 conversion_map_t NCPA::Units::map_ = conversion_map_t();

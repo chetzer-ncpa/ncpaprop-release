@@ -1,0 +1,21 @@
+
+GTESTLIBS=-lgtest_main -lgtest
+LIBNAME=../../../lib/libncpaunits.a ../../../lib/libncpacommon.a
+LDFLAGS=$(LIBNAME) $(GTESTLIBS)
+INCFLAGS=-I../include -I../../include
+CXXFLAGS=-c -fPIC -ggdb $(INCFLAGS)
+
+SOURCES=$(wildcard test_*.cpp)
+OBJECTS=$(SOURCES:.cpp=.o)
+TARGET=unitsTest
+
+test: build clean
+
+build: $(OBJECTS)
+	g++ -o $(TARGET) $^ $(LDFLAGS) && ./$(TARGET)
+	
+%.o: %.cpp
+	${CXX} $^ $(CXXFLAGS) -o $@
+	
+clean:
+	-rm $(OBJECTS) $(TARGET)

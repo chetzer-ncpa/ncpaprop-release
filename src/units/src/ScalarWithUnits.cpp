@@ -1,6 +1,6 @@
 #include "units.h"
 #include "ScalarWithUnits.h"
-
+#include <utility>
 
 NCPA::ScalarWithUnits::ScalarWithUnits() : value_{ 0.0 }, units_{ NCPA::UNITS_NONE } {}
 
@@ -13,7 +13,22 @@ NCPA::ScalarWithUnits::ScalarWithUnits( double value, const std::string &units )
 NCPA::ScalarWithUnits::ScalarWithUnits( const NCPA::ScalarWithUnits &source )
 	: value_{ source.value_ }, units_{ source.units_ } {}
 
+NCPA::ScalarWithUnits::ScalarWithUnits( ScalarWithUnits&& that) noexcept {
+	swap(*this,that);
+}
+
 NCPA::ScalarWithUnits::~ScalarWithUnits() { }
+
+void swap( NCPA::ScalarWithUnits &first, NCPA::ScalarWithUnits &second ) noexcept {
+	using std::swap;
+	swap(first.value_,second.value_);
+	swap(first.units_,second.units_);
+}
+
+NCPA::ScalarWithUnits &NCPA::ScalarWithUnits::operator=(NCPA::ScalarWithUnits other) {
+	swap(*this, other);
+	return *this;
+}
 
 NCPA::units_t NCPA::ScalarWithUnits::get_units() const {
 	//return units_.top();
@@ -87,30 +102,28 @@ std::ostream &NCPA::operator<<( std::ostream &output, const NCPA::ScalarWithUnit
 	return output;
 }
 
-NCPA::ScalarWithUnits operator+(
-		NCPA::ScalarWithUnits first,
-		const NCPA::ScalarWithUnits &second ) {
-	NCPA::ScalarWithUnits temp1(first);
+NCPA::ScalarWithUnits NCPA::ScalarWithUnits::operator+(
+		const NCPA::ScalarWithUnits &second ) const {
+	NCPA::ScalarWithUnits temp1(*this);
 	temp1 += second;
 	return temp1;
 }
 
-NCPA::ScalarWithUnits operator-(
-		NCPA::ScalarWithUnits first,
-		const NCPA::ScalarWithUnits &second ) {
-	NCPA::ScalarWithUnits temp1(first);
+NCPA::ScalarWithUnits NCPA::ScalarWithUnits::operator-(
+		const NCPA::ScalarWithUnits &second ) const {
+	NCPA::ScalarWithUnits temp1(*this);
 	temp1 -= second;
 	return temp1;
 }
 
-NCPA::ScalarWithUnits NCPA::ScalarWithUnits::operator+=( const NCPA::ScalarWithUnits &second ) {
+NCPA::ScalarWithUnits NCPA::ScalarWithUnits::operator+=( NCPA::ScalarWithUnits const &second ) {
 	NCPA::ScalarWithUnits temp2(second);
 	temp2.convert_units( get_units() );
 	value_ += temp2.get();
 	return *this;
 }
 
-NCPA::ScalarWithUnits NCPA::ScalarWithUnits::operator-=( ScalarWithUnits const &second ) {
+NCPA::ScalarWithUnits NCPA::ScalarWithUnits::operator-=( NCPA::ScalarWithUnits const &second ) {
 	NCPA::ScalarWithUnits temp2(second);
 	temp2.convert_units( get_units() );
 	value_ -= temp2.get();

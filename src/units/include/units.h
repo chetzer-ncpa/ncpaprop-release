@@ -97,7 +97,7 @@ namespace NCPA {
 		UNITS_DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST,	/**< Direction in "math" convention */
 
 		UNITS_ANGLE_DEGREES,					/**< Angles in degrees */
-		UNITS_ANGLE_RADIANS					/**< Angles in radians */
+		UNITS_ANGLE_RADIANS						/**< Angles in radians */
 	} units_t;
 }
 
@@ -150,7 +150,7 @@ namespace NCPA {
 		 *
 		 * @param type	The units constant to translate
 		 * @return		The string identifying the constant
-		 * @throws out_of_bounds if the constant is not recognized
+		 * @throws out_of_range if the constant is not recognized
 		 */
 		static std::string toString( units_t type );
 
@@ -159,7 +159,7 @@ namespace NCPA {
 		 *
 		 * @param type	The units constant to translate
 		 * @return		The abbreviation identifying the constant
-		 * @throws out_of_bounds if the constant is not recognized
+		 * @throws out_of_range if the constant is not recognized
 		 */
 		static std::string toStr( units_t type );
 
@@ -168,7 +168,7 @@ namespace NCPA {
 		 *
 		 * @param s 	The string to attempt to parse
 		 * @return 		The enum value associated with the string
-		 * @throws out_of_bounds if the string is not recognized
+		 * @throws out_of_range if the string is not recognized
 		 */
 		static units_t fromString( std::string s );
 

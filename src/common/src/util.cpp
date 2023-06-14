@@ -14,7 +14,7 @@
 #include "util.h"
 
 #ifndef PI
-#define PI 3.141592653589793
+#define PI M_PI
 #endif
 
 
@@ -250,6 +250,13 @@ void NCPA::free_c3Darray(std::complex<double> ***data, size_t xlen, size_t ylen)
   free(data);
 }
 
+bool NCPA::within( double val1, double val2, size_t precision ) {
+	double mod = std::pow( 10.0, precision );
+	long long int v1 = (long long int)(val1 * mod);
+	long long int v2 = (long long int)(val2 * mod);
+	return (v1 == v2);
+}
+
 std::string NCPA::deblank( const std::string& str ) {
 	return NCPA::deblank( str, " \t\n\r" );
 }
@@ -298,7 +305,7 @@ void NCPA::pol2cart( double r, double theta_rad, double &x, double &y ) {
 }
 
 
-void cart2pol( double x, double y, double &r, double &theta_rad ) {
+void NCPA::cart2pol( double x, double y, double &r, double &theta_rad ) {
 	r = std::sqrt( x * x + y * y );
 	theta_rad = std::atan2( y, x );
 }
