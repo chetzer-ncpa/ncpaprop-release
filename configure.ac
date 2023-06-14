@@ -5,7 +5,7 @@ AC_PREREQ([2.69])
 AC_INIT([NCPA Propagation Modeling Suite], [2.2.0], [claus@olemiss.edu], ncpaprop)
 #AM_INIT_AUTOMAKE
 
-AC_CONFIG_SRCDIR([src/common/parameterset.h])
+AC_CONFIG_SRCDIR([src/common/include/parameterset.h])
 #AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_LANG([C++])
@@ -685,12 +685,13 @@ AC_CHECK_FILE( ${SLEPC_DIR}/${PETSC_ARCH_COMPLEX}/lib/slepc/conf/slepcvariables,
 
 
 # Set output variables to propagate into Makefiles
-AC_SUBST([INCLUDEFLAGS],"-I. -I../common -I../atmosphere -I../libmodes -I../libpe -I../libbroadband -I/usr/local/include -I/usr/include")
+#AC_SUBST([INCLUDEFLAGS],"-I. -I../common -I../units -I../attenuation -I../atmosphere -I../libmodes -I../libpe -I../libbroadband -I/usr/local/include -I/usr/include")
+AC_SUBST([INCLUDEFLAGS],"-I../include -I/usr/local/include -I/usr/include")
 AC_SUBST([LIBS],"-lgsl -lgslcblas -lm -lfftw3")
 AC_SUBST([WARNINGFLAGS],${warning_compiler_flags})
 AC_SUBST([CXXFLAGS], "-fpic -c -Wall $CXXFLAGS")
 LDFLAGS="${LDFLAGS} -L/usr/lib"
-AC_SUBST([STATICLIBS],"../../lib/libatmosphere.a ../../lib/libcommon.a")
+AC_SUBST([STATICLIBS],"../../lib/libatmosphere.a ../../lib/libunits.a ../../lib/libcommon.a")
 AC_SUBST([MODELIBS],"../../lib/libmodes.a")
 AC_SUBST([PELIBS],"../../lib/libpe.a")
 AC_SUBST([BROADBANDLIBS],"../../lib/libbroadband.a")
@@ -707,6 +708,9 @@ AC_SUBST([PETSC_ARCH_COMPLEX],$PETSC_ARCH_COMPLEX)
 AC_CONFIG_FILES([
 		Makefile
 		src/common/Makefile
+		src/common/test/Makefile
+		src/units/Makefile
+		src/units/test/Makefile
 		src/atmosphere/Makefile
 		src/libmodes/Makefile
 		src/libpe/Makefile

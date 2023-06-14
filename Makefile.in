@@ -12,25 +12,68 @@
 # PETSC_INCLUDE_FILE_GENERIC = @PETSC_INCLUDE_FILE_GENERIC@
 # SLEPC_INCLUDE_FILE_GENERIC = @SLEPC_INCLUDE_FILE_GENERIC@
 
-package-parts=common atmosphere libmodes libpe libbroadband modess wmod modbb epade_pe gfpe
-
+parts=common units atmosphere modes libpe libbroadband modess wmod modbb epade_pe gfpe
+build-parts=$(addsuffix -build, $(parts))
+clean-parts=$(addsuffix -clean, $(parts))
+test-parts=$(addsuffix -test, $(parts))
 
 # Build everything
-all: clean $(package-parts)
+all: clean $(build-parts)
 
-# build general utility libraries
-common:
-	$(MAKE) -C src/common all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+# NCPA Common Utility Library
+common-build:
+	#	$(MAKE) -C src/common all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+	$(MAKE) -C src/common all
+	cp src/common/include/*.h src/include/
+	cp src/common/lib/libncpacommon.a lib/
+	
+common-clean:
+	-$(MAKE) -C src/common clean
+	-rm lib/libncpacommon.a
+	
+common-test:
+	$(MAKE) -C src/common/test test
 
-# build atmospheric utility libraries
-atmosphere:
-	$(MAKE) -C src/atmosphere all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+# NCPA Units library
+units-build:
+	#	$(MAKE) -C src/units all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+	$(MAKE) -C src/units all
+	cp src/units/include/*.h src/include/
+	cp src/units/lib/libncpaunits.a lib/
+	
+units-clean:
+	-$(MAKE) -C src/units clean
+	-rm lib/libncpaunits.a
+	
+units-test:
+	$(MAKE) -C src/units/test test
 
-libmodes:
-	$(MAKE) -C src/libmodes all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+# NCPA Atmosphere library
+atmosphere-build:
+	#	$(MAKE) -C src/atmosphere all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+	$(MAKE) -C src/atmosphere all
+	cp src/atmosphere/include/*.h src/include/
+	cp src/atmosphere/lib/libncpaatmosphere.a lib/
+	
+atmosphere-clean:
+	-$(MAKE) -C src/atmosphere clean
+	-rm lib/libncpaatmosphere.a
 
-#libcmodes:
-#	$(MAKE) -C src/libcmodes all PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+atmosphere-test:
+	$(MAKE) -C src/atmosphere/test test
+	
+
+modes:
+	$(MAKE) -C src/modes all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+	cp src/modes/include/*.h src/include/
+	cp src/modes/lib/libncpamodes.a lib/
+
+modes-clean:
+	-$(MAKE) -C src/modes clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+	-rm lib/libncpamodes.a
+
+modes-test:
+	$(MAKE) -C src/libmodes/test test
 
 libbroadband:
 	$(MAKE) -C src/libbroadband all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
@@ -62,17 +105,18 @@ wmod:
 	
 
 # clean everything up
-clean:
-	-$(MAKE) -C src/common clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-$(MAKE) -C src/atmosphere clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-$(MAKE) -C src/libmodes clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
+clean: $(clean-parts)
+#	-$(MAKE) -C src/units clean
 	-$(MAKE) -C src/libbroadband clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/libpe clean  PETSC_ARCH=@PETSC_ARCH_COMPLEX@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/modess clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/modbb clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/epade_pe clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/wmod clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-rm bin/ModBB  bin/Modess  bin/ePape  bin/WMod lib/libatmosphere.a lib/libcommon.a lib/libmodes.a lib/libbroadband.a lib/libpe.a
+	-rm bin/ModBB  bin/Modess  bin/ePape  bin/WMod lib/libatmosphere.a \
+	lib/libmodes.a lib/libbroadband.a lib/libpe.a \
+	src/include/*.h
 
+test: $(test-parts)
 
-.PHONY:  common atmosphere libmodes libpe libbroadband modess modbb epape_pe wmod clean
+.PHONY:  $(build-parts) $(clean-parts) clean 
