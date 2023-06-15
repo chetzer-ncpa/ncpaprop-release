@@ -1,6 +1,7 @@
 #include "units.h"
 #include "ScalarWithUnits.h"
 #include <utility>
+#include <stdexcept>
 
 NCPA::ScalarWithUnits::ScalarWithUnits() : value_{ 0.0 }, units_{ NCPA::UNITS_NONE } {}
 
@@ -130,3 +131,35 @@ NCPA::ScalarWithUnits NCPA::ScalarWithUnits::operator-=( NCPA::ScalarWithUnits c
 	return *this;
 }
 
+bool operator==( const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b ) {
+	if (a.units_ != b.units_) return false;
+	NCPA::ScalarWithUnits bb = b;
+	bb.convert_units( a.units_ );
+	return (a.value_ == b.value_);
+}
+
+bool operator!=( const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b ) {
+	return !(a == b);
+}
+
+bool operator>( const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b ) {
+	if (a.units_ != b.units_) throw std::invalid_argument;
+	NCPA::ScalarWithUnits bb = b;
+	bb.convert_units( a.units_ );
+	return (a.value_ > bb.value_);
+}
+
+bool operator<( const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b ) {
+	if (a.units_ != b.units_) throw std::invalid_argument;
+	NCPA::ScalarWithUnits bb = b;
+	bb.convert_units( a.units_ );
+	return (a.value_ < bb.value_);
+}
+
+bool operator>=( const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b ) {
+	return !(a < b);
+}
+
+bool operator<=( const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b ) {
+	return !(a > b);
+}

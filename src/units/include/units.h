@@ -62,10 +62,6 @@ To add a unit and its associated conversions, the following should be done:
 #include <utility>
 #include <iostream>
 
-#ifndef PI
-#define PI 3.141592653589793
-#endif
-
 namespace NCPA {
 
 	/**
@@ -128,10 +124,65 @@ namespace NCPA {
 		 */
 		static void convert( const double *in, unsigned int nSamples,
 			units_t type_in, units_t type_out, double *out );
-		// static void convert_first_derivative( const double *in, unsigned int nSamples,
-		// 	units_t type_in, units_t type_out, double *out );
-		// static void convert_second_derivative( const double *in, unsigned int nSamples,
-		// 	units_t type_in, units_t type_out, double *out );
+
+		/**
+		 * Convert an array of numbers from one unit to another.
+		 * @param in 		A pointer to an array of double values
+		 * @param nSamples 	The number of consecutive samples to convert
+		 * @param type_in	String of the units to convert from
+		 * @param type_out	String of the units to convert to
+		 * @param out		A pointer to a preallocated array to hold the converted values
+		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @see units_t
+		 */
+		static void convert( const double *in, unsigned int nSamples,
+			const std::string &type_in, const std::string &type_out, double *out );
+
+		/**
+		 * Convert an array of numbers from one unit to another.
+		 * @param in 		A pointer to an array of double values
+		 * @param nSamples 	The number of consecutive samples to convert
+		 * @param type_in	The units to convert from
+		 * @param type_out	String of the units to convert to
+		 * @param out		A pointer to a preallocated array to hold the converted values
+		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @see units_t
+		 */
+		static void convert( const double *in, unsigned int nSamples,
+			units_t type_in, const std::string &type_out, double *out );
+
+		/**
+		 * Convert an array of numbers from one unit to another.
+		 * @param in 		A pointer to an array of double values
+		 * @param nSamples 	The number of consecutive samples to convert
+		 * @param type_in	String of the units to convert from
+		 * @param type_out	The units to convert to
+		 * @param out		A pointer to a preallocated array to hold the converted values
+		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @see units_t
+		 */
+		static void convert( const double *in, unsigned int nSamples,
+			const std::string &type_in, units_t type_out, double *out );
+
+		/**
+		 * Convert a single double value from one unit to another.
+		 * @param in		A double value to convert.
+		 * @param type_in	String of the units to convert from
+		 * @param type_out	The units to convert to
+		 * @return 			The converted value
+		 * @throws out_of_range	if an undefined conversion is requested.
+		 */
+		static double convert( double in, const std::string &type_in, units_t type_out );
+
+		/**
+		 * Convert a single double value from one unit to another.
+		 * @param in		A double value to convert.
+		 * @param type_in	The units to convert from
+		 * @param type_out	String of the units to convert to
+		 * @return 			The converted value
+		 * @throws out_of_range	if an undefined conversion is requested.
+		 */
+		static double convert( double in, units_t type_in, const std::string &type_out );
 
 		/**
 		 * Convert a single double value from one unit to another.
@@ -142,8 +193,16 @@ namespace NCPA {
 		 * @throws out_of_range	if an undefined conversion is requested.
 		 */
 		static double convert( double in, units_t type_in, units_t type_out );
-		// static double convert_first_derivative( double in, units_t type_in, units_t type_out );
-		// static double convert_second_derivative( double in, units_t type_in, units_t type_out );
+
+		/**
+		 * Convert a single double value from one unit to another.
+		 * @param in		A double value to convert.
+		 * @param type_in	String of the units to convert from
+		 * @param type_out	String of the units to convert to
+		 * @return 			The converted value
+		 * @throws out_of_range	if an undefined conversion is requested.
+		 */
+		static double convert( double in, const std::string &type_in, const std::string &type_out );
 
 		/**
 		 * Returns the string identification of the units type.

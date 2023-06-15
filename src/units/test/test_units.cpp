@@ -90,6 +90,23 @@ TEST(unitsTest, ConvertArrayTest) {
 	ASSERT_DOUBLE_EQ( out[4], -5000.0 );
 }
 
+TEST(unitsTest, ConvertUsingStringsTest) {
+	double km = 5.0;
+	ASSERT_DOUBLE_EQ( Units::convert( km, "km", "m" ), 5000.0 );
+	ASSERT_DOUBLE_EQ( Units::convert( km, UNITS_DISTANCE_KILOMETERS, "m" ), 5000.0 );
+	ASSERT_DOUBLE_EQ( Units::convert( km, "km", UNITS_DISTANCE_METERS ), 5000.0 );
+	double m;
+	Units::convert( &km, 1, "km", "m", &m );
+	ASSERT_DOUBLE_EQ( m, 5000.0 );
+	m=0;
+	Units::convert( &km, 1, UNITS_DISTANCE_METERS, "km", &m );
+	ASSERT_DOUBLE_EQ( m, 0.005 );
+	m=0;
+	Units::convert( &km, 1, "km", UNITS_DISTANCE_METERS, &m );
+	ASSERT_DOUBLE_EQ( m, 5000.0 );
+
+}
+
 TEST(unitsTest, FromStringTest) {
 	ASSERT_EQ( Units::fromString( "" ), UNITS_NONE );
 	ASSERT_EQ( Units::fromString( "N/A" ), UNITS_NONE );

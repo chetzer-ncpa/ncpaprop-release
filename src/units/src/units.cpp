@@ -1,5 +1,5 @@
 #include "NCPACommon.h"
-#include "util.h"
+#include "units.h"
 #include <map>
 #include <vector>
 #include <utility>
@@ -154,8 +154,8 @@ void NCPA::Units::initialize_() {
 		{ get_unit_pair_( UNITS_PRESSURE_MILLIBARS, UNITS_PRESSURE_ATMOSPHERES ), []( double in ) { return in * 0.000986923; } },
 		{ get_unit_pair_( UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER, UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER ), []( double in ) { return in * 0.001; } },
 		{ get_unit_pair_( UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER, UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER ), []( double in ) { return in * 1000.0; } },
-		{ get_unit_pair_( UNITS_ANGLE_RADIANS, UNITS_ANGLE_DEGREES ), []( double in ) { return in * 180.0 / PI; } },
-		{ get_unit_pair_( UNITS_ANGLE_DEGREES, UNITS_ANGLE_RADIANS ), []( double in ) { return in * PI / 180.0; } },
+		{ get_unit_pair_( UNITS_ANGLE_RADIANS, UNITS_ANGLE_DEGREES ), []( double in ) { return in * 180.0 / M_PI; } },
+		{ get_unit_pair_( UNITS_ANGLE_DEGREES, UNITS_ANGLE_RADIANS ), []( double in ) { return in * M_PI / 180.0; } },
 		{ get_unit_pair_( UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH, UNITS_DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST ), []( double in ) {
 			double out = 90.0 - in;
 			while (out < 0) {
@@ -289,20 +289,49 @@ bool NCPA::Units::ready_() {
 	return !(map_.empty());
 }
 
+double NCPA::Units::convert( double in, NCPA::units_t type_in, const std::string &type_out ) {
+	return NCPA::Units::convert(
+			in, type_in, NCPA::Units::fromString(type_out) );
+}
+
+double NCPA::Units::convert( double in, const std::string &type_in, NCPA::units_t type_out ) {
+	return NCPA::Units::convert(
+			in, NCPA::Units::fromString(type_in), type_out );
+}
+
+double NCPA::Units::convert( double in, const std::string &type_in, const std::string &type_out ) {
+	return NCPA::Units::convert(
+			in, NCPA::Units::fromString(type_in), NCPA::Units::fromString(type_out) );
+}
+
 double NCPA::Units::convert( double in, NCPA::units_t type_in, NCPA::units_t type_out ) {
 	double out = 0.0;
 	NCPA::Units::convert( &in, 1, type_in, type_out, &out );
-	/*
-	try {
-		// Call the vector conversion with one-element vectors
-		NCPA::Units::convert( &in, 1, type_in, type_out, &out );
-	} catch (const std::out_of_range& oor) {
-		// didn't find the requested conversion, kick it upstairs, user
-		// will have been notified in the called function
-		throw;
-	}
-	*/
 	return out;
+}
+
+void NCPA::Units::convert( const double *in, unsigned int nSamples,
+	const std::string &type_in, const std::string &type_out, double *out ) {
+	NCPA::Units::convert(
+			in, nSamples, NCPA::Units::fromString(type_in),
+			NCPA::Units::fromString(type_out), out
+			);
+}
+
+void NCPA::Units::convert( const double *in, unsigned int nSamples,
+	NCPA::units_t type_in, const std::string &type_out, double *out ) {
+	NCPA::Units::convert(
+			in, nSamples, type_in,
+			NCPA::Units::fromString(type_out), out
+			);
+}
+
+void NCPA::Units::convert( const double *in, unsigned int nSamples,
+	const std::string &type_in, NCPA::units_t type_out, double *out ) {
+	NCPA::Units::convert(
+			in, nSamples, NCPA::Units::fromString(type_in),
+			type_out, out
+			);
 }
 
 /*

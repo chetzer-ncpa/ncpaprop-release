@@ -10,12 +10,6 @@ void swap( NCPA::ScalarWithUnits&, NCPA::ScalarWithUnits& ) noexcept;
 // class definitions
 namespace NCPA {
 	class ScalarWithUnits {
-		protected:
-			double value_;
-			//std::stack< NCPA::units_t > units_;
-			units_t units_;
-			void do_units_conversion_( NCPA::units_t fromUnits, NCPA::units_t toUnits );
-
 		public:
 			ScalarWithUnits();
 			ScalarWithUnits( double value, units_t property_units );
@@ -50,9 +44,22 @@ namespace NCPA {
 			ScalarWithUnits &operator=(ScalarWithUnits other);
 			ScalarWithUnits operator+( const ScalarWithUnits &second ) const;
 			ScalarWithUnits operator-( const ScalarWithUnits &D ) const;
-
 			ScalarWithUnits operator+=( ScalarWithUnits const &second );
 			ScalarWithUnits operator-=( ScalarWithUnits const &second );
+
+			friend bool operator==(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool operator!=(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool operator>=(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool operator<=(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool operator>(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool operator<(const ScalarWithUnits &a, const ScalarWithUnits &b);
+
+		protected:
+			double value_;
+			//std::stack< NCPA::units_t > units_;
+			units_t units_;
+			void do_units_conversion_( NCPA::units_t fromUnits, NCPA::units_t toUnits );
+
 
 
 		};
