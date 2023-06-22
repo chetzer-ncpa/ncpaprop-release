@@ -6,41 +6,46 @@ NCPA::UnitConverter: 	Handle all defined unit conversions.  Can convert single v
 			Will throw an exception if an undefined conversion is requested.
 
 Constants:
-NCPA::units_t	NCPA::UNITS_NONE
-NCPA::units_t 	NCPA::UNITS_TEMPERATURE_CELSIUS
-NCPA::units_t 	NCPA::UNITS_TEMPERATURE_KELVIN
-NCPA::units_t 	NCPA::UNITS_TEMPERATURE_FAHRENHEIT
-NCPA::units_t 	NCPA::UNITS_DISTANCE_METERS
-NCPA::units_t 	NCPA::UNITS_DISTANCE_KILOMETERS
-NCPA::units_t 	NCPA::UNITS_SPEED_METERS_PER_SECOND
-NCPA::units_t 	NCPA::UNITS_SPEED_KILOMETERS_PER_SECOND
-NCPA::units_t 	NCPA::UNITS_PRESSURE_PASCALS
-NCPA::units_t 	NCPA::UNITS_PRESSURE_MILLIBARS
-NCPA::units_t   NCPA::UNITS_PRESSURE_HECTOPASCALS
-NCPA::units_t 	NCPA::UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER
-NCPA::units_t 	NCPA::UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER
-NCPA::units_t	NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH
-NCPA::units_t	NCPA::UNITS_DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST
-NCPA::units_t 	NCPA::UNITS_ANGLE_DEGREES
-NCPA::units_t 	NCPA::UNITS_ANGLE_RADIANS
+NCPA::units_t	NCPA::units_t::NONE
+NCPA::units_t 	NCPA::units_t::TEMPERATURE_CELSIUS
+NCPA::units_t 	NCPA::units_t::TEMPERATURE_KELVIN
+NCPA::units_t 	NCPA::units_t::TEMPERATURE_FAHRENHEIT
+NCPA::units_t 	NCPA::units_t::DISTANCE_METERS
+NCPA::units_t 	NCPA::units_t::DISTANCE_KILOMETERS
+NCPA::units_t 	NCPA::units_t::SPEED_METERS_PER_SECOND
+NCPA::units_t 	NCPA::units_t::SPEED_KILOMETERS_PER_SECOND
+NCPA::units_t 	NCPA::units_t::PRESSURE_PASCALS
+NCPA::units_t 	NCPA::units_t::PRESSURE_MILLIBARS
+NCPA::units_t   NCPA::units_t::PRESSURE_HECTOPASCALS
+NCPA::units_t 	NCPA::units_t::DENSITY_KILOGRAMS_PER_CUBIC_METER
+NCPA::units_t 	NCPA::units_t::DENSITY_GRAMS_PER_CUBIC_CENTIMETER
+NCPA::units_t	NCPA::units_t::DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH
+NCPA::units_t	NCPA::units_t::DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST
+NCPA::units_t 	NCPA::units_t::ANGLE_DEGREES
+NCPA::units_t 	NCPA::units_t::ANGLE_RADIANS
 
 Examples:
 	using namespace NCPA;
 
 	// Convert a single value
 	double temp_c = 50.0, temp_k;
-	temp_k = Units::convert( temp_c, UNITS_TEMPERATURE_CELSIUS, UNITS_TEMPERATURE_KELVIN );
+	temp_k = Units::convert( temp_c, "C", "K" );
 	// or
-	Units::convert( &temp_c, 1, UNITS_TEMPERATURE_CELSIUS, UNITS_TEMPERATURE_KELVIN, &temp_k );
+	Units::convert( &temp_c, 1, "C", "K", &temp_k );
 
 	// Convert a vector of values
 	double Pa_vec[ 20 ] = { ... };
 	double mbar_vec[ 20 ];
-	Units::convert( Pa_vec, 20, UNITS_PRESSURE_PASCALS, UNITS_PRESSURE_MILLIBARS, mbar_vec );
+	Units::convert( Pa_vec, 20, "Pa", "mbar", mbar_vec );
 
 	// Can also convert in-place
 	double distance[ 300 ] = { ... };
-	Units::convert( distance, 300, UNITS_DISTANCE_METERS, UNITS_DISTANCE_KILOMETERS, distance );
+	Units::convert( distance, 300, "m", "km", distance );
+
+	// if you need access to the actual type for some reason
+	NCPA::units_t km = NCPA::units_t::DISTANCE_KILOMETERS;
+	// or, easier to remember
+	NCPA::units_t km = NCPA::Units::fromString("km");
 
 
 To add a unit and its associated conversions, the following should be done:
@@ -61,6 +66,7 @@ To add a unit and its associated conversions, the following should be done:
 #include <stack>
 #include <utility>
 #include <iostream>
+#include <stdexcept>
 
 namespace NCPA {
 
@@ -68,35 +74,46 @@ namespace NCPA {
 	 * An enum of unit constants.
 	 * Constants that can be used to identify or specify units.
 	 */
-	typedef enum units_t : unsigned int {
-		UNITS_NONE = 0,						/**< Indicates no units */
+	enum class units_t : size_t {
+		NONE = 0,						/**< Indicates no units */
 
-		UNITS_TEMPERATURE_KELVIN,				/**< Temperature in Kelvin */
-		UNITS_TEMPERATURE_CELSIUS,				/**< Temperature in Celsius */
-		UNITS_TEMPERATURE_FAHRENHEIT,				/**< Temperature in Fahrenheit */
+		TEMPERATURE_KELVIN,				/**< Temperature in Kelvin */
+		TEMPERATURE_CELSIUS,				/**< Temperature in Celsius */
+		TEMPERATURE_FAHRENHEIT,				/**< Temperature in Fahrenheit */
 
-		UNITS_DISTANCE_METERS,					/**< Distance in meters */
-		UNITS_DISTANCE_KILOMETERS,				/**< Distance in kilometers */
+		DISTANCE_METERS,					/**< Distance in meters */
+		DISTANCE_KILOMETERS,				/**< Distance in kilometers */
 
-		UNITS_SPEED_METERS_PER_SECOND,				/**< Speed in m/s */
-		UNITS_SPEED_KILOMETERS_PER_SECOND,			/**< Speed in km/s */
+		SPEED_METERS_PER_SECOND,				/**< Speed in m/s */
+		SPEED_KILOMETERS_PER_SECOND,			/**< Speed in km/s */
 
-		UNITS_PRESSURE_PASCALS,					/**< Pressure in Pa */
-		UNITS_PRESSURE_MILLIBARS,				/**< Pressure in mbar */
-		UNITS_PRESSURE_HECTOPASCALS,			/**< Pressure in hPa */
-		UNITS_PRESSURE_ATMOSPHERES,				/**< Pressure in atm */
+		PRESSURE_PASCALS,					/**< Pressure in Pa */
+		PRESSURE_MILLIBARS,				/**< Pressure in mbar */
+		PRESSURE_HECTOPASCALS,			/**< Pressure in hPa */
+		PRESSURE_ATMOSPHERES,				/**< Pressure in atm */
 
-		UNITS_DENSITY_KILOGRAMS_PER_CUBIC_METER,		/**< Density in kg/m^3 */
-		UNITS_DENSITY_GRAMS_PER_CUBIC_CENTIMETER,		/**< Density in g/cm^3 */
+		DENSITY_KILOGRAMS_PER_CUBIC_METER,		/**< Density in kg/m^3 */
+		DENSITY_GRAMS_PER_CUBIC_CENTIMETER,		/**< Density in g/cm^3 */
 
-		UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH,		/**< Direction in geographic azimuth */
-		UNITS_DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST,	/**< Direction in "math" convention */
+		DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH,		/**< Direction in geographic azimuth */
+		DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST,	/**< Direction in "math" convention */
 
-		UNITS_ANGLE_DEGREES,					/**< Angles in degrees */
-		UNITS_ANGLE_RADIANS						/**< Angles in radians */
-	} units_t;
+		ANGLE_DEGREES,					/**< Angles in degrees */
+		ANGLE_RADIANS						/**< Angles in radians */
+	};
+
+	class invalid_conversion : public std::out_of_range {
+	public:
+		invalid_conversion();
+		invalid_conversion( const std::string &msg );
+		invalid_conversion( units_t from, units_t to );
+	};
+
+
 }
 
+bool operator==(NCPA::units_t a, NCPA::units_t b);
+bool operator!=(NCPA::units_t a, NCPA::units_t b);
 
 typedef std::pair< NCPA::units_t, NCPA::units_t > conversion_pair;
 typedef double (*conversion_function)(double);
@@ -106,12 +123,23 @@ typedef std::map< NCPA::units_t, std::string > units_to_string_map_t;
 
 namespace NCPA {
 
+	bool equal_or_none(units_t a, units_t b);
+
 	/**
 	 * A class for converting units.
 	 */
 	class Units {
 
 	public:
+
+		/**
+		 * Returns whether a conversion for this pair has been defined.
+		 * @param type_in	The units to convert from
+		 * @param type_out	The units to convert to
+		 * @return true if the conversion has been defined, false otherwise
+		 */
+		static bool can_convert( units_t type_in, units_t type_out );
+
 		/**
 		 * Convert an array of numbers from one unit to another.
 		 * @param in 		A pointer to an array of double values
@@ -119,7 +147,7 @@ namespace NCPA {
 		 * @param type_in	The units to convert from
 		 * @param type_out	The units to convert to
 		 * @param out		A pointer to a preallocated array to hold the converted values
-		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @throws invalid_conversion	if an undefined conversion is requested.
 		 * @see units_t
 		 */
 		static void convert( const double *in, unsigned int nSamples,
@@ -132,7 +160,7 @@ namespace NCPA {
 		 * @param type_in	String of the units to convert from
 		 * @param type_out	String of the units to convert to
 		 * @param out		A pointer to a preallocated array to hold the converted values
-		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @throws invalid_conversion	if an undefined conversion is requested.
 		 * @see units_t
 		 */
 		static void convert( const double *in, unsigned int nSamples,
@@ -145,7 +173,7 @@ namespace NCPA {
 		 * @param type_in	The units to convert from
 		 * @param type_out	String of the units to convert to
 		 * @param out		A pointer to a preallocated array to hold the converted values
-		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @throws invalid_conversion	if an undefined conversion is requested.
 		 * @see units_t
 		 */
 		static void convert( const double *in, unsigned int nSamples,
@@ -158,7 +186,7 @@ namespace NCPA {
 		 * @param type_in	String of the units to convert from
 		 * @param type_out	The units to convert to
 		 * @param out		A pointer to a preallocated array to hold the converted values
-		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @throws invalid_conversion	if an undefined conversion is requested.
 		 * @see units_t
 		 */
 		static void convert( const double *in, unsigned int nSamples,
@@ -170,7 +198,7 @@ namespace NCPA {
 		 * @param type_in	String of the units to convert from
 		 * @param type_out	The units to convert to
 		 * @return 			The converted value
-		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @throws invalid_conversion	if an undefined conversion is requested.
 		 */
 		static double convert( double in, const std::string &type_in, units_t type_out );
 
@@ -180,7 +208,7 @@ namespace NCPA {
 		 * @param type_in	The units to convert from
 		 * @param type_out	String of the units to convert to
 		 * @return 			The converted value
-		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @throws invalid_conversion	if an undefined conversion is requested.
 		 */
 		static double convert( double in, units_t type_in, const std::string &type_out );
 
@@ -190,7 +218,7 @@ namespace NCPA {
 		 * @param type_in	The units to convert from
 		 * @param type_out	The units to convert to
 		 * @return 			The converted value
-		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @throws invalid_conversion	if an undefined conversion is requested.
 		 */
 		static double convert( double in, units_t type_in, units_t type_out );
 
@@ -200,7 +228,7 @@ namespace NCPA {
 		 * @param type_in	String of the units to convert from
 		 * @param type_out	String of the units to convert to
 		 * @return 			The converted value
-		 * @throws out_of_range	if an undefined conversion is requested.
+		 * @throws invalid_conversion	if an undefined conversion is requested.
 		 */
 		static double convert( double in, const std::string &type_in, const std::string &type_out );
 
@@ -209,7 +237,7 @@ namespace NCPA {
 		 *
 		 * @param type	The units constant to translate
 		 * @return		The string identifying the constant
-		 * @throws out_of_range if the constant is not recognized
+		 * @throws invalid_conversion if the constant is not recognized
 		 */
 		static std::string toString( units_t type );
 
@@ -218,7 +246,7 @@ namespace NCPA {
 		 *
 		 * @param type	The units constant to translate
 		 * @return		The abbreviation identifying the constant
-		 * @throws out_of_range if the constant is not recognized
+		 * @throws invalid_conversion if the constant is not recognized
 		 */
 		static std::string toStr( units_t type );
 
@@ -227,9 +255,16 @@ namespace NCPA {
 		 *
 		 * @param s 	The string to attempt to parse
 		 * @return 		The enum value associated with the string
-		 * @throws out_of_range if the string is not recognized
+		 * @throws invalid_conversion if the string is not recognized
 		 */
-		static units_t fromString( std::string s );
+		static units_t fromString( std::string s = "" );
+
+		/**
+		 * Returns the units_t enum value associated with null units.
+		 *
+		 * @return 		The null enum value
+		 */
+		static units_t null();
 
 		/**
 		 * Prints a list of the recognized strings that can be translated to units_t
@@ -245,6 +280,7 @@ namespace NCPA {
 		 * @return 		A std::vector<std::string> list of recognized unit names
 		 */
 		static std::vector<std::string> get_recognized_strings();
+
 	protected:
 
 		static conversion_map_t map_;

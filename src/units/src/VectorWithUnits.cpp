@@ -5,7 +5,7 @@
 
 
 
-NCPA::VectorWithUnits::VectorWithUnits() : std::vector<double>(), units_{ NCPA::UNITS_NONE } {}
+NCPA::VectorWithUnits::VectorWithUnits() : std::vector<double>(), units_{ NCPA::units_t::NONE } {}
 
 NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, const double *property_values, units_t property_units )
 	: std::vector<double>(n_points) {
@@ -80,7 +80,7 @@ void NCPA::VectorWithUnits::set_units( NCPA::units_t new_units ) {
 }
 
 void NCPA::VectorWithUnits::convert_units( NCPA::units_t new_units ) {
-	// will throw out_of_range and leave original units unchanged if there's an error
+	// will throw invalid_conversion and leave original units unchanged if there's an error
 	// if there's no change in units, don't bother with the calculation
 	if (new_units != units_) {
 		std::vector<double> buffer( this->begin(), this->end() );
@@ -97,15 +97,13 @@ void NCPA::VectorWithUnits::convert_units( const std::string &new_units ) {
 }
 
 
-void NCPA::VectorWithUnits::get_vector( double *buffer, units_t *buffer_units ) const {
-	*buffer_units = units_;
+void NCPA::VectorWithUnits::get_vector( double *buffer, units_t &buffer_units ) const {
+	buffer_units = units_;
 	std::copy(this->begin(), this->end(), buffer);
-//	std::memcpy( buffer, values_, n_ * sizeof( double ) );
 }
 
 void NCPA::VectorWithUnits::get_vector( double *buffer ) const {
 	std::copy(this->begin(), this->end(), buffer);
-//	std::memcpy( buffer, values_, n_ * sizeof( double ) );
 }
 
 

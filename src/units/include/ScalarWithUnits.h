@@ -6,12 +6,23 @@
 // forward declarations
 namespace NCPA { class ScalarWithUnits; }
 void swap( NCPA::ScalarWithUnits&, NCPA::ScalarWithUnits& ) noexcept;
+bool operator==(const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b);
+bool operator!=(const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b);
+bool operator>=(const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b);
+bool operator<=(const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b);
+bool operator>(const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b);
+bool operator<(const NCPA::ScalarWithUnits &a, const NCPA::ScalarWithUnits &b);
+
+std::ostream &operator<<( std::ostream &output, const NCPA::ScalarWithUnits &D );
+
+//bool operator==(const NCPA::ScalarWithUnits &a, double b);
 
 // class definitions
 namespace NCPA {
 	class ScalarWithUnits {
 		public:
 			ScalarWithUnits();
+			ScalarWithUnits( double value );
 			ScalarWithUnits( double value, units_t property_units );
 			ScalarWithUnits( double value, const std::string &units );
 
@@ -31,28 +42,40 @@ namespace NCPA {
 			virtual units_t get_units() const;
 			virtual double get_as( units_t u ) const;
 			virtual double get_as( const std::string &units ) const;
+			virtual double as( units_t u ) const;
+			virtual double as( const std::string &units ) const;
+
 			virtual void set_value( double newval );
 			virtual void set_units( units_t new_units );
 			virtual void set_units( const std::string &units );
 			virtual void set( double newval, units_t new_units );
 			virtual void set( double newval, const std::string &units );
 
+			virtual void convert( units_t new_units );
+			virtual void convert( const std::string &units );
 			virtual void convert_units( units_t new_units );
 			virtual void convert_units( const std::string &units );
-			//virtual void revert_units();
 
 			ScalarWithUnits &operator=(ScalarWithUnits other);
 			ScalarWithUnits operator+( const ScalarWithUnits &second ) const;
-			ScalarWithUnits operator-( const ScalarWithUnits &D ) const;
+			ScalarWithUnits operator-( const ScalarWithUnits &second ) const;
 			ScalarWithUnits operator+=( ScalarWithUnits const &second );
 			ScalarWithUnits operator-=( ScalarWithUnits const &second );
+			ScalarWithUnits operator*=( double factor );
+			ScalarWithUnits operator/=( double factor );
+			ScalarWithUnits operator*( double factor );
+			ScalarWithUnits operator/( double factor );
+			ScalarWithUnits operator-() const;
 
-			friend bool operator==(const ScalarWithUnits &a, const ScalarWithUnits &b);
-			friend bool operator!=(const ScalarWithUnits &a, const ScalarWithUnits &b);
-			friend bool operator>=(const ScalarWithUnits &a, const ScalarWithUnits &b);
-			friend bool operator<=(const ScalarWithUnits &a, const ScalarWithUnits &b);
-			friend bool operator>(const ScalarWithUnits &a, const ScalarWithUnits &b);
-			friend bool operator<(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			double over( const ScalarWithUnits &b ) const;
+
+			friend bool ::operator==(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool ::operator!=(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool ::operator>=(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool ::operator<=(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool ::operator>(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend bool ::operator<(const ScalarWithUnits &a, const ScalarWithUnits &b);
+			friend std::ostream &operator<<( std::ostream &output, const ScalarWithUnits &D );
 
 		protected:
 			double value_;
@@ -63,7 +86,7 @@ namespace NCPA {
 
 
 		};
-		std::ostream &operator<<( std::ostream &output, const ScalarWithUnits &D );
+
 //		ScalarWithUnits operator+( ScalarWithUnits first, ScalarWithUnits const &second );
 //		ScalarWithUnits operator-( ScalarWithUnits first, ScalarWithUnits const &D );
 
