@@ -10,10 +10,7 @@ void swap( NCPA::VectorWithUnits&, NCPA::VectorWithUnits& ) noexcept;
 
 
 namespace NCPA {
-	class VectorWithUnits : public std::vector<double> {
-		protected:
-			units_t units_;
-
+	class VectorWithUnits : public std::vector<ScalarWithUnits> {
 		public:
 			// constructors
 			VectorWithUnits();
@@ -36,20 +33,31 @@ namespace NCPA {
 			friend void ::swap( VectorWithUnits &first, VectorWithUnits &second ) noexcept;
 			VectorWithUnits &operator=(VectorWithUnits other);
 
+			// methods
+			virtual void as_array( NCPA::ScalarWithUnits *&buffer ) const;
+
 			virtual void convert_units( units_t new_units );
 			virtual void convert_units( const std::string &new_units );
+
+			// Fill the vector with identical values.  Does not resize.
+			virtual void fill( double value, units_t units );
+			virtual void fill( double value, const std::string &units );
+			virtual void fill( const ScalarWithUnits &value );
+
 			virtual units_t get_units() const;
+			virtual void get_values( size_t &n, double* buffer ) const;
+			virtual void get_values( double* buffer ) const;
+
+			virtual bool is_normalized() const;
+			virtual void normalize_units();
+
 			virtual void set( size_t n_points, const double *values, units_t units );
+			virtual void set( size_t n_points, const double *values, const std::string &units );
+			virtual void set( size_t n_points, const ScalarWithUnits *values );
+
 			virtual void set_units( units_t new_units );
-			virtual void fill( size_t n_points, double value );
-			virtual void fill( double value );
-
-			virtual void set_values( size_t n_points, const double *values );
-			virtual void get_vector( double *buffer, units_t &buffer_units ) const;
-			virtual void get_vector( double *buffer ) const;
-
-
-		};
+			virtual void set_units( const std::string &new_units );
+	};
 
 }
 
