@@ -144,6 +144,49 @@ TEST_F(VectorWithUnitsTest, AsArrayReturnsCorrectArray) {
 	delete [] buffer;
 }
 
+TEST_F(VectorWithUnitsTest, AsArrayReturnsCorrectDoubleArray) {
+	double *buffer = nullptr;
+	units_t u;
+	v4.as_array( buffer, u );
+	for (auto it = v4.cbegin(); it != v4.end(); ++it) {
+		EXPECT_DOUBLE_EQ( it->get(), 10.0 );
+	}
+	EXPECT_EQ(u,CELSIUS);
+	delete [] buffer;
+}
+
+TEST_F(VectorWithUnitsTest, AsArrayNormalizesCorrectly) {
+	v2[0].convert_units(METERS);
+	ScalarWithUnits *s;
+	v2.as_array( s );
+	for (size_t i = 0; i < v2.size(); i++) {
+		EXPECT_DOUBLE_EQ( s[i].get(), Units::convert(kms[i],KILOMETERS,METERS) );
+		EXPECT_EQ( s[i].get_units(), METERS );
+	}
+	delete [] s;
+}
+
+TEST_F(VectorWithUnitsTest, AsArrayDoesNotNormalizeIfTold) {
+	v2[0].convert_units(METERS);
+	ScalarWithUnits *s;
+	v2.as_array( s, false );
+	EXPECT_DOUBLE_EQ( s[0].get(), Units::convert(kms[0],KILOMETERS,METERS) );
+	EXPECT_EQ( s[0].get_units(), METERS );
+	for (size_t i = 1; i < v2.size(); i++) {
+		EXPECT_DOUBLE_EQ( s[i].get(), kms[i] );
+		EXPECT_EQ( s[i].get_units(), KILOMETERS );
+	}
+	delete [] s;
+}
+
+TEST_F(VectorWithUnitsTest, AsArrayThrowsLogicErrorIfNoNormalization) {
+	v2[0].convert_units(METERS);
+	double *buffer = nullptr;
+	units_t u;
+	EXPECT_THROW( {v2.as_array( buffer, u, false );},
+						logic_error );
+}
+
 TEST_F(VectorWithUnitsTest,ConvertUnitsCreatesCorrectValues) {
 	v2.convert_units(METERS);
 	for (size_t i = 0; i < 10; i++) {
@@ -174,6 +217,12 @@ TEST_F(VectorWithUnitsTest,ConvertUnitsWithStringStoresCorrectUnits) {
 
 TEST_F(VectorWithUnitsTest,GetUnitsReturnsCorrectUnits) {
 	EXPECT_EQ( v4.get_units(), CELSIUS );
+}
+
+TEST_F(VectorWithUnitsTest, GetUnitsThrowsLogicErrorIfNoNormalization) {
+	v2[0].convert_units(METERS);
+	EXPECT_THROW( {units_t u = v2.get_units( false );},
+						logic_error );
 }
 
 TEST_F(VectorWithUnitsTest,ConvertUnitsThrowsInvalidConversionCorrectly) {

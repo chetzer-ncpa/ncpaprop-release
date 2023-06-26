@@ -34,7 +34,8 @@ namespace NCPA {
 			VectorWithUnits &operator=(VectorWithUnits other);
 
 			// methods
-			virtual void as_array( NCPA::ScalarWithUnits *&buffer ) const;
+			virtual void as_array( NCPA::ScalarWithUnits *&buffer, bool normFirst=true );
+			virtual void as_array( double *&buffer, units_t &units, bool normFirst=true );
 
 			virtual void convert_units( units_t new_units );
 			virtual void convert_units( const std::string &new_units );
@@ -44,9 +45,9 @@ namespace NCPA {
 			virtual void fill( double value, const std::string &units );
 			virtual void fill( const ScalarWithUnits &value );
 
-			virtual units_t get_units() const;
-			virtual void get_values( size_t &n, double* buffer ) const;
-			virtual void get_values( double* buffer ) const;
+			virtual units_t get_units( bool normFirst=true );
+			virtual void get_values( size_t &n, double* buffer, bool normFirst=true );
+			virtual void get_values( double* buffer, bool normFirst=true );
 
 			virtual bool is_normalized() const;
 			virtual void normalize_units();

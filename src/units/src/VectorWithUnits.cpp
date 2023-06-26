@@ -74,7 +74,10 @@ void swap(NCPA::VectorWithUnits &a, NCPA::VectorWithUnits &b) noexcept {
 /*
  * Methods
  */
-void NCPA::VectorWithUnits::as_array( NCPA::ScalarWithUnits *&buffer ) const {
+void NCPA::VectorWithUnits::as_array( NCPA::ScalarWithUnits *&buffer, bool normFirst ) {
+	if (normFirst) {
+		this->normalize_units();
+	}
 	if (buffer == nullptr) {
 		buffer = new NCPA::ScalarWithUnits[ this->size() ];
 	}
@@ -84,6 +87,21 @@ void NCPA::VectorWithUnits::as_array( NCPA::ScalarWithUnits *&buffer ) const {
 	}
 }
 
+void NCPA::VectorWithUnits::as_array( double *&buffer, NCPA::units_t &units, bool normFirst ) {
+	if (normFirst) {
+		this->normalize_units();
+	} else if (!this->is_normalized()) {
+		throw std::logic_error( "Multiple units present in vector, normalize first!" );
+	}
+	if (buffer == nullptr) {
+		buffer = new double[ this->size() ];
+	}
+	size_t i = 0;
+	for (auto it = this->cbegin(); it != this->cend(); ++it) {
+		buffer[ i++ ] = it->get();
+	}
+	units = this->get_units();
+}
 
 
 void NCPA::VectorWithUnits::convert_units( NCPA::units_t new_units ) {
@@ -117,15 +135,19 @@ void NCPA::VectorWithUnits::fill( double value, const std::string &units ) {
 	this->fill( ScalarWithUnits( value, units ) );
 }
 
-NCPA::units_t NCPA::VectorWithUnits::get_units() const {
-	if (this->is_normalized()) {
-		return this->begin()->get_units();
-	} else {
-		throw std::logic_error( "Multiple units present in vector!" );
+NCPA::units_t NCPA::VectorWithUnits::get_units( bool normFirst ) {
+	if (normFirst) {
+		this->normalize_units();
+	} else if (!this->is_normalized()) {
+		throw std::logic_error( "Multiple units present in vector, normalize first!" );
 	}
+	return this->begin()->get_units();
 }
 
-void NCPA::VectorWithUnits::get_values( size_t &n, double* buffer ) const {
+void NCPA::VectorWithUnits::get_values( size_t &n, double* buffer, bool normFirst ) {
+	if (normFirst) {
+		this->normalize_units();
+	}
 	size_t i = 0;
 	for (auto it = this->cbegin(); it != this->cend(); ++it) {
 		buffer[ i++ ] = it->get();
@@ -133,15 +155,16 @@ void NCPA::VectorWithUnits::get_values( size_t &n, double* buffer ) const {
 	n = this->size();
 }
 
-void NCPA::VectorWithUnits::get_values( double* buffer ) const {
+void NCPA::VectorWithUnits::get_values( double* buffer, bool normFirst ) {
 	size_t n;
-	this->get_values( n, buffer );
+	this->get_values( n, buffer, normFirst );
 }
 
 bool NCPA::VectorWithUnits::is_normalized() const {
 	NCPA::units_t base = this->front().get_units();
 	for (auto it = this->cbegin(); it != this->cend(); ++it) {
-		if (it->get_units() != base) {
+		NCPA::units_t u = it->get_units();
+		if (u != base) {
 			return false;
 		}
 	}
