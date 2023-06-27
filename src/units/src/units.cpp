@@ -385,6 +385,24 @@ bool NCPA::Units::can_convert( NCPA::units_t type_in, NCPA::units_t type_out ) {
 	return (NCPA::Units::map_.find(cpair) != NCPA::Units::map_.end());
 }
 
+bool NCPA::Units::can_convert( const std::string &type_in, NCPA::units_t type_out ) {
+	return NCPA::Units::can_convert(
+			NCPA::Units::fromString(type_in),
+			type_out );
+}
+
+bool NCPA::Units::can_convert( NCPA::units_t type_in, const std::string &type_out ) {
+	return NCPA::Units::can_convert(
+			type_in,
+			NCPA::Units::fromString(type_out) );
+}
+
+bool NCPA::Units::can_convert( const std::string &type_in, const std::string &type_out ) {
+	return NCPA::Units::can_convert(
+			NCPA::Units::fromString(type_in),
+			NCPA::Units::fromString(type_out) );
+}
+
 
 /*
 Generates and returns a std::pair with the two unit types, for use as a map key.

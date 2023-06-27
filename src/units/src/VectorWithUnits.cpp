@@ -96,10 +96,7 @@ void NCPA::VectorWithUnits::as_array( double *&buffer, NCPA::units_t &units, boo
 	if (buffer == nullptr) {
 		buffer = new double[ this->size() ];
 	}
-	size_t i = 0;
-	for (auto it = this->cbegin(); it != this->cend(); ++it) {
-		buffer[ i++ ] = it->get();
-	}
+	this->get_values( buffer );
 	units = this->get_units();
 }
 

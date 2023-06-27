@@ -141,6 +141,32 @@ namespace NCPA {
 		static bool can_convert( units_t type_in, units_t type_out );
 
 		/**
+		 * Returns whether a conversion for this pair has been defined.
+		 * @param type_in	The units to convert from
+		 * @param type_out	The units to convert to
+		 * @return true if the conversion has been defined, false otherwise
+		 */
+		static bool can_convert( const std::string &type_in, units_t type_out );
+
+		/**
+		 * Returns whether a conversion for this pair has been defined.
+		 * @param type_in	The units to convert from
+		 * @param type_out	The units to convert to
+		 * @return true if the conversion has been defined, false otherwise
+		 */
+		static bool can_convert( units_t type_in, const std::string &type_out );
+
+		/**
+		 * Returns whether a conversion for this pair has been defined.
+		 * @param type_in	The units to convert from
+		 * @param type_out	The units to convert to
+		 * @return true if the conversion has been defined, false otherwise
+		 */
+		static bool can_convert( const std::string &type_in, const std::string &type_out );
+
+
+
+		/**
 		 * Convert an array of numbers from one unit to another.
 		 * @param in 		A pointer to an array of double values
 		 * @param nSamples 	The number of consecutive samples to convert

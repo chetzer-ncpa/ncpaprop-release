@@ -198,9 +198,21 @@ TEST(unitsTest, BadConversionTest) {
 			NCPA::invalid_conversion );
 }
 
+TEST(unitsTest, CanConvertReturnsTrueBetweenCompatibleUnits) {
+	ASSERT_TRUE( Units::can_convert(
+			units_t::DISTANCE_METERS, units_t::DISTANCE_KILOMETERS ) );
+	ASSERT_TRUE( Units::can_convert( "m", units_t::DISTANCE_KILOMETERS ) );
+	ASSERT_TRUE( Units::can_convert( units_t::DISTANCE_METERS, "km" ) );
+	ASSERT_TRUE( Units::can_convert( "m", "km" ) );
+}
 
-
-
+TEST(unitsTest, CanConvertReturnsFalseBetweenIncompatibleUnits) {
+	ASSERT_FALSE( Units::can_convert(
+			units_t::DISTANCE_METERS, units_t::TEMPERATURE_KELVIN ) );
+	ASSERT_FALSE( Units::can_convert( "m", units_t::TEMPERATURE_KELVIN ) );
+	ASSERT_FALSE( Units::can_convert( units_t::DISTANCE_METERS, "K" ) );
+	ASSERT_FALSE( Units::can_convert( "m", "K" ) );
+}
 
 
 
