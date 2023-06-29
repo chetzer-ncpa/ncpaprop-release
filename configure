@@ -9883,16 +9883,16 @@ LIBS="-lgsl -lgslcblas -lm -lfftw3"
 
 WARNINGFLAGS=${warning_compiler_flags}
 
-CXXFLAGS="-fpic -c -Wall $CXXFLAGS"
+CXXFLAGS="-fpic -c -Wall -std=c++17 $CXXFLAGS"
 
 LDFLAGS="${LDFLAGS} -L/usr/lib"
-STATICLIBS="../../lib/libatmosphere.a ../../lib/libunits.a ../../lib/libcommon.a"
+STATICLIBS="../../lib/libncpaatmosphere.a ../../lib/libncpaunits.a ../../lib/libncpainterpolation.a ../../lib/libncpacommon.a"
 
-MODELIBS="../../lib/libmodes.a"
+MODELIBS="../../lib/libncpamodes.a"
 
-PELIBS="../../lib/libpe.a"
+PELIBS="../../lib/libncpape.a"
 
-BROADBANDLIBS="../../lib/libbroadband.a"
+BROADBANDLIBS="../../lib/libncpabroadband.a"
 
 LDFLAGS=$LDFLAGS
 
@@ -9911,7 +9911,7 @@ PETSC_ARCH_COMPLEX=$PETSC_ARCH_COMPLEX
 
 
 
-ac_config_files="$ac_config_files Makefile src/common/Makefile src/common/test/Makefile src/units/Makefile src/units/test/Makefile src/atmosphere/Makefile src/libmodes/Makefile src/libpe/Makefile src/libbroadband/Makefile src/modess/Makefile src/modbb/Makefile src/epade_pe/Makefile src/wmod/Makefile src/gfpe/Makefile"
+ac_config_files="$ac_config_files Makefile src/common/Makefile src/common/test/Makefile src/interpolation/Makefile src/interpolation/test/Makefile src/units/Makefile src/units/test/Makefile src/atmosphere/Makefile src/atmosphere/test/Makefile src/libmodes/Makefile src/libpe/Makefile src/libbroadband/Makefile src/modess/Makefile src/modbb/Makefile src/epade_pe/Makefile src/wmod/Makefile src/gfpe/Makefile"
 
 
 
@@ -10618,9 +10618,12 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/common/Makefile") CONFIG_FILES="$CONFIG_FILES src/common/Makefile" ;;
     "src/common/test/Makefile") CONFIG_FILES="$CONFIG_FILES src/common/test/Makefile" ;;
+    "src/interpolation/Makefile") CONFIG_FILES="$CONFIG_FILES src/interpolation/Makefile" ;;
+    "src/interpolation/test/Makefile") CONFIG_FILES="$CONFIG_FILES src/interpolation/test/Makefile" ;;
     "src/units/Makefile") CONFIG_FILES="$CONFIG_FILES src/units/Makefile" ;;
     "src/units/test/Makefile") CONFIG_FILES="$CONFIG_FILES src/units/test/Makefile" ;;
     "src/atmosphere/Makefile") CONFIG_FILES="$CONFIG_FILES src/atmosphere/Makefile" ;;
+    "src/atmosphere/test/Makefile") CONFIG_FILES="$CONFIG_FILES src/atmosphere/test/Makefile" ;;
     "src/libmodes/Makefile") CONFIG_FILES="$CONFIG_FILES src/libmodes/Makefile" ;;
     "src/libpe/Makefile") CONFIG_FILES="$CONFIG_FILES src/libpe/Makefile" ;;
     "src/libbroadband/Makefile") CONFIG_FILES="$CONFIG_FILES src/libbroadband/Makefile" ;;

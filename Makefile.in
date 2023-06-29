@@ -12,65 +12,53 @@
 # PETSC_INCLUDE_FILE_GENERIC = @PETSC_INCLUDE_FILE_GENERIC@
 # SLEPC_INCLUDE_FILE_GENERIC = @SLEPC_INCLUDE_FILE_GENERIC@
 
-parts=common units atmosphere modes libpe libbroadband modess wmod modbb epade_pe gfpe
+parts=common interpolation units atmosphere modes libpe libbroadband modess wmod modbb epade_pe gfpe
 build-parts=$(addprefix build-, $(parts))
 clean-parts=$(addprefix clean-, $(parts))
 test-parts=$(addprefix test-, $(parts))
 
-libdir=lib
-includedir=src/include
+libdir-shared=lib
+includedir-shared=src/include
+bindir-shared=bin
 
-# NCPA Common library
-srcdir-common=src/common
-includes-common=$(wildcard $(srcdir-common)/include/*.h)
-local-includes-common=$(subst $(srcdir-common)/include,$(includedir),$(includes-common))
-libcommon=libncpacommon.a
-libdir-common=src/common/lib
+construct_libname = libncpa$(1).a
+construct_libpath = src/$(1)/lib/$(call construct_libname,$(1))
+get_target = $(subst $(2)-,,$(1))
+
+define build-lib =
+$(MAKE) -C src/$(call get_target,$@,build) all
+mkdir -p $(includedir-shared)
+cp $(wildcard src/$(call get_target,$@,build)/include/*.h) $(includedir-shared)/
+cp $(call construct_libpath,$(call get_target,$@,build)) $(libdir-shared)/
+endef
+
+define clean-lib =
+-$(MAKE) -C src/$(call get_target,$@,clean) clean
+-rm $(libdir-shared)/$(call construct_libname,$(call get_target,$@,clean)) 
+-rm $(subst src/$(call get_target,$@,clean)/include,src/include,$(wildcard src/$(call get_target,$@,clean)/include/*.h))
+endef
+
+define test-lib =
+$(MAKE) -C src/$(call get_target,$@,test)/test clean
+$(MAKE) -C src/$(call get_target,$@,test)/test test
+endef
+
+define clean-test-lib =
+$(MAKE) -C src/$(call get_target,$@,clean-test)/test clean
+endef
 
 # Build everything
 all: clean $(build-parts)
 
 # NCPA Common Utility Library
-build-common:
-	$(MAKE) -C $(srcdir-common) all
-	cp $(includes-common) $(includedir)
-	cp $(libdir-common)/$(libcommon) $(libdir)
-	
-clean-common:
-	-$(MAKE) -C $(srcdir-common) clean
-	-rm $(libdir)/$(libcommon) $(local-includes-common)
-	
-test-common:
-	$(MAKE) -C $(srcdir-common) test
-
-# NCPA Units library
-build-units:
-	#	$(MAKE) -C src/units all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	$(MAKE) -C src/units all
-	cp src/units/include/*.h src/include/
-	cp src/units/lib/libncpaunits.a lib/
-	
-clean-units:
-	-$(MAKE) -C src/units clean
-	-rm lib/libncpaunits.a
-	
-test-units:
-	$(MAKE) -C src/units/test test
-
-# NCPA Atmosphere library
-build-atmosphere:
-	#	$(MAKE) -C src/atmosphere all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	$(MAKE) -C src/atmosphere all
-	cp src/atmosphere/include/*.h src/include/
-	cp src/atmosphere/lib/libncpaatmosphere.a lib/
-	
-clean-atmosphere:
-	-$(MAKE) -C src/atmosphere clean
-	-rm lib/libncpaatmosphere.a
-
-test-atmosphere:
-	$(MAKE) -C src/atmosphere/test test
-	
+build-common build-interpolation build-units build-atmosphere:
+	$(build-lib)
+clean-common clean-interpolation clean-units clean-atmosphere:
+	$(clean-lib)
+test-common test-interpolation test-units test-atmosphere:
+	$(test-lib)
+clean-test-common clean-test-interpolation clean-test-units clean-test-atmosphere:
+	$(clean-test-lib)
 
 build-modes:
 	$(MAKE) -C src/modes all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@

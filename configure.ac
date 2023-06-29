@@ -689,12 +689,12 @@ AC_CHECK_FILE( ${SLEPC_DIR}/${PETSC_ARCH_COMPLEX}/lib/slepc/conf/slepcvariables,
 AC_SUBST([INCLUDEFLAGS],"-I../include -I/usr/local/include -I/usr/include")
 AC_SUBST([LIBS],"-lgsl -lgslcblas -lm -lfftw3")
 AC_SUBST([WARNINGFLAGS],${warning_compiler_flags})
-AC_SUBST([CXXFLAGS], "-fpic -c -Wall $CXXFLAGS")
+AC_SUBST([CXXFLAGS], "-fpic -c -Wall -std=c++17 $CXXFLAGS")
 LDFLAGS="${LDFLAGS} -L/usr/lib"
-AC_SUBST([STATICLIBS],"../../lib/libatmosphere.a ../../lib/libunits.a ../../lib/libcommon.a")
-AC_SUBST([MODELIBS],"../../lib/libmodes.a")
-AC_SUBST([PELIBS],"../../lib/libpe.a")
-AC_SUBST([BROADBANDLIBS],"../../lib/libbroadband.a")
+AC_SUBST([STATICLIBS],"../../lib/libncpaatmosphere.a ../../lib/libncpaunits.a ../../lib/libncpainterpolation.a ../../lib/libncpacommon.a")
+AC_SUBST([MODELIBS],"../../lib/libncpamodes.a")
+AC_SUBST([PELIBS],"../../lib/libncpape.a")
+AC_SUBST([BROADBANDLIBS],"../../lib/libncpabroadband.a")
 AC_SUBST([LDFLAGS],$LDFLAGS)
 AC_SUBST([PETSC_DIR],$PETSC_DIR)
 AC_SUBST([SLEPC_DIR],$SLEPC_DIR)
@@ -709,9 +709,12 @@ AC_CONFIG_FILES([
 		Makefile
 		src/common/Makefile
 		src/common/test/Makefile
+		src/interpolation/Makefile
+		src/interpolation/test/Makefile
 		src/units/Makefile
 		src/units/test/Makefile
 		src/atmosphere/Makefile
+		src/atmosphere/test/Makefile
 		src/libmodes/Makefile
 		src/libpe/Makefile
 		src/libbroadband/Makefile

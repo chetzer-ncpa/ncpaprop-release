@@ -1,0 +1,33 @@
+#include @PETSC_INCLUDE_FILE_GENERIC@
+#include @SLEPC_INCLUDE_FILE_GENERIC@
+include sources.make
+
+# the following provides CCPPFLAGS, CLINKER, CC_INCLUDES, SLEPC_INCLUDE, SLEPC_LIB
+#include $(SLEPC_DIR)/conf/slepc_common
+
+INCPATHS = -Iinclude @INCLUDEFLAGS@ #${PETSC_CC_INCLUDES} ${SLEPC_CC_INCLUDES}
+
+OBJS=$(SOURCES:.cpp=.o)
+TARGET=lib/libncpainterpolation.a
+
+
+all: $(TARGET)
+
+.PHONY: clean test
+
+# link	
+$(TARGET): $(OBJS)
+	mkdir -p lib
+	ar curv $@ $^
+#	cp $@ ../../lib
+	
+# compile 
+%.o: %.cpp
+	${CXX} ${INCPATHS} @CXXFLAGS@ ${CXX_FLAGS} @WARNINGFLAGS@ -o $@ $<
+
+test::
+	$(MAKE) -C test test
+
+clean::
+	-$(RM) -rf $(OBJS) $(TARGET)
+

@@ -55,9 +55,9 @@ namespace LANL {
     struct linear_spline_1D{
         int length;            // Length of input files (x and f(x))
         int accel;          // Index of previous table look up; used to increase spline speed
-        double* x_vals;     // 1D array of x values
-        double* f_vals;     // 1D array of f(x) values, f_vals[i] = f(x[i])
-        double* slopes;     // Slopes used to generate natural cubic spline solution
+        double* x_vals = nullptr;     // 1D array of x values
+        double* f_vals = nullptr;     // 1D array of f(x) values, f_vals[i] = f(x[i])
+        double* slopes = nullptr;     // Slopes used to generate natural cubic spline solution
     };
     typedef struct linear_spline_1D Spline1DLinear;
 
@@ -75,9 +75,9 @@ namespace LANL {
     struct natural_cubic_spline_1D{
         int length;			// Length of input files (x and f(x))
         int accel;          // Index of previous table look up; used to increase spline speed
-        double* x_vals;     // 1D array of x values
-        double* f_vals;     // 1D array of f(x) values, f_vals[i] = f(x[i])
-        double* slopes;     // Slopes used to generate natural cubic spline solution
+        double* x_vals = nullptr;     // 1D array of x values
+        double* f_vals = nullptr;     // 1D array of f(x) values, f_vals[i] = f(x[i])
+        double* slopes = nullptr;     // Slopes used to generate natural cubic spline solution
     };
     typedef struct natural_cubic_spline_1D Spline1DNatural;
 
@@ -103,11 +103,11 @@ namespace LANL {
         int length_y;           // Number of y nodes
         int accel[2];          // Indices of x,y point
 
-        double* x_vals;         // 1D array of x values
-        double* y_vals;         // 1D array of y values
+        double* x_vals = nullptr;         // 1D array of x values
+        double* y_vals = nullptr;         // 1D array of y values
 
-        double** f_vals;       // 2D array of f(x,y) values, f_vals[i][j] = f(x[i], y[j])
-        double** f_slopes;     // Slopes used to generate natural cubic spline solution at each x = constant node, describes f(x[i], y)
+        double** f_vals = nullptr;       // 2D array of f(x,y) values, f_vals[i][j] = f(x[i], y[j])
+        double** f_slopes = nullptr;     // Slopes used to generate natural cubic spline solution at each x = constant node, describes f(x[i], y)
     };
     typedef struct natural_cubic_spline_2D Spline2DNatural;
 
@@ -142,12 +142,12 @@ namespace LANL {
         int length_y;       // Number of y nodes
         int accel[2];       // Indices of x,y point for acceleration
 
-        double* x_vals;     // 1D array of x values
-        double* y_vals;     // 1D array of y values
+        double* x_vals = nullptr;     // 1D array of x values
+        double* y_vals = nullptr;     // 1D array of y values
 
-        double** f_vals;    // 2D array of f(x,y) values, f_vals[i][j] = f(x[i], y[j])
-        double** dfdx_vals; // 2D array of df/dx(x,y) values, fdx_vals[i][j] = df/dy(x[i], y[j])
-        double** dfdy_vals; // 2D array of df/dy(x,y) values, fdy_vals[i][j] = df/dy(x[i], y[j])
+        double** f_vals = nullptr;    // 2D array of f(x,y) values, f_vals[i][j] = f(x[i], y[j])
+        double** dfdx_vals = nullptr; // 2D array of df/dx(x,y) values, fdx_vals[i][j] = df/dy(x[i], y[j])
+        double** dfdy_vals = nullptr; // 2D array of df/dy(x,y) values, fdy_vals[i][j] = df/dy(x[i], y[j])
 
         double f_coeffs[4][4];      // Array of coefficients to compute f
         double dfdx_coeffs[4][4];   // Array of coefficients to compute df/dx
@@ -176,14 +176,14 @@ namespace LANL {
         int length_z;           // Number of z nodes
         int accel[3];           // Indices of x,y,z point
 
-    	double* x_vals;         // 1D array of x values
-        double* y_vals;         // 1D array of y values
-        double* z_vals;         // 1D array of z values
+    	double* x_vals = nullptr;         // 1D array of x values
+        double* y_vals = nullptr;         // 1D array of y values
+        double* z_vals = nullptr;         // 1D array of z values
 
-        double*** f_vals;       // 3D array of f(x,y,z) values, f_vals[i][j][k] = f(x[i], y[j], z[k])
-    	double*** f_slopes;     // Slopes used to generate natural cubic spline solution at each x and y = constant node, describes f(x[i], y[i], z)
-        double*** dfdx_slopes;  // Slopes used to generate df/dx at each node point, describes df/dx @ x[i], y[j], z
-        double*** dfdy_slopes;  // Slopes used to generate df/dy at each node point, describes df/dx @ x[i], y[j], z
+        double*** f_vals = nullptr;       // 3D array of f(x,y,z) values, f_vals[i][j][k] = f(x[i], y[j], z[k])
+    	double*** f_slopes = nullptr;     // Slopes used to generate natural cubic spline solution at each x and y = constant node, describes f(x[i], y[i], z)
+        double*** dfdx_slopes = nullptr;  // Slopes used to generate df/dx at each node point, describes df/dx @ x[i], y[j], z
+        double*** dfdy_slopes = nullptr;  // Slopes used to generate df/dy at each node point, describes df/dx @ x[i], y[j], z
     };
     typedef struct hybrid_spline_3D Spline3D;
 
