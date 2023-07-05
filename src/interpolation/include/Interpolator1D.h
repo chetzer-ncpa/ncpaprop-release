@@ -32,6 +32,9 @@ namespace NCPA {
 
 	class Interpolator1D {
 	public:
+
+		static Interpolator1D * build( interpolator1d_t t );
+
 		Interpolator1D();
 		Interpolator1D( const Interpolator1D &other );
 		Interpolator1D( Interpolator1D &&other );
@@ -39,35 +42,47 @@ namespace NCPA {
 		friend void ::swap( Interpolator1D &a, Interpolator1D &b );
 
 		// interface
-		virtual void set( size_t n, const double *x, const double *y ) = 0;
-		virtual void set( size_t n, const double *x, const double *y_real,
+		virtual Interpolator1D* set( size_t n, const double *x, const double *y ) = 0;
+		virtual Interpolator1D* set( size_t n, const double *x, const double *y_real,
 				const double *y_imag ) = 0;
-		virtual void set( size_t n, const double *x,
+		virtual Interpolator1D* set( size_t n, const double *x,
 				const std::complex<double> *y ) = 0;
 
-		virtual void init() = 0;
-		virtual void allocate( size_t n ) = 0;
-		virtual void ready() = 0;
-		virtual void free() = 0;
+		virtual double f( double x );
+		virtual double df( double x );
+		virtual double df( size_t n, double x );
+		virtual std::complex<double> cf( double x );
+		virtual std::complex<double> cdf( double x );
+		virtual std::complex<double> cdf( size_t n, double x );
+		virtual void is_extrapolating( bool tf );
+		virtual bool is_extrapolating() const;
 
+		virtual Interpolator1D* init() = 0;
+		virtual Interpolator1D* allocate( size_t n ) = 0;
+		virtual Interpolator1D* ready() = 0;
+		virtual void free() = 0;
 		virtual bool is_ready() = 0;
 		virtual const std::string identifier() const = 0;
 		virtual size_t max_derivative() const = 0;
+		virtual void get_interp_limits( double &min, double &max ) const = 0;
+		virtual double get_low_interp_limit() const = 0;
+		virtual double get_high_interp_limit() const = 0;
 
-		virtual double eval_f( double x );
-		virtual double eval_df( size_t n, double x );
-		virtual double eval_df( double x );
-		virtual double eval_ddf( double x );
-		virtual double eval_dddf( double x );
+	protected:
+		bool extrapolate_ = true;
+
+		virtual double eval_f_( double x );
+		virtual double eval_df_( size_t n, double x );
+		virtual double eval_df_( double x );
+		virtual double eval_d2f_( double x );
+		virtual double eval_d3f_( double x );
 
 
-		virtual std::complex<double> eval_cf( double x );
-		virtual std::complex<double> eval_cdf( size_t n, double x );
-		virtual std::complex<double> eval_cdf( double x );
-		virtual std::complex<double> eval_cddf( double x );
-		virtual std::complex<double> eval_cdddf( double x );
-
-		static Interpolator1D * build( interpolator1d_t t );
+		virtual std::complex<double> eval_cf_( double x );
+		virtual std::complex<double> eval_cdf_( size_t n, double x );
+		virtual std::complex<double> eval_cdf_( double x );
+		virtual std::complex<double> eval_cd2f_( double x );
+		virtual std::complex<double> eval_cd3f_( double x );
 	};
 }
 

@@ -48,10 +48,10 @@ protected:
 		}
 
 		interp1 = Interpolator1D::build( interpolator1d_t::LANL_1D_NATURAL_CUBIC );
-		interp1->set( 5, xvals, yvals );
+		interp1->set( 5, xvals, yvals )->ready();
 
 		c_interp1 = Interpolator1D::build( interpolator1d_t::LANL_1D_NATURAL_CUBIC );
-		c_interp1->set( 5, xvals, cvals );
+		c_interp1->set( 5, xvals, cvals )->ready();
 
 		pInterp1 = static_cast<LANLNaturalCubicSplineInterpolator1D*>(interp1);
 		pCInterp1 = static_cast<LANLNaturalCubicSplineInterpolator1D*>(c_interp1);
@@ -86,77 +86,87 @@ protected:
 // Tests that use the fixture
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,CopyConstructorCreatesCopy) {
 	LANLNaturalCubicSplineInterpolator1D interp2( *pInterp1 );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.real_spline_.x_vals, pInterp1->real_spline_.x_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.real_spline_.f_vals, pInterp1->real_spline_.f_vals );
-	EXPECT_EQ( interp2.ready_, pInterp1->ready_ );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.get_real_spline()->x_vals,
+			pInterp1->get_real_spline()->x_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.get_real_spline()->f_vals,
+			pInterp1->get_real_spline()->f_vals );
+	EXPECT_EQ( interp2.is_ready(), pInterp1->is_ready() );
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,SwapWorksProperly) {
 	LANLNaturalCubicSplineInterpolator1D interp2( *pInterp1 ), c_interp2(*pCInterp1);
 	swap( interp2, c_interp2 );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.real_spline_.x_vals, pInterp1->real_spline_.x_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.real_spline_.f_vals, pInterp1->real_spline_.f_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.real_spline_.x_vals, pCInterp1->real_spline_.x_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.real_spline_.f_vals, pCInterp1->real_spline_.f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.get_real_spline()->x_vals,
+			pInterp1->get_real_spline()->x_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.get_real_spline()->f_vals,
+			pInterp1->get_real_spline()->f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.get_real_spline()->x_vals,
+			pCInterp1->get_real_spline()->x_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.get_real_spline()->f_vals,
+			pCInterp1->get_real_spline()->f_vals );
 
-	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.imag_spline_.x_vals, pCInterp1->imag_spline_.x_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.imag_spline_.f_vals, pCInterp1->imag_spline_.f_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.imag_spline_.x_vals, pInterp1->imag_spline_.x_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.imag_spline_.f_vals, pInterp1->imag_spline_.f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.get_imag_spline()->x_vals,
+			pCInterp1->get_imag_spline()->x_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, interp2.get_imag_spline()->f_vals,
+			pCInterp1->get_imag_spline()->f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.get_imag_spline()->x_vals,
+			pInterp1->get_imag_spline()->x_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.get_imag_spline()->f_vals,
+			pInterp1->get_imag_spline()->f_vals );
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,RealSetOverwritesPriorValues) {
 	c_interp1->set( 5, xvals, xvals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, xvals, pCInterp1->real_spline_.f_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, zvals, pCInterp1->imag_spline_.f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, xvals, pCInterp1->get_real_spline()->f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, zvals, pCInterp1->get_imag_spline()->f_vals );
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ComplexSetOverwritesPriorValues) {
 	interp1->set( 5, xvals, cvals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, yvals, pCInterp1->real_spline_.f_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, ivals, pCInterp1->imag_spline_.f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, yvals, pCInterp1->get_real_spline()->f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, ivals, pCInterp1->get_imag_spline()->f_vals );
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,SetXOverwritesValuesAndMakesUnready) {
 	pInterp1->set_x( 5, yvals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, yvals, pInterp1->real_spline_.x_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, yvals, pInterp1->get_real_spline()->x_vals );
 	EXPECT_FALSE( pInterp1->is_ready() );
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,RealSetYOverwritesValuesAndMakesUnready) {
 	pInterp1->set_y( 5, zvals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, zvals, pInterp1->real_spline_.f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, zvals, pInterp1->get_real_spline()->f_vals );
 	EXPECT_FALSE( pInterp1->is_ready() );
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ComplexSetYOverwritesValuesAndMakesUnready) {
 	pInterp1->set_y( 5, cvals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, yvals, pInterp1->real_spline_.f_vals );
-	EXPECT_DOUBLE_ARRAY_EQ( 5, ivals, pInterp1->imag_spline_.f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, yvals, pInterp1->get_real_spline()->f_vals );
+	EXPECT_DOUBLE_ARRAY_EQ( 5, ivals, pInterp1->get_imag_spline()->f_vals );
 	EXPECT_FALSE( pInterp1->is_ready() );
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,InitClearsSplines) {
 	interp1->init();
-	EXPECT_EQ( pInterp1->real_spline_.length,0);
-	EXPECT_EQ( pInterp1->imag_spline_.length,0);
+	EXPECT_EQ( pInterp1->get_real_spline()->length,0);
+	EXPECT_EQ( pInterp1->get_imag_spline()->length,0);
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,InitSetsPointersToNull) {
 	interp1->init();
-	EXPECT_EQ( pInterp1->real_spline_.x_vals, nullptr );
-	EXPECT_EQ( pInterp1->real_spline_.f_vals, nullptr);
-	EXPECT_EQ( pInterp1->imag_spline_.x_vals, nullptr );
-	EXPECT_EQ( pInterp1->imag_spline_.f_vals, nullptr);
+	EXPECT_EQ( pInterp1->get_real_spline()->x_vals, nullptr );
+	EXPECT_EQ( pInterp1->get_real_spline()->f_vals, nullptr);
+	EXPECT_EQ( pInterp1->get_imag_spline()->x_vals, nullptr );
+	EXPECT_EQ( pInterp1->get_imag_spline()->f_vals, nullptr);
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,AllocateSetsPointersToValid) {
 	interp1->init();
 	interp1->allocate( 15 );
-	EXPECT_NE( pInterp1->real_spline_.x_vals, nullptr );
-	EXPECT_NE( pInterp1->real_spline_.f_vals, nullptr);
-	EXPECT_NE( pInterp1->imag_spline_.x_vals, nullptr );
-	EXPECT_NE( pInterp1->imag_spline_.f_vals, nullptr);
+	EXPECT_NE( pInterp1->get_real_spline()->x_vals, nullptr );
+	EXPECT_NE( pInterp1->get_real_spline()->f_vals, nullptr);
+	EXPECT_NE( pInterp1->get_imag_spline()->x_vals, nullptr );
+	EXPECT_NE( pInterp1->get_imag_spline()->f_vals, nullptr);
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ReadyMakesSplinesReadyAfterSet) {
@@ -174,15 +184,15 @@ TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ReadyMakesSplinesReadyAfterSet) 
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,FreeSetsPointersToNull) {
 	interp1->free();
-	EXPECT_EQ( pInterp1->real_spline_.x_vals, nullptr );
-	EXPECT_EQ( pInterp1->real_spline_.f_vals, nullptr);
-	EXPECT_EQ( pInterp1->imag_spline_.x_vals, nullptr );
-	EXPECT_EQ( pInterp1->imag_spline_.f_vals, nullptr);
+	EXPECT_EQ( pInterp1->get_real_spline()->x_vals, nullptr );
+	EXPECT_EQ( pInterp1->get_real_spline()->f_vals, nullptr);
+	EXPECT_EQ( pInterp1->get_imag_spline()->x_vals, nullptr );
+	EXPECT_EQ( pInterp1->get_imag_spline()->f_vals, nullptr);
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,IsReadyReturnsProperValue) {
 	EXPECT_TRUE( interp1->is_ready() );
-	pInterp1->ready_ = false;
+	pInterp1->free();
 	EXPECT_FALSE( interp1->is_ready() );
 }
 
@@ -193,32 +203,58 @@ TEST_F(LANLNaturalCubicSplineInterpolator1DTest,IdentifierIsCorrect) {
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,RealInterpolatedValuesAreCorrect) {
 	for (size_t i = 0; i < 4; i++) {
 		double x = 0.5*(xvals[i]+xvals[i+1]);
-		EXPECT_NEAR( interp1->eval_f(x), ymids[i], tolerance*std::fabs(ymids[i]) );
+		EXPECT_NEAR( interp1->f(x), ymids[i], tolerance*std::fabs(ymids[i]) );
 	}
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ComplexInterpolatedValuesAreCorrect) {
 	for (size_t i = 0; i < 4; i++) {
 		double x = 0.5*(xvals[i]+xvals[i+1]);
-		EXPECT_NEAR( c_interp1->eval_cf(x).real(), ymids[i], tolerance*std::fabs(ymids[i]) );
-		EXPECT_NEAR( c_interp1->eval_cf(x).imag(), imids[i], tolerance*std::fabs(imids[i]) );
+		EXPECT_NEAR( c_interp1->cf(x).real(), ymids[i], tolerance*std::fabs(ymids[i]) );
+		EXPECT_NEAR( c_interp1->cf(x).imag(), imids[i], tolerance*std::fabs(imids[i]) );
 	}
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,RealInterpolatedFirstDerivativesAreCorrect) {
 	for (size_t i = 0; i < 4; i++) {
 		double x = 0.5*(xvals[i]+xvals[i+1]);
-		EXPECT_NEAR( interp1->eval_df(x), derivs1[i], tolerance*std::fabs(derivs1[i]) );
+		EXPECT_NEAR( interp1->df(x), derivs1[i], tolerance*std::fabs(derivs1[i]) );
 	}
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ComplexInterpolatedFirstDerivativesAreCorrect) {
 	for (size_t i = 0; i < 4; i++) {
 		double x = 0.5*(xvals[i]+xvals[i+1]);
-		EXPECT_NEAR( c_interp1->eval_cdf(x).real(), derivs1[i], tolerance*std::fabs(derivs1[i]) );
-		EXPECT_NEAR( c_interp1->eval_cdf(x).imag(), iderivs1[i], tolerance*std::fabs(iderivs1[i]) );
+		EXPECT_NEAR( c_interp1->cdf(x).real(), derivs1[i], tolerance*std::fabs(derivs1[i]) );
+		EXPECT_NEAR( c_interp1->cdf(x).imag(), iderivs1[i], tolerance*std::fabs(iderivs1[i]) );
 	}
 }
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ThrowsDomainErrorIfNotReady) {
+	interp1->set( 5, xvals, cvals );
+	EXPECT_FALSE( interp1->is_ready() );
+	EXPECT_THROW( {double d = interp1->df(2,1.5);}, std::domain_error );
+}
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ReturnsCorrectMaxDerivativeOrder) {
+	EXPECT_EQ(interp1->max_derivative(),3);
+}
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,IsExtrapolatingReturnsTrueByDefault) {
+	EXPECT_TRUE( interp1->is_extrapolating() );
+}
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,IsExtrapolatingReturnsFalseIfSet) {
+	interp1->is_extrapolating( false );
+	EXPECT_FALSE( interp1->is_extrapolating() );
+}
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ExtrapolationThrowsOutOfRangeIfExtrapolationDisabled) {
+	interp1->is_extrapolating( false );
+	EXPECT_THROW( {double d = interp1->f(interp1->get_low_interp_limit() - 1.0); }, std::out_of_range );
+	EXPECT_THROW( {double d = interp1->f(interp1->get_high_interp_limit() + 1.0); }, std::out_of_range );
+}
+
 
 // Tests that don't use the fixture
 //TEST(SuiteName,TestName2) {

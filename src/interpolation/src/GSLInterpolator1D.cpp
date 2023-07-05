@@ -13,14 +13,17 @@
 #include <sstream>
 #include <iostream>
 
+NCPA::GSLInterpolator1D::GSLInterpolator1D() : NCPA::Interpolator1D(),
+	ready_{false}, minx_{0.0}, maxx_{0.0}, interptype_{nullptr} {}
+
 NCPA::GSLInterpolator1D::GSLInterpolator1D( const gsl_interp_type *interp_type )
-		: NCPA::Interpolator1D(), ready_{false} {
+		: NCPA::Interpolator1D(), ready_{false}, minx_{0.0}, maxx_{0.0} {
 	interptype_ = new gsl_interp_type( *interp_type );
 	this->init();
 }
 
 NCPA::GSLInterpolator1D::GSLInterpolator1D( const GSLInterpolator1D &other )
-		: NCPA::Interpolator1D( other ), ready_{false} {
+		: NCPA::Interpolator1D( other ), ready_{false}, minx_{0.0}, maxx_{0.0} {
 	interptype_ = new gsl_interp_type( *(other.get_gsl_interp_type()) );
 	this->init();
 	if (other.spline_r_ != nullptr && other.spline_i_ != nullptr) {
@@ -35,6 +38,8 @@ NCPA::GSLInterpolator1D::GSLInterpolator1D( const GSLInterpolator1D &other )
 		this->accel_r_->miss_count = other.accel_r_->miss_count;
 		this->accel_i_->miss_count = other.accel_i_->miss_count;
 	}
+	this->minx_ = other.minx_;
+	this->maxx_ = other.maxx_;
 	ready();
 }
 
@@ -45,6 +50,7 @@ NCPA::GSLInterpolator1D::GSLInterpolator1D( GSLInterpolator1D &&other )
 
 NCPA::GSLInterpolator1D::~GSLInterpolator1D() {
 	this->free();
+	delete interptype_;
 }
 
 void swap( NCPA::GSLInterpolator1D &a, NCPA::GSLInterpolator1D &b ) {
@@ -57,22 +63,28 @@ void swap( NCPA::GSLInterpolator1D &a, NCPA::GSLInterpolator1D &b ) {
 	swap( a.accel_i_, b.accel_i_ );
 	swap( a.interptype_, b.interptype_ );
 	swap( a.ready_, b.ready_ );
+	swap( a.minx_, b.minx_ );
+	swap( a.maxx_, b.maxx_ );
 }
 
-void NCPA::GSLInterpolator1D::init() {
+NCPA::Interpolator1D* NCPA::GSLInterpolator1D::init() {
 	spline_r_ = nullptr;
 	spline_i_ = nullptr;
 	accel_r_ = nullptr;
 	accel_i_ = nullptr;
+	minx_ = 0.0;
+	maxx_ = 0.0;
+	return static_cast<NCPA::Interpolator1D *>( this );
 }
 
 //void NCPA::GSLInterpolator1D::init_spline_(gsl_spline * &spline) {
 //
 //}
 
-void NCPA::GSLInterpolator1D::allocate( size_t n ) {
+NCPA::Interpolator1D* NCPA::GSLInterpolator1D::allocate( size_t n ) {
 	allocate_spline_( spline_r_, accel_r_, n );
 	allocate_spline_( spline_i_, accel_i_, n );
+	return static_cast<NCPA::Interpolator1D *>( this );
 }
 
 void NCPA::GSLInterpolator1D::allocate_spline_(
@@ -82,10 +94,11 @@ void NCPA::GSLInterpolator1D::allocate_spline_(
 	ready_ = false;
 }
 
-void NCPA::GSLInterpolator1D::ready() {
+NCPA::Interpolator1D* NCPA::GSLInterpolator1D::ready() {
 	if (spline_r_ != nullptr && spline_i_ != nullptr) {
 		ready_ = true;
 	}
+	return static_cast<NCPA::Interpolator1D *>( this );
 }
 
 bool NCPA::GSLInterpolator1D::is_ready() {
@@ -95,7 +108,8 @@ bool NCPA::GSLInterpolator1D::is_ready() {
 void NCPA::GSLInterpolator1D::free() {
 	free_spline_( spline_r_, accel_r_ );
 	free_spline_( spline_i_, accel_i_ );
-	init();
+	minx_ = 0.0;
+	maxx_ = 0.0;
 }
 
 void NCPA::GSLInterpolator1D::free_spline_(gsl_spline *&spline,
@@ -111,18 +125,20 @@ void NCPA::GSLInterpolator1D::free_spline_(gsl_spline *&spline,
 	ready_ = false;
 }
 
-void NCPA::GSLInterpolator1D::set( size_t n, const double *x, const double *y ) {
+NCPA::Interpolator1D* NCPA::GSLInterpolator1D::set( size_t n, const double *x, const double *y ) {
 	double *z = NCPA::zeros<double>( n );
 	this->set_splines_( n, x, y, z );
 	delete [] z;
+	return static_cast<NCPA::Interpolator1D *>( this );
 }
 
-void NCPA::GSLInterpolator1D::set( size_t n, const double *x, const double *y_r,
+NCPA::Interpolator1D* NCPA::GSLInterpolator1D::set( size_t n, const double *x, const double *y_r,
 		const double *y_i ) {
 	this->set_splines_( n, x, y_r, y_i );
+	return static_cast<NCPA::Interpolator1D *>( this );
 }
 
-void NCPA::GSLInterpolator1D::set( size_t n, const double *x,
+NCPA::Interpolator1D* NCPA::GSLInterpolator1D::set( size_t n, const double *x,
 		const std::complex<double> *y ) {
 	double *y_r = new double[n];
 	double *y_i = new double[n];
@@ -130,6 +146,7 @@ void NCPA::GSLInterpolator1D::set( size_t n, const double *x,
 	this->set_splines_( n, x, y_r, y_i );
 	delete [] y_r;
 	delete [] y_i;
+	return static_cast<NCPA::Interpolator1D *>( this );
 }
 
 void NCPA::GSLInterpolator1D::set_splines_( size_t n, const double *x, const double *y_r,
@@ -146,6 +163,8 @@ void NCPA::GSLInterpolator1D::set_splines_( size_t n, const double *x, const dou
 	allocate_spline_( spline_i_, accel_i_, n );
 	gsl_spline_init( spline_r_, x, y_r, n );
 	gsl_spline_init( spline_i_, x, y_i, n );
+	minx_ = x[0];
+	maxx_ = x[n-1];
 }
 
 const std::string NCPA::GSLInterpolator1D::identifier() const {
@@ -159,21 +178,21 @@ size_t NCPA::GSLInterpolator1D::max_derivative() const {
 }
 
 
-double NCPA::GSLInterpolator1D::eval_f( double x ) {
+double NCPA::GSLInterpolator1D::eval_f_( double x ) {
 	if (this->is_ready()) {
 		return gsl_spline_eval( spline_r_, x, accel_r_ );
 	} else {
 		throw std::domain_error( "Spline not ready!" );
 	}
 }
-double NCPA::GSLInterpolator1D::eval_df( double x ) {
+double NCPA::GSLInterpolator1D::eval_df_( double x ) {
 	if (this->is_ready()) {
 		return gsl_spline_eval_deriv( spline_r_, x, accel_r_ );
 	} else {
 		throw std::domain_error( "Spline not ready!" );
 	}
 }
-double NCPA::GSLInterpolator1D::eval_ddf( double x ) {
+double NCPA::GSLInterpolator1D::eval_d2f_( double x ) {
 	if (this->is_ready()) {
 		return gsl_spline_eval_deriv2( spline_r_, x, accel_r_ );
 	} else {
@@ -181,7 +200,7 @@ double NCPA::GSLInterpolator1D::eval_ddf( double x ) {
 	}
 }
 
-std::complex<double> NCPA::GSLInterpolator1D::eval_cf( double x ) {
+std::complex<double> NCPA::GSLInterpolator1D::eval_cf_( double x ) {
 	if (this->is_ready()) {
 		return std::complex<double>(
 				gsl_spline_eval( spline_r_, x, accel_r_ ),
@@ -191,7 +210,7 @@ std::complex<double> NCPA::GSLInterpolator1D::eval_cf( double x ) {
 		throw std::domain_error( "Spline not ready!" );
 	}
 }
-std::complex<double> NCPA::GSLInterpolator1D::eval_cdf( double x ) {
+std::complex<double> NCPA::GSLInterpolator1D::eval_cdf_( double x ) {
 	if (this->is_ready()) {
 		return std::complex<double>(
 				gsl_spline_eval_deriv( spline_r_, x, accel_r_ ),
@@ -201,7 +220,7 @@ std::complex<double> NCPA::GSLInterpolator1D::eval_cdf( double x ) {
 		throw std::domain_error( "Spline not ready!" );
 	}
 }
-std::complex<double> NCPA::GSLInterpolator1D::eval_cddf( double x ) {
+std::complex<double> NCPA::GSLInterpolator1D::eval_cd2f_( double x ) {
 	if (this->is_ready()) {
 		return std::complex<double>(
 				gsl_spline_eval_deriv2( spline_r_, x, accel_r_ ),
@@ -215,5 +234,44 @@ std::complex<double> NCPA::GSLInterpolator1D::eval_cddf( double x ) {
 gsl_interp_type *NCPA::GSLInterpolator1D::get_gsl_interp_type() const {
 	return interptype_;
 }
+
+void NCPA::GSLInterpolator1D::set_gsl_interp_type( const gsl_interp_type *gsltype ) {
+	interptype_ = new gsl_interp_type(*gsltype);
+}
+
+void NCPA::GSLInterpolator1D::get_interp_limits( double &xmin, double &xmax ) const {
+	xmin = get_low_interp_limit();
+	xmax = get_high_interp_limit();
+}
+
+double NCPA::GSLInterpolator1D::get_low_interp_limit() const {
+	if (spline_r_ == nullptr) {
+		throw std::out_of_range( "Spline is not ready");
+	}
+	return minx_;
+}
+double NCPA::GSLInterpolator1D::get_high_interp_limit() const {
+	if (spline_r_ == nullptr) {
+		throw std::out_of_range( "Spline is not ready");
+	}
+	return maxx_;
+}
+
+gsl_spline *NCPA::GSLInterpolator1D::get_real_spline() {
+	return spline_r_;
+}
+
+gsl_spline *NCPA::GSLInterpolator1D::get_imag_spline() {
+	return spline_i_;
+}
+
+gsl_interp_accel *NCPA::GSLInterpolator1D::get_real_accel() {
+	return accel_r_;
+}
+
+gsl_interp_accel *NCPA::GSLInterpolator1D::get_imag_accel() {
+	return accel_i_;
+}
+
 
 #endif

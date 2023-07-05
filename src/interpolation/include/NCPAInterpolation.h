@@ -5,5 +5,6 @@
 #include "LANLLinearInterpolator1D.h"
 #include "LANLNaturalCubicSplineInterpolator1D.h"
 #include "GSLInterpolator1D.h"
+#include "GSLPeriodicInterpolator1D.h"
 
 #endif

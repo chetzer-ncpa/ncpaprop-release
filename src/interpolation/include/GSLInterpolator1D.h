@@ -15,38 +15,42 @@ namespace NCPA {
 
 	class GSLInterpolator1D : public Interpolator1D {
 	public:
+		GSLInterpolator1D();
 		GSLInterpolator1D( const gsl_interp_type *gsltype );
 		GSLInterpolator1D( const GSLInterpolator1D &other );
 		GSLInterpolator1D( GSLInterpolator1D &&other );
 		virtual ~GSLInterpolator1D();
 		friend void ::swap( GSLInterpolator1D &a, GSLInterpolator1D &b );
 
-		virtual void set( size_t n, const double *x, const double *y );
-		virtual void set( size_t n, const double *x, const double *y_r,
+		virtual Interpolator1D* set( size_t n, const double *x, const double *y );
+		virtual Interpolator1D* set( size_t n, const double *x, const double *y_r,
 				const double *y_i );
-		virtual void set( size_t n, const double *x,
+		virtual Interpolator1D* set( size_t n, const double *x,
 				const std::complex<double> *y );
 
-		virtual void init();
-		virtual void allocate( size_t n );
-		virtual void ready();
+		virtual Interpolator1D* init();
+		virtual Interpolator1D* allocate( size_t n );
+		virtual Interpolator1D* ready();
 		virtual void free();
 		virtual bool is_ready();
 		virtual size_t max_derivative() const;
 		virtual gsl_interp_type *get_gsl_interp_type() const;
+		virtual void set_gsl_interp_type( const gsl_interp_type *gsltype );
 
-		const std::string identifier() const;
-		virtual double eval_f( double x );
-		virtual double eval_df( double x );
-		virtual double eval_ddf( double x );
+		virtual const std::string identifier() const;
+		virtual void get_interp_limits( double &xmin, double &xmax ) const;
+		virtual double get_low_interp_limit() const;
+		virtual double get_high_interp_limit() const;
 
-		virtual std::complex<double> eval_cf( double x );
-		virtual std::complex<double> eval_cdf( double x );
-		virtual std::complex<double> eval_cddf( double x );
+		virtual gsl_spline *get_real_spline();
+		virtual gsl_spline *get_imag_spline();
+		virtual gsl_interp_accel *get_real_accel();
+		virtual gsl_interp_accel *get_imag_accel();
 
-//	protected:
+	protected:
 		bool ready_ = false;
-		gsl_interp_type *interptype_;
+		double minx_, maxx_;
+		gsl_interp_type *interptype_ = nullptr;
 		gsl_interp_accel *accel_r_ = nullptr, *accel_i_ = nullptr;
 		gsl_spline *spline_r_ = nullptr, *spline_i_ = nullptr;
 
@@ -54,6 +58,15 @@ namespace NCPA {
 		void set_splines_( size_t n, const double *x, const double *y_r,
 				const double *y_i );
 		void free_spline_( gsl_spline *&spline, gsl_interp_accel *&accel );
+
+		virtual double eval_f_( double x );
+		virtual double eval_df_( double x );
+		virtual double eval_d2f_( double x );
+
+		virtual std::complex<double> eval_cf_( double x );
+		virtual std::complex<double> eval_cdf_( double x );
+		virtual std::complex<double> eval_cd2f_( double x );
+
 	};
 }
 
