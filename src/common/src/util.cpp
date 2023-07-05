@@ -466,3 +466,29 @@ void NCPA::read_text_columns_from_file_with_header(
 		}
 	}
 }
+
+void NCPA::double2complex( size_t n, const double *in, std::complex<double> *out ) {
+	for (size_t i = 0; i < n; i++) {
+		out[i] = std::complex<double>( in[i], 0.0 );
+	}
+}
+
+void NCPA::double2complex( size_t n, const double *real, const double *imag,
+		std::complex<double> *out ) {
+	for (size_t i = 0; i < n; i++) {
+		out[i] = std::complex<double>( real[i], imag[i] );
+	}
+}
+
+void NCPA::complex2double( size_t n, const std::complex<double> *in,
+		double *real, double *imag ) {
+	for (size_t i = 0; i < n; i++) {
+		real[i] = in[i].real();
+		imag[i] = in[i].imag();
+	}
+}
+
+
+
+
+

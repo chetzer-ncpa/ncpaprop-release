@@ -15,7 +15,12 @@
 
 	Conversion:
 	cart2pol(double,double,double&,double&): void
+	void complex2double( size_t n, const std::complex<double> *in,
+		double *real, double *imag );
 	deg2rad<T>(T): T
+	void double2complex( size_t n, const double *real, std::complex<double> *out );
+	void double2complex( size_t n, const double *real, const double *imag,
+		std::complex<double> *out );
 	rad2deg<T>(T): T
 
 	File interaction:
@@ -187,6 +192,18 @@ namespace NCPA {
 	std::complex<double> **cmatrix(long nr, long nc);
 
 	/**
+	 * Converts an array of complex<double>s into the equivalent arrays of doubles
+	 * where one array represents the real parts and the other the imaginary parts.
+	 * @brief Converts a complex<double> array to two double arrays
+	 * @param n The size of the arrays
+	 * @param in The complex array to decompose
+	 * @param real The real parts
+	 * @param imag The imaginary parts
+	 */
+	void complex2double( size_t n, const std::complex<double> *in,
+			double *real, double *imag );
+
+	/**
 	@brief Counts the rows in a file.
 	@input filename The filename to count the rows from.
 	@returns The number of rows in the file.
@@ -235,6 +252,28 @@ namespace NCPA {
 		NCPA::allocate_matrix<> template (if not).}
 	*/
 	double **dmatrix(long nr, long nc);
+
+	/**
+	 * Converts an array of doubles into the equivalent array of complex<double>s
+	 * with the imaginary value set to zero.
+	 * @brief Converts a double array to a complex<double> array
+	 * @param n The size of the arrays
+	 * @param real The double array to convert
+	 * @param out The complex<double> array to return
+	 */
+	void double2complex( size_t n, const double *real, std::complex<double> *out );
+
+	/**
+	 * Converts two arrays of doubles into the equivalent array of complex<double>s
+	 * where one array represents the real parts and the other the imaginary parts.
+	 * @brief Converts a double array to a complex<double> array
+	 * @param n The size of the arrays
+	 * @param real The double array to convert as the real parts
+	 * @param imag The double array to convert as the real parts
+	 * @param out The complex<double> array to return
+	 */
+	void double2complex( size_t n, const double *real, const double *imag,
+			std::complex<double> *out );
 
 	/**
 	@brief Evaluate a polynomial from its coefficients.

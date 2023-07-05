@@ -9,7 +9,6 @@
 
 #include "binaryreader.h"
 #include "geographic.h"
-#include "LANLInterpolation.h"
 
 #include "AtmosphericTransferFunctionSolver.h"
 
