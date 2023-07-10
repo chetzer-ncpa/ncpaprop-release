@@ -29,7 +29,7 @@ define build-lib =
 $(MAKE) -C src/$(call get_target,$@,build) all
 @MKDIR_CMD@ -p $(includedir-shared)
 @CP_CMD@ $(wildcard src/$(call get_target,$@,build)/include/*.h) $(includedir-shared)/
-@MKDIR_CMD@ -p $(libdir)
+@MKDIR_CMD@ -p $(libdir-shared)
 @CP_CMD@ $(call construct_libpath,$(call get_target,$@,build)) $(libdir-shared)/
 endef
 
