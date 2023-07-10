@@ -76,6 +76,9 @@ case $host_os in
 		AS_IF([test "x$enable_autodependencies" = "xyes"],[
 			AC_MSG_ERROR([Option --enable-autodependencies is not supported on MacOS.])
 		])
+		cp_cmd="cp"
+		rm_cmd="rm"
+		mkdir_cmd="mkdir"
 		;;
 	linux* )
 		# For Linux, need to know if apt-get or yum is installed
@@ -90,7 +93,9 @@ case $host_os in
 		AS_IF([test "x${enable_compilerwarnings}" != "xyes"],[
 			warning_compiler_flags="${warning_compiler_flags} -Wno-unused-but-set-variable -Wno-maybe-uninitialized -Wno-unused-result"
 		])
-		
+		cp_cmd="cp"
+		rm_cmd="rm"
+		mkdir_cmd="mkdir"
 		;;
 	*)
 		AC_MSG_ERROR([Your platform is not currently supported])
@@ -700,6 +705,10 @@ AC_SUBST([PETSC_DIR],$PETSC_DIR)
 AC_SUBST([SLEPC_DIR],$SLEPC_DIR)
 AC_SUBST([PETSC_INCLUDE_FILE_GENERIC],$PETSC_INCLUDE_FILE_GENERIC)
 AC_SUBST([SLEPC_INCLUDE_FILE_GENERIC],$SLEPC_INCLUDE_FILE_GENERIC)
+
+AC_SUBST([RM_CMD],$rm_cmd)
+AC_SUBST([CP_CMD],$cp_cmd)
+AC_SUBST([MKDIR_CMD],$mkdir_cmd)
 
 AC_SUBST([PETSC_ARCH_REAL],$PETSC_ARCH_REAL)
 AC_SUBST([PETSC_ARCH_COMPLEX],$PETSC_ARCH_COMPLEX)

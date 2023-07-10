@@ -4,6 +4,7 @@ Makefile
 *.pe
 *.a
 *.swp
+todo.txt
 bin/ModBB
 src/modbb/ModBB
 bin/Modess

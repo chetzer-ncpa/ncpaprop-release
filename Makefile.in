@@ -27,15 +27,16 @@ get_target = $(subst $(2)-,,$(1))
 
 define build-lib =
 $(MAKE) -C src/$(call get_target,$@,build) all
-mkdir -p $(includedir-shared)
-cp $(wildcard src/$(call get_target,$@,build)/include/*.h) $(includedir-shared)/
-cp $(call construct_libpath,$(call get_target,$@,build)) $(libdir-shared)/
+@MKDIR_CMD@ -p $(includedir-shared)
+@CP_CMD@ $(wildcard src/$(call get_target,$@,build)/include/*.h) $(includedir-shared)/
+@MKDIR_CMD@ -p $(libdir)
+@CP_CMD@ $(call construct_libpath,$(call get_target,$@,build)) $(libdir-shared)/
 endef
 
 define clean-lib =
 -$(MAKE) -C src/$(call get_target,$@,clean) clean
--rm $(libdir-shared)/$(call construct_libname,$(call get_target,$@,clean)) 
--rm $(subst src/$(call get_target,$@,clean)/include,src/include,$(wildcard src/$(call get_target,$@,clean)/include/*.h))
+-@RM_CMD@ $(libdir-shared)/$(call construct_libname,$(call get_target,$@,clean)) 
+-@RM_CMD@ $(subst src/$(call get_target,$@,clean)/include,src/include,$(wildcard src/$(call get_target,$@,clean)/include/*.h))
 endef
 
 define test-lib =
@@ -62,12 +63,12 @@ clean-test-common clean-test-interpolation clean-test-units clean-test-atmospher
 
 build-modes:
 	$(MAKE) -C src/modes all PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	cp src/modes/include/*.h src/include/
-	cp src/modes/lib/libncpamodes.a lib/
+	@CP_CMD@ src/modes/include/*.h src/include/
+	@CP_CMD@ src/modes/lib/libncpamodes.a lib/
 
 clean-modes:
 	-$(MAKE) -C src/modes clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-rm lib/libncpamodes.a
+	-@RM_CMD@ lib/libncpamodes.a
 
 test-modes:
 	$(MAKE) -C src/modes/test test
@@ -110,7 +111,7 @@ clean: $(clean-parts)
 	-$(MAKE) -C src/modbb clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/epade_pe clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
 	-$(MAKE) -C src/wmod clean  PETSC_ARCH=@PETSC_ARCH_REAL@ PETSC_DIR=@PETSC_DIR@ SLEPC_DIR=@SLEPC_DIR@
-	-rm bin/ModBB  bin/Modess  bin/ePape  bin/WMod lib/libatmosphere.a \
+	-@RM_CMD@ bin/ModBB  bin/Modess  bin/ePape  bin/WMod lib/libatmosphere.a \
 		lib/libmodes.a lib/libbroadband.a lib/libpe.a \
 		src/include/*.h
 

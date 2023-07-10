@@ -651,6 +651,9 @@ ac_header_cxx_list=
 ac_subst_vars='LTLIBOBJS
 PETSC_ARCH_COMPLEX
 PETSC_ARCH_REAL
+MKDIR_CMD
+CP_CMD
+RM_CMD
 SLEPC_INCLUDE_FILE_GENERIC
 PETSC_INCLUDE_FILE_GENERIC
 SLEPC_DIR
@@ -3151,6 +3154,9 @@ then :
 			as_fn_error $? "Option --enable-autodependencies is not supported on MacOS." "$LINENO" 5
 
 fi
+		cp_cmd="cp"
+		rm_cmd="rm"
+		mkdir_cmd="mkdir"
 		;;
 	linux* )
 		# For Linux, need to know if apt-get or yum is installed
@@ -3221,7 +3227,9 @@ then :
 			warning_compiler_flags="${warning_compiler_flags} -Wno-unused-but-set-variable -Wno-maybe-uninitialized -Wno-unused-result"
 
 fi
-
+		cp_cmd="cp"
+		rm_cmd="rm"
+		mkdir_cmd="mkdir"
 		;;
 	*)
 		as_fn_error $? "Your platform is not currently supported" "$LINENO" 5
@@ -9903,6 +9911,13 @@ SLEPC_DIR=$SLEPC_DIR
 PETSC_INCLUDE_FILE_GENERIC=$PETSC_INCLUDE_FILE_GENERIC
 
 SLEPC_INCLUDE_FILE_GENERIC=$SLEPC_INCLUDE_FILE_GENERIC
+
+
+RM_CMD=$rm_cmd
+
+CP_CMD=$cp_cmd
+
+MKDIR_CMD=$mkdir_cmd
 
 
 PETSC_ARCH_REAL=$PETSC_ARCH_REAL
