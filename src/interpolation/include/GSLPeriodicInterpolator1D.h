@@ -17,7 +17,8 @@ namespace NCPA {
 
 	class GSLPeriodicInterpolator1D : public GSLInterpolator1D {
 	public:
-		GSLPeriodicInterpolator1D( const gsl_interp_type *gsltype );
+		GSLPeriodicInterpolator1D( const gsl_interp_type *gsltype,
+				NCPA::interpolator1d_t ncpatype );
 		GSLPeriodicInterpolator1D( const GSLPeriodicInterpolator1D &other );
 		GSLPeriodicInterpolator1D( GSLPeriodicInterpolator1D &&other );
 		virtual ~GSLPeriodicInterpolator1D();

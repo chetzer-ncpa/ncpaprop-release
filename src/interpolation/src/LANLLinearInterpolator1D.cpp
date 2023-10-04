@@ -12,7 +12,8 @@
 #include <iostream>
 
 NCPA::LANLLinearInterpolator1D::LANLLinearInterpolator1D()
-		: NCPA::Interpolator1D(), ready_{false}, minx_{0.0}, maxx_{0.0} {
+		: NCPA::Interpolator1D(NCPA::interpolator1d_t::LANL_1D_LINEAR),
+		  ready_{false}, minx_{0.0}, maxx_{0.0} {
 	this->init();
 }
 
@@ -105,11 +106,13 @@ NCPA::Interpolator1D* NCPA::LANLLinearInterpolator1D::ready() {
 
 	if (real_spline_.length > 0) {
 		ready_ = true;
+	} else {
+		throw std::domain_error("Interpolator has not been set up");
 	}
 	return static_cast<NCPA::Interpolator1D *>( this );
 }
 
-bool NCPA::LANLLinearInterpolator1D::is_ready() {
+bool NCPA::LANLLinearInterpolator1D::is_ready() const {
 	return ready_;
 }
 
@@ -224,10 +227,6 @@ void NCPA::LANLLinearInterpolator1D::set_y( size_t n, const std::complex<double>
 	ready_ = false;
 }
 
-const std::string NCPA::LANLLinearInterpolator1D::identifier() const {
-	return "LANL 1-D Linear Interpolator";
-}
-
 size_t NCPA::LANLLinearInterpolator1D::max_derivative() const {
 	return 3;
 }
@@ -251,36 +250,36 @@ double NCPA::LANLLinearInterpolator1D::get_high_interp_limit() const {
 }
 
 
-double NCPA::LANLLinearInterpolator1D::eval_f_( double x ) {
+double NCPA::LANLLinearInterpolator1D::interpolate_f_( double x ) {
 	if (this->is_ready()) {
 		return LANL::eval_f( x, real_spline_ );
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-double NCPA::LANLLinearInterpolator1D::eval_df_( double x ) {
+double NCPA::LANLLinearInterpolator1D::interpolate_df_( double x ) {
 	if (this->is_ready()) {
 		return LANL::eval_df( x, real_spline_ );
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-double NCPA::LANLLinearInterpolator1D::eval_d2f_( double x ) {
+double NCPA::LANLLinearInterpolator1D::interpolate_d2f_( double x ) {
 	if (this->is_ready()) {
 		return 0.0;
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-double NCPA::LANLLinearInterpolator1D::eval_d3f_( double x ) {
+double NCPA::LANLLinearInterpolator1D::interpolate_d3f_( double x ) {
 	if (this->is_ready()) {
 		return 0.0;
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
 
-std::complex<double> NCPA::LANLLinearInterpolator1D::eval_cf_( double x ) {
+std::complex<double> NCPA::LANLLinearInterpolator1D::interpolate_cf_( double x ) {
 	if (this->is_ready()) {
 		double impart = 0.0;
 		if (imag_spline_.f_vals != nullptr) {
@@ -291,10 +290,10 @@ std::complex<double> NCPA::LANLLinearInterpolator1D::eval_cf_( double x ) {
 				impart
 		);
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-std::complex<double> NCPA::LANLLinearInterpolator1D::eval_cdf_( double x ) {
+std::complex<double> NCPA::LANLLinearInterpolator1D::interpolate_cdf_( double x ) {
 	if (this->is_ready()) {
 		double impart = 0.0;
 		if (imag_spline_.f_vals != nullptr) {
@@ -305,21 +304,21 @@ std::complex<double> NCPA::LANLLinearInterpolator1D::eval_cdf_( double x ) {
 				impart
 		);
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-std::complex<double> NCPA::LANLLinearInterpolator1D::eval_cd2f_( double x ) {
+std::complex<double> NCPA::LANLLinearInterpolator1D::interpolate_cd2f_( double x ) {
 	if (this->is_ready()) {
 		return std::complex<double>( 0.0, 0.0 );
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-std::complex<double> NCPA::LANLLinearInterpolator1D::eval_cd3f_( double x ) {
+std::complex<double> NCPA::LANLLinearInterpolator1D::interpolate_cd3f_( double x ) {
 	if (this->is_ready()) {
 		return std::complex<double>( 0.0, 0.0 );
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
 
@@ -328,6 +327,32 @@ LANL::Spline1DLinear * NCPA::LANLLinearInterpolator1D::get_real_spline() {
 }
 LANL::Spline1DLinear * NCPA::LANLLinearInterpolator1D::get_imag_spline() {
 	return &imag_spline_;
+}
+
+double NCPA::LANLLinearInterpolator1D::extrapolate_f_( double x ) {
+	return this->linear_extrapolate_f_( x );
+}
+double NCPA::LANLLinearInterpolator1D::extrapolate_df_( double x ) {
+	return this->linear_extrapolate_df_( x );
+}
+double NCPA::LANLLinearInterpolator1D::extrapolate_d2f_( double x ) {
+	return this->linear_extrapolate_d2f_( x );
+}
+double NCPA::LANLLinearInterpolator1D::extrapolate_d3f_( double x ) {
+	return this->linear_extrapolate_d3f_( x );
+}
+
+std::complex<double> NCPA::LANLLinearInterpolator1D::extrapolate_cf_( double x ) {
+	return this->linear_extrapolate_cf_( x );
+}
+std::complex<double> NCPA::LANLLinearInterpolator1D::extrapolate_cdf_( double x ) {
+	return this->linear_extrapolate_cdf_( x );
+}
+std::complex<double> NCPA::LANLLinearInterpolator1D::extrapolate_cd2f_( double x ) {
+	return this->linear_extrapolate_cd2f_( x );
+}
+std::complex<double> NCPA::LANLLinearInterpolator1D::extrapolate_cd3f_( double x ) {
+	return this->linear_extrapolate_cd3f_( x );
 }
 
 #endif

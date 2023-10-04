@@ -16,7 +16,7 @@ namespace NCPA {
 	class GSLInterpolator1D : public Interpolator1D {
 	public:
 		GSLInterpolator1D();
-		GSLInterpolator1D( const gsl_interp_type *gsltype );
+		GSLInterpolator1D( const gsl_interp_type *gsltype, NCPA::interpolator1d_t t );
 		GSLInterpolator1D( const GSLInterpolator1D &other );
 		GSLInterpolator1D( GSLInterpolator1D &&other );
 		virtual ~GSLInterpolator1D();
@@ -32,12 +32,11 @@ namespace NCPA {
 		virtual Interpolator1D* allocate( size_t n );
 		virtual Interpolator1D* ready();
 		virtual void free();
-		virtual bool is_ready();
+		virtual bool is_ready() const;
 		virtual size_t max_derivative() const;
 		virtual gsl_interp_type *get_gsl_interp_type() const;
 		virtual void set_gsl_interp_type( const gsl_interp_type *gsltype );
 
-		virtual const std::string identifier() const;
 		virtual void get_interp_limits( double &xmin, double &xmax ) const;
 		virtual double get_low_interp_limit() const;
 		virtual double get_high_interp_limit() const;
@@ -59,13 +58,19 @@ namespace NCPA {
 				const double *y_i );
 		void free_spline_( gsl_spline *&spline, gsl_interp_accel *&accel );
 
-		virtual double eval_f_( double x );
-		virtual double eval_df_( double x );
-		virtual double eval_d2f_( double x );
+		virtual double extrapolate_f_( double x );
+		virtual double extrapolate_df_( double x );
+		virtual double extrapolate_d2f_( double x );
+		virtual std::complex<double> extrapolate_cf_( double x );
+		virtual std::complex<double> extrapolate_cdf_( double x );
+		virtual std::complex<double> extrapolate_cd2f_( double x );
 
-		virtual std::complex<double> eval_cf_( double x );
-		virtual std::complex<double> eval_cdf_( double x );
-		virtual std::complex<double> eval_cd2f_( double x );
+		virtual double interpolate_f_( double x );
+		virtual double interpolate_df_( double x );
+		virtual double interpolate_d2f_( double x );
+		virtual std::complex<double> interpolate_cf_( double x );
+		virtual std::complex<double> interpolate_cdf_( double x );
+		virtual std::complex<double> interpolate_cd2f_( double x );
 
 	};
 }

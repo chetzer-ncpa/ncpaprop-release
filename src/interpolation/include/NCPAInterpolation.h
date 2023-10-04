@@ -6,5 +6,7 @@
 #include "LANLNaturalCubicSplineInterpolator1D.h"
 #include "GSLInterpolator1D.h"
 #include "GSLPeriodicInterpolator1D.h"
+#include "NCPALinearInterpolator1D.h"
+#include "NCPANearestNeighborInterpolator1D.h"
 
 #endif

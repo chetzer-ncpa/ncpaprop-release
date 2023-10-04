@@ -16,8 +16,8 @@
 #include <iostream>
 
 NCPA::GSLPeriodicInterpolator1D::GSLPeriodicInterpolator1D(
-		const gsl_interp_type *interp_type )
-		: NCPA::GSLInterpolator1D(interp_type) {}
+		const gsl_interp_type *interp_type, NCPA::interpolator1d_t ncpa_type )
+		: NCPA::GSLInterpolator1D(interp_type, ncpa_type) {}
 
 NCPA::GSLPeriodicInterpolator1D::GSLPeriodicInterpolator1D(
 		const GSLPeriodicInterpolator1D &other )
@@ -51,11 +51,11 @@ double NCPA::GSLPeriodicInterpolator1D::f( double x ) {
 		while (x > max_x) {
 			x -= xrange;
 		}
-		return eval_f_( x );
+		return interpolate_f_( x );
 	} else {
 		std::ostringstream oss;
 		oss << "Requested value " << x << " outside range of interpolator ["
-				<< min_x << "," << max_x << "]";
+				<< min_x << "," << max_x << "], and extrapolation is turned off.";
 		throw std::out_of_range(oss.str());
 	}
 }
@@ -72,11 +72,11 @@ double NCPA::GSLPeriodicInterpolator1D::df( double x ) {
 		while (x > max_x) {
 			x -= xrange;
 		}
-		return eval_df_( x );
+		return interpolate_df_( x );
 	} else {
 		std::ostringstream oss;
 		oss << "Requested value " << x << " outside range of interpolator ["
-				<< min_x << "," << max_x << "]";
+				<< min_x << "," << max_x << "], and extrapolation is turned off.";
 		throw std::out_of_range(oss.str());
 	}
 }
@@ -99,18 +99,18 @@ double NCPA::GSLPeriodicInterpolator1D::df( size_t n, double x ) {
 		while (x > max_x) {
 			x -= xrange;
 		}
-//		return eval_df_( n, x );
+//		return interpolate_df_( n, x );
 		if (n == 2) {
-			return eval_d2f_( x );
+			return interpolate_d2f_( x );
 		} else if (n == 3) {
-			return eval_d3f_( x );
+			return interpolate_d3f_( x );
 		} else {
 			throw std::out_of_range( "Derivative level must be in [0,3]" );
 		}
 	} else {
 		std::ostringstream oss;
 		oss << "Requested value " << x << " outside range of interpolator ["
-				<< min_x << "," << max_x << "]";
+				<< min_x << "," << max_x << "], and extrapolation is turned off.";
 		throw std::out_of_range(oss.str());
 	}
 }
@@ -127,11 +127,11 @@ std::complex<double> NCPA::GSLPeriodicInterpolator1D::cf( double x ) {
 		while (x > max_x) {
 			x -= xrange;
 		}
-		return eval_cf_( x );
+		return interpolate_cf_( x );
 	} else {
 		std::ostringstream oss;
 		oss << "Requested value " << x << " outside range of interpolator ["
-				<< min_x << "," << max_x << "]";
+				<< min_x << "," << max_x << "], and extrapolation is turned off.";
 		throw std::out_of_range(oss.str());
 	}
 }
@@ -148,11 +148,11 @@ std::complex<double> NCPA::GSLPeriodicInterpolator1D::cdf( double x ) {
 		while (x > max_x) {
 			x -= xrange;
 		}
-		return eval_cdf_( x );
+		return interpolate_cdf_( x );
 	} else {
 		std::ostringstream oss;
 		oss << "Requested value " << x << " outside range of interpolator ["
-				<< min_x << "," << max_x << "]";
+				<< min_x << "," << max_x << "], and extrapolation is turned off.";
 		throw std::out_of_range(oss.str());
 	}
 }
@@ -176,9 +176,9 @@ std::complex<double> NCPA::GSLPeriodicInterpolator1D::cdf( size_t n, double x ) 
 			x -= xrange;
 		}
 		if (n == 2) {
-			return eval_cd2f_( x );
+			return interpolate_cd2f_( x );
 		} else if (n == 3) {
-			return eval_cd3f_( x );
+			return interpolate_cd3f_( x );
 		} else {
 			throw std::out_of_range( "Derivative level must be in [0,3]" );
 		}
@@ -186,7 +186,7 @@ std::complex<double> NCPA::GSLPeriodicInterpolator1D::cdf( size_t n, double x ) 
 	} else {
 		std::ostringstream oss;
 		oss << "Requested value " << x << " outside range of interpolator ["
-				<< min_x << "," << max_x << "]";
+				<< min_x << "," << max_x << "], and extrapolation is turned off.";
 		throw std::out_of_range(oss.str());
 	}
 }

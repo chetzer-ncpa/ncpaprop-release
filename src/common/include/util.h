@@ -351,6 +351,38 @@ namespace NCPA {
 		}
 	}
 
+	/**
+	 * Finds and returns the indices of the array elements before and after the supplied
+	 * value.
+	 */
+	template<typename T>
+	bool find_interval_inclusive( T* z, size_t NZ, T val, size_t &bottom, size_t &top ) {
+		double *it = std::lower_bound(z, z+NZ, val);
+		size_t diff = it - z;
+		if (diff == 0) {
+			bottom = 0;
+			if (val < z[0]) {
+				top = 0;
+				return false;
+			} else {
+				top = 1;
+				return true;
+			}
+		} else if (diff == NZ) {
+			top = NZ;
+			if (val > z[NZ-1]) {
+				bottom = NZ;
+				return false;
+			} else {
+				bottom = NZ-1;
+				return true;
+			}
+		} else {
+			bottom = diff - 1;
+			top = diff;
+			return true;
+		}
+	}
 
 	/**
 	Finds and returns the index of the array element that is closest

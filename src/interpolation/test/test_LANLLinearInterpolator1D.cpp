@@ -185,7 +185,7 @@ TEST_F(LANLLinearInterpolator1DTest,IsReadyReturnsProperValue) {
 }
 
 TEST_F(LANLLinearInterpolator1DTest,IdentifierIsCorrect) {
-	EXPECT_EQ( interp1->identifier(), "LANL 1-D Linear Interpolator");
+	EXPECT_EQ( interp1->identifier(), Interpolator1D::as_string( interp1->type() ));
 }
 
 TEST_F(LANLLinearInterpolator1DTest,RealInterpolatedValuesAreCorrect) {
@@ -291,6 +291,30 @@ TEST_F(LANLLinearInterpolator1DTest,ExtrapolationThrowsOutOfRangeIfExtrapolation
 	interp1->is_extrapolating( false );
 	EXPECT_THROW( {double d = interp1->f(interp1->get_low_interp_limit() - 1.0); }, std::out_of_range );
 	EXPECT_THROW( {double d = interp1->f(interp1->get_high_interp_limit() + 1.0); }, std::out_of_range );
+}
+
+TEST_F(LANLLinearInterpolator1DTest,ExtrapolationReturnsCorrectRealValueOnLowEnd) {
+	EXPECT_DOUBLE_EQ( interp1->f(-1.0), -2.0 );
+	EXPECT_DOUBLE_EQ( interp1->f(-3.0), -6.0 );
+}
+
+TEST_F(LANLLinearInterpolator1DTest,ExtrapolationReturnsCorrectRealValueOnHighEnd) {
+	EXPECT_DOUBLE_EQ( interp1->f(7.0), 64.0 );
+	EXPECT_DOUBLE_EQ( interp1->f(9.0), 96.0 );
+}
+
+TEST_F(LANLLinearInterpolator1DTest,ExtrapolationReturnsCorrectComplexValueOnLowEnd) {
+	EXPECT_DOUBLE_EQ( c_interp1->cf(-1.0).real(), -2.0 );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(-1.0).imag(), 4.0 );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(-4.0).real(), -8.0 );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(-4.0).imag(), 7.0 );
+}
+
+TEST_F(LANLLinearInterpolator1DTest,ExtrapolationReturnsCorrectComplexValueOnHighEnd) {
+	EXPECT_DOUBLE_EQ( c_interp1->cf(7.0).real(), 64.0 );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(7.0).imag(), -8.0 );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(9.0).real(), 96.0 );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(9.0).imag(), -12.0 );
 }
 
 

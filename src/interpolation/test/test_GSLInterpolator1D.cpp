@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <utility>
 #include <complex>
+#include <iostream>
 
 using namespace std;
 using namespace NCPA;
@@ -54,7 +55,23 @@ protected:
 		akima = Interpolator1D::build(interpolator1d_t::GSL_1D_AKIMA);
 		steffen = Interpolator1D::build(interpolator1d_t::GSL_1D_STEFFEN);
 
+//		cout << "Setup: Linear" << endl;
+//		for (size_t i = 0; i < 5; i++) {
+//			cout << "xvals[i]=" << l_xvals[i] << endl;
+//			cout << "yvals_r[i]=" << l_rvals[i] << endl;
+//			cout << "yvals_i[i]=" << l_ivals[i] << endl;
+//		}
+//		cout << "Linear setup done" << endl;
 		linear->set( 5, l_xvals, l_rvals, l_ivals )->ready();
+
+//		cout << "Setup: Nonlinear" << endl;
+//		for (size_t i = 0; i < 9; i++) {
+//			cout << "xvals[i]=" << n_xvals[i] << endl;
+//			cout << "yvals_r[i]=" << n_rvals[i] << endl;
+//			cout << "yvals_i[i]=" << n_ivals[i] << endl;
+//		}
+//		cout << "Nonlinear setup done" << endl;
+
 		polynomial->set( 9, n_xvals, n_rvals, n_ivals )->ready();
 		cubic->set( 9, n_xvals, n_rvals, n_ivals )->ready();
 		akima->set( 9, n_xvals, n_rvals, n_ivals )->ready();
@@ -374,8 +391,6 @@ TEST_F(GSLInterpolator1DTest,ExtrapolationOnLowEndReturnsCorrectComplexValue) {
 	x += stepsize;
 	EXPECT_DOUBLE_EQ( steffen->cf(x).real(), (f0 - (double)steps * steffen->cdf(x0)).real() );
 	EXPECT_DOUBLE_EQ( steffen->cf(x).imag(), (f0 - (double)steps * steffen->cdf(x0)).imag() );
-
-	// test periodic in a minute
 }
 
 TEST_F(GSLInterpolator1DTest,ExtrapolationOnLowEndReturnsCorrectComplexFirstDerivative) {
@@ -503,26 +518,26 @@ TEST_F(GSLInterpolator1DTest,ExtrapolationOnHighEndReturnsCorrectComplexSecondDe
 
 
 TEST_F(GSLInterpolator1DTest,LinearIdentifierIsCorrect) {
-	EXPECT_EQ( linear->identifier(), "GSL 1-D Interpolator (linear)" );
+	EXPECT_EQ( linear->identifier(), Interpolator1D::as_string( linear->type() ) );
 
 }
 
 TEST_F(GSLInterpolator1DTest,PolynomialIdentifierIsCorrect) {
-	EXPECT_EQ( polynomial->identifier(), "GSL 1-D Interpolator (polynomial)" );
+	EXPECT_EQ( polynomial->identifier(), Interpolator1D::as_string( polynomial->type() ) );
 }
 
 TEST_F(GSLInterpolator1DTest,CubicIdentifierIsCorrect) {
-	EXPECT_EQ( cubic->identifier(), "GSL 1-D Interpolator (cspline)" );
+	EXPECT_EQ( cubic->identifier(), Interpolator1D::as_string( cubic->type() ) );
 
 }
 
 TEST_F(GSLInterpolator1DTest,AkimaIdentifierIsCorrect) {
-	EXPECT_EQ( akima->identifier(), "GSL 1-D Interpolator (akima)" );
+	EXPECT_EQ( akima->identifier(), Interpolator1D::as_string( akima->type() ) );
 
 }
 
 TEST_F(GSLInterpolator1DTest,SteffenIdentifierIsCorrect) {
-	EXPECT_EQ( steffen->identifier(), "GSL 1-D Interpolator (steffen)" );
+	EXPECT_EQ( steffen->identifier(), Interpolator1D::as_string( steffen->type() ) );
 }
 
 

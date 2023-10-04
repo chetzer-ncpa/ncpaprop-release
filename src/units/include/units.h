@@ -108,9 +108,11 @@ namespace NCPA {
 		invalid_conversion( const std::string &msg );
 		invalid_conversion( units_t from, units_t to );
 	};
-
-
 }
+
+#ifndef NULL_UNIT
+#define NULL_UNIT NCPA::units_t::NONE
+#endif
 
 bool operator==(NCPA::units_t a, NCPA::units_t b);
 bool operator!=(NCPA::units_t a, NCPA::units_t b);

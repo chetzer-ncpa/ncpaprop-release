@@ -364,13 +364,13 @@ TEST_F(GSLPeriodicInterpolator1DTest,ExtrapolationOnHighEndReturnsCorrectComplex
 
 
 TEST_F(GSLPeriodicInterpolator1DTest,CubicPeriodicIdentifierIsCorrect) {
-	EXPECT_EQ( cubic_periodic->identifier(), "GSL 1-D Interpolator (cspline-periodic)" );
+	EXPECT_EQ( cubic_periodic->identifier(), Interpolator1D::as_string( cubic_periodic->type() ) );
 
 }
 
 
 TEST_F(GSLPeriodicInterpolator1DTest,AkimaPeriodicIdentifierIsCorrect) {
-	EXPECT_EQ( akima_periodic->identifier(), "GSL 1-D Interpolator (akima-periodic)" );
+	EXPECT_EQ( akima_periodic->identifier(), Interpolator1D::as_string( akima_periodic->type() ) );
 
 }
 

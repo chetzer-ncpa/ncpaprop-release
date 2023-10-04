@@ -197,7 +197,7 @@ TEST_F(LANLNaturalCubicSplineInterpolator1DTest,IsReadyReturnsProperValue) {
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,IdentifierIsCorrect) {
-	EXPECT_EQ( interp1->identifier(), "LANL 1-D Natural Cubic Spline Interpolator");
+	EXPECT_EQ( interp1->identifier(), Interpolator1D::as_string( interp1->type() ));
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,RealInterpolatedValuesAreCorrect) {
@@ -247,6 +247,38 @@ TEST_F(LANLNaturalCubicSplineInterpolator1DTest,IsExtrapolatingReturnsTrueByDefa
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,IsExtrapolatingReturnsFalseIfSet) {
 	interp1->is_extrapolating( false );
 	EXPECT_FALSE( interp1->is_extrapolating() );
+}
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ExtrapolationReturnsCorrectRealValueOnLowEnd) {
+	EXPECT_DOUBLE_EQ( interp1->f(-1.0), interp1->f(1.0) - 2.0*interp1->df(1.0) );
+	EXPECT_DOUBLE_EQ( interp1->f(-3.0), interp1->f(1.0) - 4.0*interp1->df(1.0) );
+}
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ExtrapolationReturnsCorrectRealValueOnHighEnd) {
+	EXPECT_DOUBLE_EQ( interp1->f(7.0), interp1->f(5.0) + 2.0*interp1->df(5.0) );
+	EXPECT_DOUBLE_EQ( interp1->f(9.0), interp1->f(5.0) + 4.0*interp1->df(5.0) );
+}
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ExtrapolationReturnsCorrectComplexValueOnLowEnd) {
+	EXPECT_DOUBLE_EQ( c_interp1->cf(-1.0).real(),
+			c_interp1->cf(1.0).real() - 2.0*c_interp1->cdf(1.0).real() );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(-1.0).imag(),
+			c_interp1->cf(1.0).imag() - 2.0*c_interp1->cdf(1.0).imag() );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(-4.0).real(),
+			c_interp1->cf(1.0).real() - 5.0*c_interp1->cdf(1.0).real() );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(-4.0).imag(),
+			c_interp1->cf(1.0).imag() - 5.0*c_interp1->cdf(1.0).imag() );
+}
+
+TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ExtrapolationReturnsCorrectComplexValueOnHighEnd) {
+	EXPECT_DOUBLE_EQ( c_interp1->cf(7.0).real(),
+			c_interp1->cf(5.0).real() + 2.0*c_interp1->cdf(5.0).real() );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(7.0).imag(),
+			c_interp1->cf(5.0).imag() + 2.0*c_interp1->cdf(5.0).imag() );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(9.0).real(),
+			c_interp1->cf(5.0).real() + 4.0*c_interp1->cdf(5.0).real() );
+	EXPECT_DOUBLE_EQ( c_interp1->cf(9.0).imag(),
+			c_interp1->cf(5.0).imag() + 4.0*c_interp1->cdf(5.0).imag() );
 }
 
 TEST_F(LANLNaturalCubicSplineInterpolator1DTest,ExtrapolationThrowsOutOfRangeIfExtrapolationDisabled) {

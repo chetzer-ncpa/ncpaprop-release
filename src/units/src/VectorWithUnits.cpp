@@ -87,6 +87,11 @@ void NCPA::VectorWithUnits::as_array( NCPA::ScalarWithUnits *&buffer, bool normF
 	}
 }
 
+void NCPA::VectorWithUnits::as_array( double *&buffer, bool normFirst ) {
+	NCPA::units_t u;
+	this->as_array( buffer, u, normFirst );
+}
+
 void NCPA::VectorWithUnits::as_array( double *&buffer, NCPA::units_t &units, bool normFirst ) {
 	if (normFirst) {
 		this->normalize_units();

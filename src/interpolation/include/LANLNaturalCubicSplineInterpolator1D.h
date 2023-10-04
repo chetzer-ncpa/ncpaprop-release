@@ -35,10 +35,9 @@ namespace NCPA {
 		virtual Interpolator1D* allocate( size_t n );
 		virtual Interpolator1D* ready();
 		virtual void free();
-		virtual bool is_ready();
+		virtual bool is_ready() const;
 		virtual size_t max_derivative() const;
 
-		virtual const std::string identifier() const;
 		virtual void get_interp_limits( double &xmin, double &xmax ) const;
 		virtual double get_low_interp_limit() const;
 		virtual double get_high_interp_limit() const;
@@ -55,15 +54,23 @@ namespace NCPA {
 		void allocate_spline_( LANL::Spline1DNatural &spline, size_t n );
 		void free_spline_( LANL::Spline1DNatural &spline );
 
-		virtual double eval_f_( double x );
-		virtual double eval_df_( double x );
-		virtual double eval_d2f_( double x );
-		virtual double eval_d3f_( double x );
+		virtual double interpolate_f_( double x );
+		virtual double interpolate_df_( double x );
+		virtual double interpolate_d2f_( double x );
+		virtual double interpolate_d3f_( double x );
+		virtual std::complex<double> interpolate_cf_( double x );
+		virtual std::complex<double> interpolate_cdf_( double x );
+		virtual std::complex<double> interpolate_cd2f_( double x );
+		virtual std::complex<double> interpolate_cd3f_( double x );
 
-		virtual std::complex<double> eval_cf_( double x );
-		virtual std::complex<double> eval_cdf_( double x );
-		virtual std::complex<double> eval_cd2f_( double x );
-		virtual std::complex<double> eval_cd3f_( double x );
+		virtual double extrapolate_f_( double x );
+		virtual double extrapolate_df_( double x );
+		virtual double extrapolate_d2f_( double x );
+		virtual double extrapolate_d3f_( double x );
+		virtual std::complex<double> extrapolate_cf_( double x );
+		virtual std::complex<double> extrapolate_cdf_( double x );
+		virtual std::complex<double> extrapolate_cd2f_( double x );
+		virtual std::complex<double> extrapolate_cd3f_( double x );
 	};
 }
 #endif

@@ -12,7 +12,8 @@
 #include <iostream>
 
 NCPA::LANLNaturalCubicSplineInterpolator1D::LANLNaturalCubicSplineInterpolator1D()
-		: NCPA::Interpolator1D(), ready_{false}, minx_{0.0}, maxx_{0.0} {
+		: NCPA::Interpolator1D(NCPA::interpolator1d_t::LANL_1D_NATURAL_CUBIC),
+		  ready_{false}, minx_{0.0}, maxx_{0.0} {
 	this->init();
 }
 
@@ -103,11 +104,13 @@ NCPA::Interpolator1D* NCPA::LANLNaturalCubicSplineInterpolator1D::ready() {
 
 	if (real_spline_.length > 0) {
 		ready_ = true;
+	} else {
+		throw std::domain_error("Interpolator has not been set up");
 	}
 	return static_cast<NCPA::Interpolator1D *>( this );
 }
 
-bool NCPA::LANLNaturalCubicSplineInterpolator1D::is_ready() {
+bool NCPA::LANLNaturalCubicSplineInterpolator1D::is_ready() const {
 	return ready_;
 }
 
@@ -222,10 +225,6 @@ void NCPA::LANLNaturalCubicSplineInterpolator1D::set_y( size_t n, const std::com
 	ready_ = false;
 }
 
-const std::string NCPA::LANLNaturalCubicSplineInterpolator1D::identifier() const {
-	return "LANL 1-D Natural Cubic Spline Interpolator";
-}
-
 void NCPA::LANLNaturalCubicSplineInterpolator1D::get_interp_limits( double &xmin, double &xmax ) const {
 	xmin = get_low_interp_limit();
 	xmax = get_high_interp_limit();
@@ -257,35 +256,35 @@ size_t NCPA::LANLNaturalCubicSplineInterpolator1D::max_derivative() const {
 }
 
 
-double NCPA::LANLNaturalCubicSplineInterpolator1D::eval_f_( double x ) {
+double NCPA::LANLNaturalCubicSplineInterpolator1D::interpolate_f_( double x ) {
 	if (this->is_ready()) {
 		return LANL::eval_f( x, real_spline_ );
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-double NCPA::LANLNaturalCubicSplineInterpolator1D::eval_df_( double x ) {
+double NCPA::LANLNaturalCubicSplineInterpolator1D::interpolate_df_( double x ) {
 	if (this->is_ready()) {
 		return LANL::eval_df( x, real_spline_ );
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-double NCPA::LANLNaturalCubicSplineInterpolator1D::eval_d2f_( double x ) {
+double NCPA::LANLNaturalCubicSplineInterpolator1D::interpolate_d2f_( double x ) {
 	if (this->is_ready()) {
 		return LANL::eval_ddf( x, real_spline_ );
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-double NCPA::LANLNaturalCubicSplineInterpolator1D::eval_d3f_( double x ) {
+double NCPA::LANLNaturalCubicSplineInterpolator1D::interpolate_d3f_( double x ) {
 	if (this->is_ready()) {
 		return LANL::eval_dddf( x, real_spline_ );
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::eval_cf_( double x ) {
+std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::interpolate_cf_( double x ) {
 	if (this->is_ready()) {
 		double impart = 0.0;
 		if (imag_spline_.f_vals != nullptr) {
@@ -296,10 +295,10 @@ std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::eval_cf_( doubl
 				impart
 		);
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::eval_cdf_( double x ) {
+std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::interpolate_cdf_( double x ) {
 	if (this->is_ready()) {
 		double impart = 0.0;
 		if (imag_spline_.f_vals != nullptr) {
@@ -310,10 +309,10 @@ std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::eval_cdf_( doub
 				impart
 		);
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::eval_cd2f_( double x ) {
+std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::interpolate_cd2f_( double x ) {
 	if (this->is_ready()) {
 		double impart = 0.0;
 		if (imag_spline_.f_vals != nullptr) {
@@ -324,10 +323,10 @@ std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::eval_cd2f_( dou
 				impart
 		);
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
 }
-std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::eval_cd3f_( double x ) {
+std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::interpolate_cd3f_( double x ) {
 	if (this->is_ready()) {
 		double impart = 0.0;
 		if (imag_spline_.f_vals != nullptr) {
@@ -338,8 +337,34 @@ std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::eval_cd3f_( dou
 				impart
 		);
 	} else {
-		throw std::domain_error( "Spline not ready!" );
+		throw std::domain_error( "Interpolator not ready!" );
 	}
+}
+
+double NCPA::LANLNaturalCubicSplineInterpolator1D::extrapolate_f_( double x ) {
+	return this->linear_extrapolate_f_( x );
+}
+double NCPA::LANLNaturalCubicSplineInterpolator1D::extrapolate_df_( double x ) {
+	return this->linear_extrapolate_df_( x );
+}
+double NCPA::LANLNaturalCubicSplineInterpolator1D::extrapolate_d2f_( double x ) {
+	return this->linear_extrapolate_d2f_( x );
+}
+double NCPA::LANLNaturalCubicSplineInterpolator1D::extrapolate_d3f_( double x ) {
+	return this->linear_extrapolate_d3f_( x );
+}
+
+std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::extrapolate_cf_( double x ) {
+	return this->linear_extrapolate_cf_( x );
+}
+std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::extrapolate_cdf_( double x ) {
+	return this->linear_extrapolate_cdf_( x );
+}
+std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::extrapolate_cd2f_( double x ) {
+	return this->linear_extrapolate_cd2f_( x );
+}
+std::complex<double> NCPA::LANLNaturalCubicSplineInterpolator1D::extrapolate_cd3f_( double x ) {
+	return this->linear_extrapolate_cd3f_( x );
 }
 
 #endif
