@@ -104,7 +104,7 @@ namespace NCPA {
 		ANGLE_RADIANS,									/**< Angles in radians */
 
 		ATTENUATION_NEPERS_PER_METER,					/**< Attenuation in np/m */
-		ATTENUATION_DECIBELS_PER_METER					/**< Attenuation in dB/m */
+		ATTENUATION_DECIBELS_PER_KILOMETER				/**< Attenuation in dB/m */
 	};
 
 	class invalid_conversion : public std::out_of_range {
