@@ -51,6 +51,10 @@ NCPA::NCPANearestNeighborInterpolator1D& NCPA::NCPANearestNeighborInterpolator1D
 	return *this;
 }
 
+NCPA::Interpolator1D* NCPA::NCPANearestNeighborInterpolator1D::clone() const {
+	return static_cast<NCPA::Interpolator1D *>( new NCPA::NCPANearestNeighborInterpolator1D( *this ) );
+}
+
 NCPA::Interpolator1D* NCPA::NCPANearestNeighborInterpolator1D::set(
 		size_t n, const double *x, const double *y ) {
 	if (n != this->n_ || this->x_ == nullptr || this->yr_ == nullptr) {

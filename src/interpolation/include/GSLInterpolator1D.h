@@ -21,6 +21,7 @@ namespace NCPA {
 		GSLInterpolator1D( GSLInterpolator1D &&other );
 		virtual ~GSLInterpolator1D();
 		friend void ::swap( GSLInterpolator1D &a, GSLInterpolator1D &b );
+		virtual Interpolator1D* clone() const;
 
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y );
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y_r,

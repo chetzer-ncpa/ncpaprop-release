@@ -176,6 +176,39 @@ TEST_F(GSLInterpolator1DTest,SwapWorksProperly) {
 	EXPECT_EQ( steffen2.get_real_accel()->hit_count, gPtr1->get_real_accel()->hit_count );
 }
 
+TEST_F(GSLInterpolator1DTest,CloneWorksProperly) {
+	Interpolator1D *clone = linear->clone();
+	linear->free();
+	for (size_t i = 0; i < 5; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(l_xvals[i]), l_rvals[i] );
+	}
+	delete clone;
+	clone = polynomial->clone();
+	polynomial->free();
+	for (size_t i = 0; i < 9; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(n_xvals[i]), n_rvals[i] );
+	}
+	delete clone;
+	clone = steffen->clone();
+	steffen->free();
+	for (size_t i = 0; i < 9; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(n_xvals[i]), n_rvals[i] );
+	}
+	delete clone;
+	clone = akima->clone();
+	akima->free();
+	for (size_t i = 0; i < 9; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(n_xvals[i]), n_rvals[i] );
+	}
+	delete clone;
+	clone = cubic->clone();
+	cubic->free();
+	for (size_t i = 0; i < 9; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(n_xvals[i]), n_rvals[i] );
+	}
+	delete clone;
+}
+
 TEST_F(GSLInterpolator1DTest,RealSetOverwritesPriorValues) {
 	gPtr1 = static_cast<GSLInterpolator1D *>( linear );
 	EXPECT_DOUBLE_ARRAY_EQ( 5, gPtr1->get_real_spline()->x, l_xvals );

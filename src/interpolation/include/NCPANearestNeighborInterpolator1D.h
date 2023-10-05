@@ -17,6 +17,7 @@ namespace NCPA {
 		virtual ~NCPANearestNeighborInterpolator1D();
 		friend void ::swap( NCPANearestNeighborInterpolator1D &a, NCPANearestNeighborInterpolator1D &b );
 		NCPANearestNeighborInterpolator1D& operator=( NCPANearestNeighborInterpolator1D other );
+		virtual Interpolator1D* clone() const;
 
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y );
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y_real,

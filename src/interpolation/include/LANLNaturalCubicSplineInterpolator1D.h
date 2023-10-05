@@ -19,6 +19,7 @@ namespace NCPA {
 		LANLNaturalCubicSplineInterpolator1D( LANLNaturalCubicSplineInterpolator1D &&other );
 		virtual ~LANLNaturalCubicSplineInterpolator1D();
 		friend void ::swap( LANLNaturalCubicSplineInterpolator1D &a, LANLNaturalCubicSplineInterpolator1D &b );
+		virtual Interpolator1D* clone() const;
 
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y );
 		virtual Interpolator1D* set( size_t n, const double *x,

@@ -69,6 +69,10 @@ void swap( NCPA::GSLInterpolator1D &a, NCPA::GSLInterpolator1D &b ) {
 	swap( a.maxx_, b.maxx_ );
 }
 
+NCPA::Interpolator1D* NCPA::GSLInterpolator1D::clone() const {
+	return static_cast<NCPA::Interpolator1D *>( new NCPA::GSLInterpolator1D( *this ) );
+}
+
 NCPA::Interpolator1D* NCPA::GSLInterpolator1D::init() {
 	spline_r_ = nullptr;
 	spline_i_ = nullptr;

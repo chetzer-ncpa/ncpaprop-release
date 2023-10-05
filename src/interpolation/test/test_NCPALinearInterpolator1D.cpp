@@ -77,6 +77,14 @@ TEST_F(NCPALinearInterpolator1DTest,SwapWorksProperly) {
 	}
 }
 
+TEST_F(NCPALinearInterpolator1DTest,CloneWorksProperly) {
+	Interpolator1D *clone = interp1->clone();
+	interp1->free();
+	for (size_t i = 0; i < 5; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(xvals[i]), yvals[i] );
+	}
+}
+
 TEST_F(NCPALinearInterpolator1DTest,RealSetOverwritesPriorValues) {
 	c_interp1->set( 5, xvals, xvals )->ready();
 	for (size_t i = 0; i < 5; i++) {

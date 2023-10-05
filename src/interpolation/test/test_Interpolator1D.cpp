@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <utility>
 #include <complex>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 using namespace NCPA;
@@ -22,6 +24,24 @@ using namespace testing;
 // test fixture
 class Interpolator1DTest : public ::testing::Test {
 protected:
+	void SetUp() override {
+		xvector.resize(5);
+		yvector.resize(5);
+		cvector.resize(5);
+		std::copy( xvals, xvals+5, xvector.begin() );
+		std::copy( yvals, yvals+5, yvector.begin() );
+		std::copy( cvals, cvals+5, cvector.begin() );
+		v_interp1 = Interpolator1D::build( interpolator1d_t::NCPA_1D_LINEAR );
+		v_interp1->set( xvector, yvector )->ready();
+
+		vc_interp1 = Interpolator1D::build( interpolator1d_t::NCPA_1D_LINEAR );
+		vc_interp1->set( xvector, cvector )->ready();
+	}
+
+	void TearDown() override {
+		delete v_interp1;
+		delete vc_interp1;
+	}
 
 	Interpolator1D *iPtr;
 	std::vector<interpolator1d_t> types = {
@@ -37,6 +57,19 @@ protected:
 			interpolator1d_t::GSL_1D_AKIMA_PERIODIC,
 			interpolator1d_t::GSL_1D_STEFFEN
 	};
+	Interpolator1D *v_interp1, *vc_interp1;
+	double xvals[5] = { 1, 2, 3, 4, 5 };
+	double yvals[5] = { 2, 4, 8, 16, 32 };
+	std::complex<double> cvals[5] = {
+			complex<double>( 2, 2 ),
+			complex<double>( 4, 1 ),
+			complex<double>( 8, 0 ),
+			complex<double>( 16, -2 ),
+			complex<double>( 32, -4 )
+	};
+	std::vector<double> yvector, xvector;
+	std::vector<std::complex<double>> cvector;
+
 };
 
 
@@ -99,5 +132,18 @@ TEST_F(Interpolator1DTest,BuildsOrThrowsAsAppropriate) {
 	}
 }
 
+TEST_F(Interpolator1DTest,RealInterpolatedValuesAreCorrectWithVectorInput) {
+	for (size_t i = 0; i < 5; i++) {
+		EXPECT_DOUBLE_EQ( v_interp1->f( xvals[i] ), yvals[i] );
+	}
+}
+
+
+TEST_F(Interpolator1DTest,ComplexInterpolatedValuesAreCorrectWithVectorInput) {
+	for (size_t i = 0; i < 5; i++) {
+		EXPECT_DOUBLE_EQ( vc_interp1->cf( xvals[i] ).real(), cvals[i].real() );
+		EXPECT_DOUBLE_EQ( vc_interp1->cf( xvals[i] ).imag(), cvals[i].imag() );
+	}
+}
 
 

@@ -69,6 +69,10 @@ void swap( NCPA::LANLLinearInterpolator1D &a, NCPA::LANLLinearInterpolator1D &b 
 	swap( a.ready_, b.ready_ );
 }
 
+NCPA::Interpolator1D* NCPA::LANLLinearInterpolator1D::clone() const {
+	return static_cast<NCPA::Interpolator1D *>( new NCPA::LANLLinearInterpolator1D( *this ) );
+}
+
 NCPA::Interpolator1D* NCPA::LANLLinearInterpolator1D::init() {
 	init_spline_( real_spline_ );
 	init_spline_( imag_spline_ );

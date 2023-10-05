@@ -58,6 +58,11 @@ NCPA::LANLNaturalCubicSplineInterpolator1D::~LANLNaturalCubicSplineInterpolator1
 	this->free();
 }
 
+NCPA::Interpolator1D* NCPA::LANLNaturalCubicSplineInterpolator1D::clone() const {
+	return static_cast<NCPA::Interpolator1D *>(
+			new NCPA::LANLNaturalCubicSplineInterpolator1D( *this ) );
+}
+
 void swap( NCPA::LANLNaturalCubicSplineInterpolator1D &a, NCPA::LANLNaturalCubicSplineInterpolator1D &b ) {
 	using std::swap;
 	::swap( static_cast<NCPA::Interpolator1D&>(a),

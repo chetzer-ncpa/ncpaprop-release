@@ -17,6 +17,7 @@ namespace NCPA {
 		virtual ~NCPALinearInterpolator1D();
 		friend void ::swap( NCPALinearInterpolator1D &a, NCPALinearInterpolator1D &b );
 		NCPALinearInterpolator1D& operator=( NCPALinearInterpolator1D other );
+		virtual Interpolator1D *clone() const;
 
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y );
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y_real,

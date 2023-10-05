@@ -81,6 +81,14 @@ TEST_F(LANLLinearInterpolator1DTest,SwapWorksProperly) {
 	EXPECT_DOUBLE_ARRAY_EQ( 5, c_interp2.get_imag_spline()->f_vals, pInterp1->get_imag_spline()->f_vals );
 }
 
+TEST_F(LANLLinearInterpolator1DTest,CloneWorksProperly) {
+	Interpolator1D *clone = interp1->clone();
+	interp1->free();
+	for (size_t i = 0; i < 5; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(xvals[i]), yvals[i] );
+	}
+}
+
 TEST_F(LANLLinearInterpolator1DTest,RealSetOverwritesPriorValues) {
 	c_interp1->set( 5, xvals, xvals )->ready();
 	EXPECT_DOUBLE_ARRAY_EQ( 5, xvals, pCInterp1->get_real_spline()->f_vals );

@@ -150,6 +150,21 @@ TEST_F(GSLPeriodicInterpolator1DTest,SwapWorksProperly) {
 	EXPECT_EQ( akima2.get_real_accel()->hit_count, gPtr1->get_real_accel()->hit_count );
 }
 
+TEST_F(GSLPeriodicInterpolator1DTest,CloneWorksProperly) {
+	Interpolator1D *clone = cubic_periodic->clone();
+	cubic_periodic->free();
+	for (size_t i = 0; i < 81; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(n_xvals_p[i]), n_rvals_p[i] );
+	}
+	delete clone;
+	clone = akima_periodic->clone();
+	akima_periodic->free();
+	for (size_t i = 0; i < 81; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(n_xvals_p[i]), n_rvals_p[i] );
+	}
+	delete clone;
+}
+
 TEST_F(GSLPeriodicInterpolator1DTest,RealSetOverwritesPriorValues) {
 	gPtr1 = static_cast<GSLPeriodicInterpolator1D *>( cubic_periodic );
 	EXPECT_DOUBLE_ARRAY_EQ( 81, gPtr1->get_real_spline()->x, n_xvals_p );

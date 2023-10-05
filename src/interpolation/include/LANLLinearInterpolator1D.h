@@ -20,6 +20,7 @@ namespace NCPA {
 		LANLLinearInterpolator1D( LANLLinearInterpolator1D &&other );
 		virtual ~LANLLinearInterpolator1D();
 		friend void ::swap( LANLLinearInterpolator1D &a, LANLLinearInterpolator1D &b );
+		virtual Interpolator1D *clone() const;
 
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y );
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y_real,

@@ -1,4 +1,5 @@
 #include "Interpolator1D.h"
+#include "NCPACommon.h"
 
 #include "../include/NCPALinearInterpolator1D.h"
 #include "../include/NCPANearestNeighborInterpolator1D.h"
@@ -625,5 +626,32 @@ std::complex<double> NCPA::Interpolator1D::linear_extrapolate_cd3f_( double x ) 
 	return std::complex<double>(0.0,0.0);
 }
 
+NCPA::Interpolator1D* NCPA::Interpolator1D::set(
+		std::vector<double> x, std::vector<double> y ) {
+	if (x.size() != y.size()) {
+		throw std::logic_error("Vectors are not of the same size");
+	}
+	double *xbuffer = NCPA::zeros<double>( x.size() );
+	double *ybuffer = NCPA::zeros<double>( y.size() );
+	std::copy( x.cbegin(), x.cend(), xbuffer );
+	std::copy( y.cbegin(), y.cend(), ybuffer );
+	this->set( x.size(), xbuffer, ybuffer );
+	delete [] xbuffer;
+	delete [] ybuffer;
+	return static_cast<NCPA::Interpolator1D *>( this );
+}
 
-
+NCPA::Interpolator1D* NCPA::Interpolator1D::set(
+		std::vector<double> x, std::vector<std::complex<double>> y ) {
+	if (x.size() != y.size()) {
+		throw std::logic_error("Vectors are not of the same size");
+	}
+	double *xbuffer = NCPA::zeros<double>( x.size() );
+	std::complex<double> *ybuffer = NCPA::zeros<std::complex<double>>( y.size() );
+	std::copy( x.cbegin(), x.cend(), xbuffer );
+	std::copy( y.cbegin(), y.cend(), ybuffer );
+	this->set( x.size(), xbuffer, ybuffer );
+	delete [] xbuffer;
+	delete [] ybuffer;
+	return static_cast<NCPA::Interpolator1D *>( this );
+}

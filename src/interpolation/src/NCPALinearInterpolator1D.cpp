@@ -17,7 +17,7 @@ NCPA::NCPALinearInterpolator1D::NCPALinearInterpolator1D()
 NCPA::NCPALinearInterpolator1D::NCPALinearInterpolator1D(
 		const NCPA::NCPALinearInterpolator1D &other )
 		: NCPA::Interpolator1D( other ) {
-
+//	std::cout << "Making copy" << std::endl;
 	this->init();
 	if (other.n_ > 0) {
 		this->allocate( other.n_ );
@@ -61,6 +61,10 @@ NCPA::NCPALinearInterpolator1D& NCPA::NCPALinearInterpolator1D::operator=(
 		NCPA::NCPALinearInterpolator1D other ) {
 	::swap(*this,other);
 	return *this;
+}
+
+NCPA::Interpolator1D* NCPA::NCPALinearInterpolator1D::clone() const {
+	return static_cast<NCPA::Interpolator1D *>( new NCPA::NCPALinearInterpolator1D( *this ) );
 }
 
 NCPA::Interpolator1D* NCPA::NCPALinearInterpolator1D::set(

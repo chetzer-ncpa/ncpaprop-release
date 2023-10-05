@@ -49,6 +49,7 @@ namespace NCPA {
 		Interpolator1D( Interpolator1D &&other );
 		virtual ~Interpolator1D() {}
 		friend void ::swap( Interpolator1D &a, Interpolator1D &b );
+		virtual Interpolator1D* clone() const = 0;
 
 		// interface
 		virtual Interpolator1D* set( size_t n, const double *x, const double *y ) = 0;
@@ -56,6 +57,9 @@ namespace NCPA {
 				const double *y_imag ) = 0;
 		virtual Interpolator1D* set( size_t n, const double *x,
 				const std::complex<double> *y ) = 0;
+
+		virtual Interpolator1D* set( std::vector<double> x, std::vector<double> y );
+		virtual Interpolator1D* set( std::vector<double> x, std::vector<std::complex<double>> y );
 
 		virtual double f( double x );
 		virtual double df( double x );

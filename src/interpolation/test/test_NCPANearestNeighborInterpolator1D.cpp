@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <utility>
 #include <complex>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 using namespace NCPA;
@@ -26,11 +28,24 @@ protected:
 
 	// Initializations and other setup
 	void SetUp() override {
+//		xvector.resize(5);
+//		yvector.resize(5);
+//		cvector.resize(5);
+//		std::copy( xvals, xvals+5, xvector.begin() );
+//		std::copy( yvals, yvals+5, yvector.begin() );
+//		std::copy( cvals, cvals+5, cvector.begin() );
+
 		interp1 = Interpolator1D::build( interpolator1d_t::NCPA_1D_NEAREST_NEIGHBOR );
 		interp1->set( 5, xvals, yvals )->ready();
 
 		c_interp1 = Interpolator1D::build( interpolator1d_t::NCPA_1D_NEAREST_NEIGHBOR );
 		c_interp1->set( 5, xvals, cvals )->ready();
+
+//		v_interp1 = Interpolator1D::build( interpolator1d_t::NCPA_1D_NEAREST_NEIGHBOR );
+//		v_interp1->set( xvector, yvector )->ready();
+//
+//		vc_interp1 = Interpolator1D::build( interpolator1d_t::NCPA_1D_NEAREST_NEIGHBOR );
+//		vc_interp1->set( xvector, cvector )->ready();
 
 		pInterp1 = static_cast<NCPANearestNeighborInterpolator1D*>(interp1);
 		pCInterp1 = static_cast<NCPANearestNeighborInterpolator1D*>(c_interp1);
@@ -56,6 +71,8 @@ protected:
 			complex<double>( 16, -2 ),
 			complex<double>( 32, -4 )
 	};
+//	std::vector<double> yvector, xvector;
+//	std::vector<std::complex<double>> cvector;
 };
 
 
@@ -75,6 +92,14 @@ TEST_F(NCPANearestNeighborInterpolator1DTest,SwapWorksProperly) {
 	ASSERT_TRUE( interp2.is_ready() );
 	ASSERT_FALSE( pInterp1->is_ready() );
 	ASSERT_DOUBLE_EQ( interp2.f( 2.0 ), 4.0 );
+}
+
+TEST_F(NCPANearestNeighborInterpolator1DTest,CloneWorksProperly) {
+	Interpolator1D *clone = interp1->clone();
+	interp1->free();
+	for (size_t i = 0; i < 5; i++) {
+		EXPECT_DOUBLE_EQ( clone->f(xvals[i]), yvals[i] );
+	}
 }
 
 TEST_F(NCPANearestNeighborInterpolator1DTest,ThrowsDomainErrorIfNotReady) {
@@ -115,6 +140,7 @@ TEST_F(NCPANearestNeighborInterpolator1DTest,RealInterpolatedValuesAreCorrect) {
 		EXPECT_DOUBLE_EQ( interp1->f( d + 0.55 ), interp1->f( d + 1.0 ) );
 	}
 }
+
 
 TEST_F(NCPANearestNeighborInterpolator1DTest,RealExtrapolatedValuesAreCorrect) {
 	EXPECT_DOUBLE_EQ( interp1->f( 0.0 ), interp1->f( 1.0 ) );
