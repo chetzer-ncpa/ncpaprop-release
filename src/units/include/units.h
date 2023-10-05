@@ -23,6 +23,8 @@ NCPA::units_t	NCPA::units_t::DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH
 NCPA::units_t	NCPA::units_t::DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST
 NCPA::units_t 	NCPA::units_t::ANGLE_DEGREES
 NCPA::units_t 	NCPA::units_t::ANGLE_RADIANS
+NCPA::units_t 	NCPA::units_t::ATTENUATION_NEPERS_PER_METER
+NCPA::units_t 	NCPA::units_t::ATTENUATION_DECIBELS_PER_METER
 
 Examples:
 	using namespace NCPA;
@@ -75,31 +77,34 @@ namespace NCPA {
 	 * Constants that can be used to identify or specify units.
 	 */
 	enum class units_t : size_t {
-		NONE = 0,						/**< Indicates no units */
+		NONE = 0,										/**< Indicates no units */
 
-		TEMPERATURE_KELVIN,				/**< Temperature in Kelvin */
-		TEMPERATURE_CELSIUS,				/**< Temperature in Celsius */
-		TEMPERATURE_FAHRENHEIT,				/**< Temperature in Fahrenheit */
+		TEMPERATURE_KELVIN,								/**< Temperature in Kelvin */
+		TEMPERATURE_CELSIUS,							/**< Temperature in Celsius */
+		TEMPERATURE_FAHRENHEIT,							/**< Temperature in Fahrenheit */
 
-		DISTANCE_METERS,					/**< Distance in meters */
-		DISTANCE_KILOMETERS,				/**< Distance in kilometers */
+		DISTANCE_METERS,								/**< Distance in meters */
+		DISTANCE_KILOMETERS,							/**< Distance in kilometers */
 
-		SPEED_METERS_PER_SECOND,				/**< Speed in m/s */
-		SPEED_KILOMETERS_PER_SECOND,			/**< Speed in km/s */
+		SPEED_METERS_PER_SECOND,						/**< Speed in m/s */
+		SPEED_KILOMETERS_PER_SECOND,					/**< Speed in km/s */
 
-		PRESSURE_PASCALS,					/**< Pressure in Pa */
-		PRESSURE_MILLIBARS,				/**< Pressure in mbar */
-		PRESSURE_HECTOPASCALS,			/**< Pressure in hPa */
-		PRESSURE_ATMOSPHERES,				/**< Pressure in atm */
+		PRESSURE_PASCALS,								/**< Pressure in Pa */
+		PRESSURE_MILLIBARS,								/**< Pressure in mbar */
+		PRESSURE_HECTOPASCALS,							/**< Pressure in hPa */
+		PRESSURE_ATMOSPHERES,							/**< Pressure in atm */
 
-		DENSITY_KILOGRAMS_PER_CUBIC_METER,		/**< Density in kg/m^3 */
-		DENSITY_GRAMS_PER_CUBIC_CENTIMETER,		/**< Density in g/cm^3 */
+		DENSITY_KILOGRAMS_PER_CUBIC_METER,				/**< Density in kg/m^3 */
+		DENSITY_GRAMS_PER_CUBIC_CENTIMETER,				/**< Density in g/cm^3 */
 
-		DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH,		/**< Direction in geographic azimuth */
+		DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH,			/**< Direction in geographic azimuth */
 		DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST,	/**< Direction in "math" convention */
 
-		ANGLE_DEGREES,					/**< Angles in degrees */
-		ANGLE_RADIANS						/**< Angles in radians */
+		ANGLE_DEGREES,									/**< Angles in degrees */
+		ANGLE_RADIANS,									/**< Angles in radians */
+
+		ATTENUATION_NEPERS_PER_METER,					/**< Attenuation in np/m */
+		ATTENUATION_DECIBELS_PER_METER					/**< Attenuation in dB/m */
 	};
 
 	class invalid_conversion : public std::out_of_range {

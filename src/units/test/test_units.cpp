@@ -105,6 +105,11 @@ TEST(unitsTest, ConvertAngleUnits) {
 	ASSERT_DOUBLE_EQ( Units::convert(3.0*M_PI/2.0,units_t::ANGLE_RADIANS,units_t::ANGLE_DEGREES), 270.0);
 }
 
+TEST(unitsTest, ConvertAttenuationUnits) {
+	ASSERT_DOUBLE_EQ( Units::convert( 10.0, units_t::ATTENUATION_NEPERS_PER_METER, units_t::ATTENUATION_DECIBELS_PER_METER ),  86.85889638);
+	ASSERT_DOUBLE_EQ( Units::convert( 10.0, units_t::ATTENUATION_DECIBELS_PER_METER, units_t::ATTENUATION_NEPERS_PER_METER ),  1.15129255 );
+}
+
 TEST(unitsTest, ConvertArrayTest) {
 	double in[5] = { 1.0, 2.0, 4.0, -2.0, -5.0 };
 	double out[5];

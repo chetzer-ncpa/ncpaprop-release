@@ -174,7 +174,9 @@ void NCPA::Units::initialize_() {
 				out -= 360.0;
 			}
 			return out;
-		} }
+		} },
+		{ get_unit_pair_( NCPA::units_t::ATTENUATION_NEPERS_PER_METER, NCPA::units_t::ATTENUATION_DECIBELS_PER_METER ), []( double in ) { return in * 8.685889638; } },
+		{ get_unit_pair_( NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, NCPA::units_t::ATTENUATION_NEPERS_PER_METER ), []( double in ) { return in * 0.115129255; } },
 	};
 
 
@@ -199,6 +201,8 @@ void NCPA::Units::initialize_() {
 		{ NCPA::units_t::DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST, "degrees counterclockwise from East" },
 		{ NCPA::units_t::ANGLE_DEGREES, "degrees" },
 		{ NCPA::units_t::ANGLE_RADIANS, "radians" },
+		{ NCPA::units_t::ATTENUATION_NEPERS_PER_METER, "nepers per meter" },
+		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, "decibels per meter" },
 	};
 
 	enum_to_abbr_map_ = {
@@ -220,6 +224,8 @@ void NCPA::Units::initialize_() {
 		{ NCPA::units_t::DIRECTION_DEGREES_COUNTERCLOCKWISE_FROM_EAST, "deg CCW from E" },
 		{ NCPA::units_t::ANGLE_DEGREES, "deg" },
 		{ NCPA::units_t::ANGLE_RADIANS, "rad" },
+		{ NCPA::units_t::ATTENUATION_NEPERS_PER_METER, "np/m" },
+		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, "dB/m" },
 	};
 
 	string_to_enum_map_ = {
@@ -279,7 +285,13 @@ void NCPA::Units::initialize_() {
 		{ "DEG", NCPA::units_t::ANGLE_DEGREES },
 		{ "DEGREES", NCPA::units_t::ANGLE_DEGREES },
 		{ "RAD", NCPA::units_t::ANGLE_RADIANS },
-		{ "RADIANS", NCPA::units_t::ANGLE_RADIANS }
+		{ "RADIANS", NCPA::units_t::ANGLE_RADIANS },
+		{ "NP/M", NCPA::units_t::ATTENUATION_NEPERS_PER_METER },
+		{ "NEPERS/METER", NCPA::units_t::ATTENUATION_NEPERS_PER_METER },
+		{ "NEPERS PER METER", NCPA::units_t::ATTENUATION_NEPERS_PER_METER },
+		{ "DB/M", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
+		{ "DECIBELS/METER", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
+		{ "DECIBELS PER METER", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
 	};
 
 }
