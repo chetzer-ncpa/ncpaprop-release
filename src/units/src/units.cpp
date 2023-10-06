@@ -176,7 +176,12 @@ void NCPA::Units::initialize_() {
 			return out;
 		} },
 		{ get_unit_pair_( NCPA::units_t::ATTENUATION_NEPERS_PER_METER, NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER ), []( double in ) { return in * 8685.889638; } },
+		{ get_unit_pair_( NCPA::units_t::ATTENUATION_NEPERS_PER_METER, NCPA::units_t::ATTENUATION_DECIBELS_PER_METER ), []( double in ) { return in * 8.685889638; } },
 		{ get_unit_pair_( NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER, NCPA::units_t::ATTENUATION_NEPERS_PER_METER ), []( double in ) { return in * 0.000115129255; } },
+		{ get_unit_pair_( NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER, NCPA::units_t::ATTENUATION_DECIBELS_PER_METER ), []( double in ) { return in * 0.001; } },
+		{ get_unit_pair_( NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, NCPA::units_t::ATTENUATION_NEPERS_PER_METER ), []( double in ) { return in * 0.115129255; } },
+		{ get_unit_pair_( NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER ), []( double in ) { return in * 1000.0; } },
+
 	};
 
 
@@ -203,6 +208,7 @@ void NCPA::Units::initialize_() {
 		{ NCPA::units_t::ANGLE_RADIANS, "radians" },
 		{ NCPA::units_t::ATTENUATION_NEPERS_PER_METER, "nepers per meter" },
 		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER, "decibels per kilometer" },
+		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, "decibels per meter" },
 	};
 
 	enum_to_abbr_map_ = {
@@ -226,6 +232,7 @@ void NCPA::Units::initialize_() {
 		{ NCPA::units_t::ANGLE_RADIANS, "rad" },
 		{ NCPA::units_t::ATTENUATION_NEPERS_PER_METER, "np/m" },
 		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER, "dB/km" },
+		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, "dB/m" },
 	};
 
 	string_to_enum_map_ = {
@@ -292,6 +299,9 @@ void NCPA::Units::initialize_() {
 		{ "DB/KM", NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER },
 		{ "DECIBELS/KILOMETER", NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER },
 		{ "DECIBELS PER KILOMETER", NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER },
+		{ "DB/M", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
+		{ "DECIBELS/METER", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
+		{ "DECIBELS PER METER", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
 	};
 
 }

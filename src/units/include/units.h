@@ -25,6 +25,7 @@ NCPA::units_t 	NCPA::units_t::ANGLE_DEGREES
 NCPA::units_t 	NCPA::units_t::ANGLE_RADIANS
 NCPA::units_t 	NCPA::units_t::ATTENUATION_NEPERS_PER_METER
 NCPA::units_t 	NCPA::units_t::ATTENUATION_DECIBELS_PER_METER
+NCPA::units_t 	NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER
 
 Examples:
 	using namespace NCPA;
@@ -104,6 +105,7 @@ namespace NCPA {
 		ANGLE_RADIANS,									/**< Angles in radians */
 
 		ATTENUATION_NEPERS_PER_METER,					/**< Attenuation in np/m */
+		ATTENUATION_DECIBELS_PER_METER,					/**< Attenuation in np/m */
 		ATTENUATION_DECIBELS_PER_KILOMETER				/**< Attenuation in dB/m */
 	};
 
