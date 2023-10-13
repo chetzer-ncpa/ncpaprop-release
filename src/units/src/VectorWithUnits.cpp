@@ -200,6 +200,18 @@ void NCPA::VectorWithUnits::set( size_t n_points, const ScalarWithUnits *values 
 	}
 }
 
+void NCPA::VectorWithUnits::set( const std::vector<double> &values, units_t units ) {
+	this->clear();
+	this->resize( values.size() );
+	for (size_t i = 0; i < values.size(); i++) {
+		this->at(i) = ScalarWithUnits( values[i], units );
+	}
+}
+
+void NCPA::VectorWithUnits::set( const std::vector<double> &values, const std::string &units ) {
+	this->set( values, NCPA::Units::fromString(units) );
+}
+
 void NCPA::VectorWithUnits::set_units( NCPA::units_t new_units ) {
 	for (auto it = this->begin(); it != this->end(); ++it) {
 		it->set_units( new_units );

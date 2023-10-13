@@ -34,6 +34,7 @@ class VectorWithUnitsTest : public ::testing::Test {
   VectorWithUnits v1, v2, v3, v4, v5, v6, v7;
   double kms[10] = { 1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0 };
   double temps[5] = {10,20,30,40,50};
+  vector<double> hottemps = {50,60,70,80,90,100};
   ScalarWithUnits svec[5]= {
 		  ScalarWithUnits(10.0,CELSIUS),
 		  ScalarWithUnits(20.0,CELSIUS),
@@ -44,7 +45,8 @@ class VectorWithUnitsTest : public ::testing::Test {
   double all10[10] = {10,10,10,10,10,10,10,10,10,10};
   const units_t KILOMETERS 	= Units::fromString("km"),
 		  	    METERS 		= Units::fromString("m"),
-				CELSIUS 	= Units::fromString("C");
+				CELSIUS 	= Units::fromString("C"),
+				FAHRENHEIT	= Units::fromString("F");
 };
 
 
@@ -340,6 +342,24 @@ TEST_F(VectorWithUnitsTest,SetSetsNewVectorValuesCorrectlyFromArrayOfScalarObjec
 	for (size_t i = 0; i < 5; i++) {
 		ASSERT_DOUBLE_EQ( v2[i].get(), temps[i] );
 		ASSERT_EQ( v2[i].get_units(), CELSIUS );
+	}
+}
+
+TEST_F(VectorWithUnitsTest,SetWorksWithVector) {
+	v2.set(hottemps,CELSIUS);
+	ASSERT_EQ( v2.size(), 6 );
+	for (size_t i = 0; i < 6; i++) {
+		ASSERT_DOUBLE_EQ( v2[i].get(), hottemps[i] );
+		ASSERT_EQ( v2[i].get_units(), CELSIUS );
+	}
+}
+
+TEST_F(VectorWithUnitsTest,SetWorksWithVectorAAndString) {
+	v2.set(hottemps,"F");
+	ASSERT_EQ( v2.size(), 6 );
+	for (size_t i = 0; i < 6; i++) {
+		ASSERT_DOUBLE_EQ( v2[i].get(), hottemps[i] );
+		ASSERT_EQ( v2[i].get_units(), FAHRENHEIT );
 	}
 }
 

@@ -56,6 +56,8 @@ namespace NCPA {
 			virtual void set( size_t n_points, const double *values, units_t units );
 			virtual void set( size_t n_points, const double *values, const std::string &units );
 			virtual void set( size_t n_points, const ScalarWithUnits *values );
+			virtual void set( const std::vector<double> &values, units_t units );
+			virtual void set( const std::vector<double> &values, const std::string &units );
 
 			virtual void set_units( units_t new_units );
 			virtual void set_units( const std::string &new_units );
