@@ -114,6 +114,11 @@ TEST(unitsTest, ConvertAttenuationUnits) {
 	ASSERT_DOUBLE_EQ( Units::convert( 10.0, units_t::ATTENUATION_DECIBELS_PER_METER, units_t::ATTENUATION_DECIBELS_PER_KILOMETER ),  10000.0 );
 }
 
+TEST(unitsTest, ConvertRatioUnits) {
+	ASSERT_DOUBLE_EQ( Units::convert( 0.15, units_t::RATIO_DECIMAL, units_t::RATIO_PERCENT ),  15);
+	ASSERT_DOUBLE_EQ( Units::convert( 0.15, units_t::RATIO_PERCENT, units_t::RATIO_DECIMAL ),  0.0015);
+}
+
 TEST(unitsTest, ConvertArrayTest) {
 	double in[5] = { 1.0, 2.0, 4.0, -2.0, -5.0 };
 	double out[5];

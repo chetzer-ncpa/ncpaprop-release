@@ -26,6 +26,8 @@ NCPA::units_t 	NCPA::units_t::ANGLE_RADIANS
 NCPA::units_t 	NCPA::units_t::ATTENUATION_NEPERS_PER_METER
 NCPA::units_t 	NCPA::units_t::ATTENUATION_DECIBELS_PER_METER
 NCPA::units_t 	NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER
+NCPA::units_t	NCPA::units_t::RATIO_DECIMAL
+NCPA::units_t	NCPA::units_t::RATIO_PERCENT
 
 Examples:
 	using namespace NCPA;
@@ -106,7 +108,10 @@ namespace NCPA {
 
 		ATTENUATION_NEPERS_PER_METER,					/**< Attenuation in np/m */
 		ATTENUATION_DECIBELS_PER_METER,					/**< Attenuation in np/m */
-		ATTENUATION_DECIBELS_PER_KILOMETER				/**< Attenuation in dB/m */
+		ATTENUATION_DECIBELS_PER_KILOMETER,				/**< Attenuation in dB/m */
+
+		RATIO_DECIMAL,									/**< Ratio expressed as a decimal */
+		RATIO_PERCENT,									/**< Ratio expressed as a percent */
 	};
 
 	class invalid_conversion : public std::out_of_range {

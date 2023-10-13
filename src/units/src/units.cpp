@@ -181,7 +181,8 @@ void NCPA::Units::initialize_() {
 		{ get_unit_pair_( NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER, NCPA::units_t::ATTENUATION_DECIBELS_PER_METER ), []( double in ) { return in * 0.001; } },
 		{ get_unit_pair_( NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, NCPA::units_t::ATTENUATION_NEPERS_PER_METER ), []( double in ) { return in * 0.115129255; } },
 		{ get_unit_pair_( NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER ), []( double in ) { return in * 1000.0; } },
-
+		{ get_unit_pair_( NCPA::units_t::RATIO_DECIMAL, NCPA::units_t::RATIO_PERCENT ), []( double in ) { return in * 100.0; } },
+		{ get_unit_pair_( NCPA::units_t::RATIO_PERCENT, NCPA::units_t::RATIO_DECIMAL ), []( double in ) { return in * 0.01; } },
 	};
 
 
@@ -209,6 +210,8 @@ void NCPA::Units::initialize_() {
 		{ NCPA::units_t::ATTENUATION_NEPERS_PER_METER, "nepers per meter" },
 		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER, "decibels per kilometer" },
 		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, "decibels per meter" },
+		{ NCPA::units_t::RATIO_DECIMAL, "" },
+		{ NCPA::units_t::RATIO_PERCENT, "percent" },
 	};
 
 	enum_to_abbr_map_ = {
@@ -233,6 +236,9 @@ void NCPA::Units::initialize_() {
 		{ NCPA::units_t::ATTENUATION_NEPERS_PER_METER, "np/m" },
 		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_KILOMETER, "dB/km" },
 		{ NCPA::units_t::ATTENUATION_DECIBELS_PER_METER, "dB/m" },
+		{ NCPA::units_t::RATIO_DECIMAL, "" },
+		{ NCPA::units_t::RATIO_PERCENT, "%" },
+
 	};
 
 	string_to_enum_map_ = {
@@ -302,6 +308,9 @@ void NCPA::Units::initialize_() {
 		{ "DB/M", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
 		{ "DECIBELS/METER", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
 		{ "DECIBELS PER METER", NCPA::units_t::ATTENUATION_DECIBELS_PER_METER },
+		{ "PERCENT", NCPA::units_t::RATIO_PERCENT },
+		{ "PCT", NCPA::units_t::RATIO_PERCENT },
+		{ "%", NCPA::units_t::RATIO_PERCENT },
 	};
 
 }
