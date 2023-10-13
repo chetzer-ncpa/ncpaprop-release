@@ -28,10 +28,12 @@ class VectorWithUnitsTest : public ::testing::Test {
 	  v5 = VectorWithUnits( 10, 10.0, CELSIUS );
 	  v6 = VectorWithUnits(v4);
 	  v7 = VectorWithUnits(5, svec);
+	  v8 = VectorWithUnits( hottemps, CELSIUS );
+	  v9 = VectorWithUnits( hottemps, "F" );
   }
 
   // void TearDown() override {}
-  VectorWithUnits v1, v2, v3, v4, v5, v6, v7;
+  VectorWithUnits v1, v2, v3, v4, v5, v6, v7, v8, v9;
   double kms[10] = { 1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0 };
   double temps[5] = {10,20,30,40,50};
   vector<double> hottemps = {50,60,70,80,90,100};
@@ -85,6 +87,22 @@ TEST_F(VectorWithUnitsTest,ConstructorWithConstantDoubleWorks) {
 	EXPECT_EQ( v5.get_units(), CELSIUS );
 	for (size_t i = 0; i < v5.size(); i++) {
 		EXPECT_DOUBLE_EQ( v5[ i ].get(), 10.0 );
+	}
+}
+
+TEST_F(VectorWithUnitsTest,ConstructorWithVectorWorks) {
+	EXPECT_THAT( v8, SizeIs(6) );
+	EXPECT_EQ( v8.get_units(), CELSIUS );
+	for (size_t i = 0; i < v8.size(); i++) {
+		EXPECT_DOUBLE_EQ( v8[ i ].get(), hottemps[i] );
+	}
+}
+
+TEST_F(VectorWithUnitsTest,ConstructorWithVectorAndStringWorks) {
+	EXPECT_THAT( v9, SizeIs(6) );
+	EXPECT_EQ( v9.get_units(), FAHRENHEIT );
+	for (size_t i = 0; i < v9.size(); i++) {
+		EXPECT_DOUBLE_EQ( v9[ i ].get(), hottemps[i] );
 	}
 }
 

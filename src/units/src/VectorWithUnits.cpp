@@ -36,6 +36,24 @@ NCPA::VectorWithUnits::VectorWithUnits( size_t n_points,
 NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, double singleValue, units_t units )
 	: std::vector<NCPA::ScalarWithUnits>( n_points, NCPA::ScalarWithUnits(singleValue, units) ) {}
 
+NCPA::VectorWithUnits::VectorWithUnits( size_t n_points, double singleValue,
+		const std::string &units )
+	: std::vector<NCPA::ScalarWithUnits>( n_points, NCPA::ScalarWithUnits(singleValue, units) ) {}
+
+NCPA::VectorWithUnits::VectorWithUnits( const std::vector<double> &values,
+		NCPA::units_t units ) : std::vector<NCPA::ScalarWithUnits>( values.size() ) {
+	for (size_t i = 0; i < values.size(); i++) {
+		this->at(i) = NCPA::ScalarWithUnits( values[i], units );
+	}
+}
+
+NCPA::VectorWithUnits::VectorWithUnits( const std::vector<double> &values,
+		const std::string &units ) : std::vector<NCPA::ScalarWithUnits>( values.size() ) {
+	for (size_t i = 0; i < values.size(); i++) {
+		this->at(i) = NCPA::ScalarWithUnits( values[i], units );
+	}
+}
+
 NCPA::VectorWithUnits::VectorWithUnits( const NCPA::VectorWithUnits &source )
 	: std::vector<NCPA::ScalarWithUnits>(source) {
 	normalize_units();

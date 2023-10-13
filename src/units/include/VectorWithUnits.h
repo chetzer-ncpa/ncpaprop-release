@@ -19,6 +19,9 @@ namespace NCPA {
 			VectorWithUnits( size_t n_points, const ScalarWithUnits *values );
 			VectorWithUnits( size_t n_points, const ScalarWithUnits &singleValue );
 			VectorWithUnits( size_t n_points, double singleValue, units_t units );
+			VectorWithUnits( size_t n_points, double singleValue, const std::string &units );
+			VectorWithUnits( const std::vector<double> &values, units_t units );
+			VectorWithUnits( const std::vector<double> &values, const std::string &units );
 
 			// copy constructor
 			VectorWithUnits( const VectorWithUnits &source );
