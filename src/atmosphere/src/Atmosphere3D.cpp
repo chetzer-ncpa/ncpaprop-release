@@ -1,5 +1,5 @@
-#include "ncpaprop_common.h"
-#include "ncpaprop_atmosphere.h"
+#include "NCPACommon.h"
+#include "NCPAAtmosphere.h"
 
 #include <set>
 #include <fstream>

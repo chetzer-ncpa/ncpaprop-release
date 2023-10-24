@@ -2,8 +2,10 @@
 #define NCPAPROP_STRATIFIEDATMOSPHERE3D_H_INCLUDED
 
 
-#include "ncpaprop_common.h"
-#include "ncpaprop_atmosphere.h"
+#include "NCPACommon.h"
+#include "Atmosphere1D.h"
+#include "Atmosphere3D.h"
+#include "StratifiedAtmosphere3D.h"
 
 namespace NCPA {
 

@@ -1,8 +1,8 @@
 #ifndef NCPAPROP_PROFILEGRIDATMOSPHERE3D_H_INCLUDED
 #define NCPAPROP_PROFILEGRIDATMOSPHERE3D_H_INCLUDED
 
-#include "ncpaprop_common.h"
-#include "ncpaprop_atmosphere.h"
+#include "NCPACommon.h"
+#include "Atmosphere3D.h"
 #include <climits>
 #include <map>
 

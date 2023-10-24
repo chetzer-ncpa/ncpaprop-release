@@ -1,40 +1,88 @@
 #include "AtmosphericModel.h"
-
+#include "NCPAUnits.h"
 #include <cmath>
 
-#ifndef GAMMA_FOR_C
-#define GAMMA_FOR_C 1.4
-#endif
 
-#ifndef R_FOR_C
-#define R_FOR_C 287.0
-#endif
 
-#ifndef PI
-#define PI 3.14159
-#endif
 
 // t in K, returns in m/s
-double NCPA::AtmosphericModel::soundspeed_from_temperature( double t ) {
-	return std::sqrt( GAMMA_FOR_C * R_FOR_C * t );
+double NCPA::AtmosphericModel::soundspeed_from_temperature( double t,
+		NCPA::units_t t_units, NCPA::units_t c_units) {
+	return NCPA::Units::convert(
+			std::sqrt(
+					NCPA__GAMMA_FOR_C
+					* NCPA__R_FOR_C
+					* NCPA::Units::convert( t, t_units, "K" )
+			), "m/s", c_units );
+}
+
+double NCPA::AtmosphericModel::soundspeed_from_temperature( double t,
+				const std::string &t_units,
+				const std::string &c_units ) {
+	return NCPA::AtmosphericModel::soundspeed_from_temperature(
+			t, NCPA::Units::fromString(t_units), NCPA::Units::fromString(c_units) );
 }
 
 // sound speed in m/s, returns in K
-double NCPA::AtmosphericModel::temperature_from_soundspeed( double c ) {
-	return c * c / GAMMA_FOR_C / R_FOR_C;
+double NCPA::AtmosphericModel::temperature_from_soundspeed( double c,
+		NCPA::units_t c_units, NCPA::units_t t_units ) {
+	double cc = NCPA::Units::convert( c, c_units, "m/s" );
+	return NCPA::Units::convert(
+			cc*cc / NCPA__GAMMA_FOR_C / NCPA__R_FOR_C,
+			"K", t_units );
+}
+
+double NCPA::AtmosphericModel::temperature_from_soundspeed( double c,
+		const std::string &c_units, const std::string &t_units ) {
+	return NCPA::AtmosphericModel::temperature_from_soundspeed(
+			c, NCPA::Units::fromString(c_units), NCPA::Units::fromString(t_units) );
+}
+
+double NCPA::AtmosphericModel::soundspeed_from_pressure_density( double p, units_t p_units,
+				double d, units_t d_units, units_t c_units ) {
+	double p_Pa = NCPA::Units::convert( p, p_units, "Pa" );
+	double d_kg = NCPA::Units::convert( d, d_units, "kg/m3" );
+	double c_mps = std::sqrt( NCPA__GAMMA_FOR_C * p_Pa / d_kg );
+	return NCPA::Units::convert( c_mps, "m/s", c_units );
+}
+
+double NCPA::AtmosphericModel::soundspeed_from_pressure_density(
+				double p, const std::string &p_units,
+				double d, const std::string &d_units,
+				const std::string &c_units ) {
+	return NCPA::AtmosphericModel::soundspeed_from_pressure_density(
+		p, Units::fromString(p_units), d, Units::fromString(d_units),
+		Units::fromString(c_units) );
 }
 
 // p in Pa, d in kg/m3, returns in m/s
-double NCPA::AtmosphericModel::soundspeed_from_pressure_density(
-	double p, double d ) {
-	return std::sqrt( GAMMA_FOR_C * p / d );
-}
+//double NCPA::AtmosphericModel::soundspeed_from_pressure_density(
+//	double p, double d ) {
+//	return NCPA::AtmosphericModel::soundspeed_from_pressure_density(
+//			p, "Pa", d, "kg/m3", "m/s" );
+//}
 
 // p in Pa, t in K, returns in kg/m3
 double NCPA::AtmosphericModel::density_from_temperature_pressure(
-	double t, double p ) {
-	return p / (t * R_FOR_C);
+		double t, NCPA::units_t T_units,
+		double p, NCPA::units_t P_units,
+		NCPA::units_t D_units ) {
+	double t_K = NCPA::Units::convert( t, T_units, "K" );
+	double p_Pa = NCPA::Units::convert( p, P_units, "Pa" );
+	double d_kgpm3 = p_Pa / (t_K * NCPA__R_FOR_C);
+	return NCPA::Units::convert( d_kgpm3, "kg/m3", D_units );
 }
+
+double NCPA::AtmosphericModel::density_from_temperature_pressure(
+		double t, const std::string &T_units,
+		double p, const std::string &P_units,
+		const std::string &D_units ) {
+	return NCPA::AtmosphericModel::density_from_temperature_pressure(
+			t, NCPA::Units::fromString(T_units),
+			p, NCPA::Units::fromString(P_units),
+			NCPA::Units::fromString(D_units));
+}
+
 
 // z in km, t in K, p in Pa, d in kg/m3
 double NCPA::AtmosphericModel::attenuation_sutherland_bass(
@@ -101,11 +149,11 @@ double NCPA::AtmosphericModel::attenuation_from_temperature_pressure_density(
 
 
 	// calculated parameters
-	double c_snd_z = std::sqrt( GAMMA_FOR_C * P_z / D_z );  // m/s
+	double c_snd_z = std::sqrt( NCPA__GAMMA_FOR_C * P_z / D_z );  // m/s
 	double mu      = mu_o * std::sqrt(
 		T_z/T_o ) * ( (1.0 + S/T_o) / (1.0 + S/T_z)
 		); // Viscosity [kg/(m*s)]
-	double nu      = ( 8.0 * PI * freq * mu ) / ( 3.0 * P_z ); // Nondimensional frequency
+	double nu      = ( 8.0 * M_PI * freq * mu ) / ( 3.0 * P_z ); // Nondimensional frequency
 
 	// Gas fractions
 	double X[7];
@@ -174,10 +222,10 @@ double NCPA::AtmosphericModel::attenuation_from_temperature_pressure_density(
 	double cchi  = 2.36 * chi;
 
 	//---------Classical + rotational loss/dispersion--------------------------
-	double a_cl    = (2 * PI * freq / c_snd_z)
+	double a_cl    = (2 * M_PI * freq / c_snd_z)
 						* std::sqrt( 0.5 * (std::sqrt(1+std::pow(nu,2))-1) * (1+std::pow(cchi,2))
 						/ ((1+std::pow(nu,2))*(1+std::pow(sigma*cchi,2))) );
-	double a_rot   = (2*PI*freq/c_snd_z) * X_ON
+	double a_rot   = (2*M_PI*freq/c_snd_z) * X_ON
 						* ((pow(sigma,2)-1)*chi/(2*sigma))
 						* sqrt(0.5*(sqrt(1+pow(nu,2))+1)/((1+pow(nu,2))*(1+pow(cchi,2))));
 	double a_diff  = 0.003*a_cl;
@@ -209,8 +257,8 @@ double NCPA::AtmosphericModel::attenuation_from_temperature_pressure_density(
 	for (size_t m=0; m<4; m++)
 	{
 		double C_R        = ((std::pow(theta[m]/T_z,2))*std::exp(-theta[m]/T_z))/(std::pow(1-std::exp(-theta[m]/T_z),2));
-		double A_max      = (X[m]*(PI/2)*C_R)/(Cp_R[m]*(Cv_R[m]+C_R));
-		       // A_max      = (X[m]*(PI/2)*C_R)/(Cp_R[m]*(Cv_R[m]+C_R));
+		double A_max      = (X[m]*(M_PI/2)*C_R)/(Cp_R[m]*(Cv_R[m]+C_R));
+		       // A_max      = (X[m]*(M_PI/2)*C_R)/(Cp_R[m]*(Cv_R[m]+C_R));
 		a_vib_c[m] = (A_max/c_snd_z)*((2*(pow(freq,2))/f_vib[m])/(1+pow(freq/f_vib[m],2)));
 		a_vib      = a_vib + a_vib_c[m];
 	}
@@ -247,3 +295,10 @@ std::string NCPA::AtmosphericModel::remove_underscores(
 
 	return output;
 }
+
+void swap( NCPA::AtmosphericModel &a, NCPA::AtmosphericModel &b ) noexcept {}
+
+
+
+
+

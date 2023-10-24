@@ -76,7 +76,7 @@ void NCPA::ToyAtmosphere1D::make_gaussian_parameter_( const std::string &new_key
 	double gaussarg;
 	double *newprop = new double[ nz() ];
 	for (size_t i=0; i < nz(); i++) {
-		double z = z_[ i ];
+		double z = z_[ i ].get();
 		double alt_m = NCPA::Units::convert( z, get_altitude_units(), NCPA::Units::fromString( "m" ) );
 	    gaussarg   = -( alt_m - height ) * ( alt_m - height ) / ( 2 * width * width );
 	    newprop[i] = amplitude * std::exp( gaussarg );

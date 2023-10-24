@@ -696,7 +696,7 @@ AC_SUBST([LIBS],"-lgsl -lgslcblas -lm -lfftw3")
 AC_SUBST([WARNINGFLAGS],${warning_compiler_flags})
 AC_SUBST([CXXFLAGS], "-fpic -c -Wall -std=c++17 $CXXFLAGS")
 LDFLAGS="${LDFLAGS} -L/usr/lib"
-AC_SUBST([STATICLIBS],"../../lib/libncpaatmosphere.a ../../lib/libncpaunits.a ../../lib/libncpainterpolation.a ../../lib/libncpacommon.a")
+AC_SUBST([STATICLIBS],"../../lib/libncpaatmosphere.a ../../lib/libncpaattenuation.a ../../lib/libncpaunits.a ../../lib/libncpainterpolation.a ../../lib/libncpacommon.a")
 AC_SUBST([MODELIBS],"../../lib/libncpamodes.a")
 AC_SUBST([PELIBS],"../../lib/libncpape.a")
 AC_SUBST([BROADBANDLIBS],"../../lib/libncpabroadband.a")
@@ -722,6 +722,8 @@ AC_CONFIG_FILES([
 		src/interpolation/test/Makefile
 		src/units/Makefile
 		src/units/test/Makefile
+		src/attenuation/Makefile
+		src/attenuation/test/Makefile
 		src/atmosphere/Makefile
 		src/atmosphere/test/Makefile
 		src/libmodes/Makefile

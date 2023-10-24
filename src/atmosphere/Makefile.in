@@ -14,7 +14,7 @@ TARGET=lib/libncpaatmosphere.a
 
 all: $(TARGET)
 
-.PHONY: clean
+.PHONY: clean test
 
 # link	
 $(TARGET): $(OBJS)
@@ -24,6 +24,9 @@ $(TARGET): $(OBJS)
 # compile 
 %.o: %.cpp
 	${CXX} ${INCPATHS} @CXXFLAGS@ ${CXX_FLAGS} @WARNINGFLAGS@ -o $@ $<
+
+test::
+	$(MAKE) -C test test
 
 clean::
 	-$(RM) -rf $(OBJS) $(TARGET)

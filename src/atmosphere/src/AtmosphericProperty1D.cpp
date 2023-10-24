@@ -1,6 +1,7 @@
 #include "AtmosphericProperty1D.h"
-#include "units.h"
-#include "util.h"
+#include "NCPAUnits.h"
+#include "NCPACommon.h"
+#include "NCPAInterpolation.h"
 #include <cstring>
 #include <stdexcept>
 #include <sstream>
@@ -8,64 +9,77 @@
 #include <iostream>
 #include <algorithm>
 #include <utility>
+//
+//#include "gsl/gsl_errno.h"
+//#include "gsl/gsl_spline.h"
+//#include "gsl/gsl_version.h"
 
-#include "gsl/gsl_errno.h"
-#include "gsl/gsl_spline.h"
-#include "gsl/gsl_version.h"
+NCPA::AtmosphericProperty1D::AtmosphericProperty1D() : NCPA::vectorpair_t(),
+	interp_type_{NCPAPROP_DEFAULT_ATMOSPHERIC_PROPERTY_INTERPOLATION_TYPE} {
 
-
-NCPA::AtmosphericProperty1D::AtmosphericProperty1D() {
-//	z_ = NULL;
+	interp_ = NCPA::Interpolator1D::build( interp_type_ );
 }
 
-NCPA::AtmosphericProperty1D::AtmosphericProperty1D( NCPA::VectorWithUnits zvector,
-		NCPA::VectorWithUnits propvector ) {
-	this->first = zvector;
-	this->second = propvector;
+NCPA::AtmosphericProperty1D::AtmosphericProperty1D(
+		NCPA::VectorWithUnits zvector,
+		NCPA::VectorWithUnits propvector,
+		NCPA::interpolator1d_t interptype ) : NCPA::vectorpair_t(zvector,propvector),
+				interp_type_{interptype} {
+	interp_ = NCPA::Interpolator1D::build( interp_type_ );
+	build_splines_();
 }
 
 NCPA::AtmosphericProperty1D::AtmosphericProperty1D( size_t n_points, double *altitude_points, units_t altitude_units,
-			double *property_values, units_t property_units ) {
-
-//	z_ = new double[ n_points ];
-//	z_units_ = altitude_units;
-//	std::memcpy( z_, altitude_points, n_points*sizeof(double) );
-//	z_.( n_points, altitude_points, altitude_units );
-//
-//	values_ = new double[ n_points ];
-//	units_ = property_units;
-//	std::memcpy( values_, property_values, n_points*sizeof(double) );
-//	n_ = n_points;
+			double *property_values, units_t property_units,
+			NCPA::interpolator1d_t interptype ) : NCPA::vectorpair_t(),
+					interp_type_{interptype} {
 	this->first.set( n_points, altitude_points, altitude_units );
 	this->second.set( n_points, property_values, property_units );
+	interp_ = NCPA::Interpolator1D::build( interp_type_ );
 	build_splines_();
 }
 
-NCPA::AtmosphericProperty1D::AtmosphericProperty1D( const AtmosphericProperty1D &source ) {
-	this->first = source.first;
-	this->second = source.second;
-//	this->n_ = source.n_;
-//	this->z_ = new double[ n_ ];
-//	std::memcpy( z_, source.z_, n_ * sizeof( double ) );
-//	this->z_units_ = source.z_units_;
+NCPA::AtmosphericProperty1D::AtmosphericProperty1D( size_t n_points,
+		double *altitude_points, const std::string &altitude_units,
+		double *property_values, const std::string &property_units,
+		NCPA::interpolator1d_t interptype )
+			: NCPA::AtmosphericProperty1D(
+				n_points, altitude_points, NCPA::Units::fromString(altitude_units),
+				property_values, NCPA::Units::fromString(property_units)) {}
 
-	build_splines_();
+NCPA::AtmosphericProperty1D::AtmosphericProperty1D( const AtmosphericProperty1D &source )
+		: NCPA::vectorpair_t(source) {
+	this->first = source.first; // test that copy constructor is properly called
+	this->second = source.second;
+	this->interp_type_ = source.interp_type_;
+	this->interp_ = NCPA::Interpolator1D::build( source.interp_type_ );
+	reset_splines();
 }
 
 NCPA::AtmosphericProperty1D::~AtmosphericProperty1D() {
 	delete_splines_();
-//	delete [] z_;
-	//delete [] values_;
+}
+
+void swap( NCPA::AtmosphericProperty1D &a, NCPA::AtmosphericProperty1D &b ) noexcept {
+	using std::swap;
+	swap(static_cast<NCPA::vectorpair_t&>(a), static_cast<NCPA::vectorpair_t&>(b));
+	swap(a.interp_,b.interp_);
+	swap(a.interp_type_,b.interp_type_);
+}
+
+NCPA::AtmosphericProperty1D &NCPA::AtmosphericProperty1D::operator=( NCPA::AtmosphericProperty1D other ) {
+	::swap(*this,other);
+	return *this;
 }
 
 NCPA::units_t NCPA::AtmosphericProperty1D::get_altitude_units() const {
-//	return z_units_;
-	return this->first.get_units();
+	NCPA::VectorWithUnits v(this->first);
+	return v.get_units();
 }
 
 NCPA::units_t NCPA::AtmosphericProperty1D::get_units() const {
-//	return z_units_;
-	return this->second.get_units();
+	NCPA::VectorWithUnits v(this->second);
+	return v.get_units();
 }
 
 size_t NCPA::AtmosphericProperty1D::size() const {
@@ -73,78 +87,105 @@ size_t NCPA::AtmosphericProperty1D::size() const {
 }
 
 void NCPA::AtmosphericProperty1D::convert_altitude_units( NCPA::units_t new_units ) {
-
-	// will throw out_of_range and leave original units unchanged if there's an error
-	// if there's no change in units, don't bother with the calculation, just push another
-	// one onto the stack so reversion can happen properly
-//	if (new_units != z_units_) {
-//		do_units_conversion_( n_, z_, z_units_, new_units );
-//		build_splines_();
-//		z_units_ = new_units;
-//	}
 	if (new_units != this->first.get_units()) {
 		this->first.convert_units( new_units );
-		build_splines_();
+		this->reset_splines();
 	}
 }
 
+void NCPA::AtmosphericProperty1D::convert_altitude_units( const std::string &new_units ) {
+	this->convert_altitude_units( NCPA::Units::fromString(new_units) );
+}
 
 void NCPA::AtmosphericProperty1D::convert_units( NCPA::units_t new_units ) {
-	//std::cout << "Called AtmosphericProperty1D::convert_units()" << std::endl;
-//	NCPA::VectorWithUnits::convert_units( new_units );
 	this->second.convert_units( new_units );
-	build_splines_();
+	this->reset_splines();
+}
+
+void NCPA::AtmosphericProperty1D::convert_units( const std::string &new_units ) {
+	this->convert_units( NCPA::Units::fromString(new_units) );
 }
 
 void NCPA::AtmosphericProperty1D::build_splines_() {
-	delete_splines_();
-	// construct spline
-	size_t n = this->first.size();
-	accel_ = gsl_interp_accel_alloc();
-	spline_ = gsl_spline_alloc( ATMOSPHERIC_INTERPOLATION_TYPE, n );
-	double *z_buffer = new double[ n ];
-	double *x_buffer = new double[ n ];
-	this->first.get_vector( z_buffer );
-	this->second.get_vector( x_buffer );
-	gsl_spline_init( spline_, z_buffer, x_buffer, n );
-	delete [] z_buffer;
-	delete [] x_buffer;
+	if (interp_ == nullptr) {
+		interp_ = NCPA::Interpolator1D::build(this->interp_type_);
+	}
+
+	double *zbuffer, *xbuffer;
+	this->first.as_array(zbuffer);
+	this->second.as_array(xbuffer);
+	interp_->init()->allocate(this->first.size())->set(
+			this->first.size(), zbuffer, xbuffer )->ready();
+	delete [] zbuffer;
+	delete [] xbuffer;
 }
 
 void NCPA::AtmosphericProperty1D::delete_splines_() {
-	if (spline_ != NULL) {
-		gsl_spline_free( spline_ );
-		spline_ = NULL;
-	}
-	if (accel_ != NULL) {
-		gsl_interp_accel_free( accel_ );
-		accel_ = NULL;
+	if (interp_ != nullptr) {
+		interp_->free();
+		delete interp_;
+		interp_ = nullptr;
 	}
 }
 
-void NCPA::AtmosphericProperty1D::get_altitude_vector( double *buffer, units_t *buffer_units ) const {
-//	*buffer_units = z_units_;
-//	std::memcpy( buffer, z_, n_ * sizeof(double) );
-	this->first.get_vector( buffer, buffer_units );
+void NCPA::AtmosphericProperty1D::reset_splines() {
+	this->delete_splines_();
+	this->build_splines_();
 }
 
-void NCPA::AtmosphericProperty1D::get_altitude_vector( double *buffer ) const {
-//	*buffer_units = z_units_;
-//	std::memcpy( buffer, z_, n_ * sizeof(double) );
-	this->first.get_vector( buffer );
+void NCPA::AtmosphericProperty1D::get_altitude_vector(
+		double *buffer, units_t &buffer_units ) {
+	this->first.get_values( buffer );
+	buffer_units = this->first.get_units();
+}
+
+void NCPA::AtmosphericProperty1D::get_altitude_vector( double *buffer ) {
+	this->first.get_values( buffer );
+}
+
+NCPA::VectorWithUnits NCPA::AtmosphericProperty1D::get_altitude_vector() {
+	NCPA::VectorWithUnits v( this->first );
+	return v;
+}
+
+void NCPA::AtmosphericProperty1D::get_altitude_vector_as(
+		double *buffer, units_t buffer_units ) {
+	NCPA::VectorWithUnits v( this->first );
+	v.convert_units(buffer_units);
+	v.get_values( buffer );
+}
+
+void NCPA::AtmosphericProperty1D::get_altitude_vector_as(
+		double *buffer, const std::string &buffer_units ) {
+	this->get_altitude_vector_as( buffer, NCPA::Units::fromString( buffer_units ) );
 }
 
 
-void NCPA::AtmosphericProperty1D::get_vector( double *buffer, units_t *buffer_units ) const {
-//	*buffer_units = z_units_;
-//	std::memcpy( buffer, z_, n_ * sizeof(double) );
-	this->second.get_vector( buffer, buffer_units );
+void NCPA::AtmosphericProperty1D::as_array( double *&buffer, units_t &buffer_units ) {
+	this->second.as_array( buffer, buffer_units );
 }
 
-void NCPA::AtmosphericProperty1D::get_vector( double *buffer ) const {
-//	*buffer_units = z_units_;
-//	std::memcpy( buffer, z_, n_ * sizeof(double) );
-	this->second.get_vector( buffer );
+void NCPA::AtmosphericProperty1D::as_array( double *&buffer ) {
+	this->second.as_array( buffer );
+}
+
+void NCPA::AtmosphericProperty1D::as_array( NCPA::ScalarWithUnits *&buffer ) {
+	this->second.as_array( buffer );
+}
+
+NCPA::VectorWithUnits NCPA::AtmosphericProperty1D::get_vector() {
+//	NCPA::VectorWithUnits v( this->second );
+	return NCPA::VectorWithUnits( this->second );
+}
+
+NCPA::VectorWithUnits NCPA::AtmosphericProperty1D::get_vector_as( units_t buffer_units ) {
+	NCPA::VectorWithUnits v( this->second );
+	v.convert_units(buffer_units);
+	return v;
+}
+
+NCPA::VectorWithUnits NCPA::AtmosphericProperty1D::get_vector_as( const std::string &buffer_units ) {
+	return this->get_vector_as( NCPA::Units::fromString( buffer_units ) );
 }
 
 int NCPA::AtmosphericProperty1D::check_altitude_( double z_req ) const {
@@ -155,54 +196,68 @@ int NCPA::AtmosphericProperty1D::check_altitude_( double z_req ) const {
 	} else {
 		return 0;
 	}
-	// if ( z_req < z_[0] || z_req > z_[ n_ - 1 ] ) {
-	// 	std::ostringstream oss;
-	// 	oss << "Requested altitude " << z_req << " " << NCPA::Units::toStr( z_units_ ) << " outside profile bounds.";
-	// 	throw std::range_error( oss.str() );
-	// }
 }
 
 double NCPA::AtmosphericProperty1D::get( double z_req ) const {
-	// check_altitude_( z_req );
 	int check = check_altitude_( z_req );
 	if ( check > 0 ) {
-		return this->second.back();
-//		return values_[ n_ - 1 ];
+		return this->second.back().get();
 	} else if ( check < 0 ) {
-		return this->second.front();
-//		return values_[ 0 ];
+		return this->second.front().get();
 	} else {
-		return gsl_spline_eval( spline_, z_req, accel_ );
+		return interp_->f( z_req );
+//		return gsl_spline_eval( spline_, z_req, accel_ );
 	}
+}
+
+double NCPA::AtmosphericProperty1D::get_as( double z_req, NCPA::units_t as_units ) const {
+	return NCPA::Units::convert( this->get( z_req ), this->get_units(), as_units );
+}
+
+double NCPA::AtmosphericProperty1D::get_as( double z_req, const std::string &as_units ) const {
+	return NCPA::Units::convert( this->get( z_req ), this->get_units(), as_units );
 }
 
 double NCPA::AtmosphericProperty1D::get_first_derivative( double z_req ) const {
-	// check_altitude_( z_req );
 	int check = check_altitude_( z_req );
 	if (check == 0) {
-		return gsl_spline_eval_deriv( spline_, z_req, accel_ );
+		return interp_->df( z_req );
+//		return gsl_spline_eval_deriv( spline_, z_req, accel_ );
 	} else {
 		return 0;
 	}
 }
 
+double NCPA::AtmosphericProperty1D::get_first_derivative_as( double z_req, NCPA::units_t as_units ) const {
+	return NCPA::Units::convert( this->get_first_derivative( z_req ), this->get_units(), as_units );
+}
+
+double NCPA::AtmosphericProperty1D::get_first_derivative_as( double z_req, const std::string &as_units ) const {
+	return NCPA::Units::convert( this->get_first_derivative( z_req ), this->get_units(), as_units );
+}
+
 double NCPA::AtmosphericProperty1D::get_second_derivative( double z_req ) const {
-	// check_altitude_( z_req );
 	int check = check_altitude_( z_req );
 	if (check == 0) {
-		return gsl_spline_eval_deriv2( spline_, z_req, accel_ );
+		return interp_->df( 2, z_req );
+//		return gsl_spline_eval_deriv2( spline_, z_req, accel_ );
 	} else {
 		return 0;
 	}
+}
+
+double NCPA::AtmosphericProperty1D::get_second_derivative_as( double z_req, NCPA::units_t as_units ) const {
+	return NCPA::Units::convert( this->get_second_derivative( z_req ), this->get_units(), as_units );
+}
+
+double NCPA::AtmosphericProperty1D::get_second_derivative_as( double z_req, const std::string &as_units ) const {
+	return NCPA::Units::convert( this->get_second_derivative( z_req ), this->get_units(), as_units );
 }
 
 void NCPA::AtmosphericProperty1D::resample( double new_dz ) {
 
-	// get new altitude vector
-//	double z0 = z_[0];
-//	double z1 = z_[ n_ - 1 ];
-	double z0 = this->first.front();
-	double z1 = this->first.back();
+	double z0 = this->first.front().get();
+	double z1 = this->first.back().get();
 	size_t new_nz = (size_t)std::floor( ( z1 - z0 ) / new_dz ) + 1;
 
 	double *new_z = new double[ new_nz ];
@@ -212,13 +267,9 @@ void NCPA::AtmosphericProperty1D::resample( double new_dz ) {
 		new_prop[ i ] = this->get( new_z[ i ] );
 	}
 
-	// reset everything
-//	delete [] z_;
-//	delete [] values_;
-//	n_ = new_nz;
-//	z_ = new_z;
-//	values_ = new_prop;
-	this->first.set_values( new_nz, new_z );
-	this->second.set_values( new_nz, new_prop );
-	build_splines_();
+	this->first.set( new_nz, new_z, this->get_altitude_units() );
+	this->second.set( new_nz, new_prop, this->get_units() );
+	this->reset_splines();
+	delete [] new_z;
+	delete [] new_prop;
 }
