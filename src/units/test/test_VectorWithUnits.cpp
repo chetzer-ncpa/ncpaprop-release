@@ -30,10 +30,11 @@ class VectorWithUnitsTest : public ::testing::Test {
 	  v7 = VectorWithUnits(5, svec);
 	  v8 = VectorWithUnits( hottemps, CELSIUS );
 	  v9 = VectorWithUnits( hottemps, "F" );
+	  v0 = VectorWithUnits();
   }
 
   // void TearDown() override {}
-  VectorWithUnits v1, v2, v3, v4, v5, v6, v7, v8, v9;
+  VectorWithUnits v1, v2, v3, v4, v5, v6, v7, v8, v9, v0;
   double kms[10] = { 1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0 };
   double temps[5] = {10,20,30,40,50};
   vector<double> hottemps = {50,60,70,80,90,100};
@@ -207,6 +208,13 @@ TEST_F(VectorWithUnitsTest, AsArrayThrowsLogicErrorIfNoNormalization) {
 						logic_error );
 }
 
+TEST_F(VectorWithUnitsTest, AsArrayReturnsCorrectDoubleVector) {
+	vector<double> v = v4.as_doubles();
+	for (auto it = v.cbegin(); it != v.end(); ++it) {
+		EXPECT_DOUBLE_EQ( *it, 10.0 );
+	}
+}
+
 TEST_F(VectorWithUnitsTest,ConvertUnitsCreatesCorrectValues) {
 	v2.convert_units(METERS);
 	for (size_t i = 0; i < 10; i++) {
@@ -317,6 +325,11 @@ TEST_F(VectorWithUnitsTest,IsNormalizedReturnsFalseIfNotAllUnitsMatch) {
 	v2[3].set_units(CELSIUS);
 	EXPECT_FALSE( v2.is_normalized() );
 }
+
+TEST_F(VectorWithUnitsTest,IsNormalizedReturnsTrueIfEmpty) {
+	EXPECT_TRUE( v0.is_normalized() );
+}
+
 
 TEST_F(VectorWithUnitsTest,NormalizeUnitsCorrectlyNormalizesToUnitsOfFirstEntry) {
 	v2[0].convert(METERS);

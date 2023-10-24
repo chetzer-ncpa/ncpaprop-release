@@ -40,6 +40,7 @@ namespace NCPA {
 			virtual void as_array( NCPA::ScalarWithUnits *&buffer, bool normFirst=true );
 			virtual void as_array( double *&buffer, units_t &units, bool normFirst=true );
 			virtual void as_array( double *&buffer, bool normFirst=true );
+			virtual std::vector<double> as_doubles() const;
 
 			virtual void convert_units( units_t new_units );
 			virtual void convert_units( const std::string &new_units );

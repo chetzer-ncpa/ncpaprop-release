@@ -123,6 +123,16 @@ void NCPA::VectorWithUnits::as_array( double *&buffer, NCPA::units_t &units, boo
 	units = this->get_units();
 }
 
+std::vector<double> NCPA::VectorWithUnits::as_doubles() const {
+	std::vector<double> v( this->size() );
+	auto it1 = this->cbegin();
+	auto it2 = v.begin();
+	for ( ; it1 != this->cend(); ++it1, ++it2) {
+		*it2 = it1->get();
+	}
+	return v;
+}
+
 
 void NCPA::VectorWithUnits::convert_units( NCPA::units_t new_units ) {
 	// will throw invalid_conversion and leave original units unchanged if there's an error
@@ -161,7 +171,11 @@ NCPA::units_t NCPA::VectorWithUnits::get_units( bool normFirst ) {
 	} else if (!this->is_normalized()) {
 		throw std::logic_error( "Multiple units present in vector, normalize first!" );
 	}
-	return this->begin()->get_units();
+	if (this->empty()) {
+		return NCPA::units_t::NONE;
+	} else {
+		return this->begin()->get_units();
+	}
 }
 
 void NCPA::VectorWithUnits::get_values( size_t &n, double* buffer, bool normFirst ) {
@@ -181,20 +195,24 @@ void NCPA::VectorWithUnits::get_values( double* buffer, bool normFirst ) {
 }
 
 bool NCPA::VectorWithUnits::is_normalized() const {
-	NCPA::units_t base = this->front().get_units();
-	for (auto it = this->cbegin(); it != this->cend(); ++it) {
-		NCPA::units_t u = it->get_units();
-		if (u != base) {
-			return false;
+	if (!this->empty()) {
+		NCPA::units_t base = this->front().get_units();
+		for (auto it = this->cbegin(); it != this->cend(); ++it) {
+			NCPA::units_t u = it->get_units();
+			if (u != base) {
+				return false;
+			}
 		}
 	}
 	return true;
 }
 
 void NCPA::VectorWithUnits::normalize_units() {
-	NCPA::units_t base = this->front().get_units();
-	for (auto it = this->begin()+1; it != this->end(); ++it) {
-		it->convert_units( base );
+	if (!this->empty()) {
+		NCPA::units_t base = this->front().get_units();
+		for (auto it = this->begin()+1; it != this->end(); ++it) {
+			it->convert_units( base );
+		}
 	}
 }
 
@@ -212,6 +230,7 @@ void NCPA::VectorWithUnits::set( size_t n_points, const double *property_values,
 }
 
 void NCPA::VectorWithUnits::set( size_t n_points, const ScalarWithUnits *values ) {
+	this->clear();
 	this->resize( n_points );
 	for (size_t i = 0; i < n_points; i++) {
 		this->at(i) = values[i];
