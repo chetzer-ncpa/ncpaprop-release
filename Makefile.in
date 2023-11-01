@@ -12,7 +12,7 @@
 # PETSC_INCLUDE_FILE_GENERIC = @PETSC_INCLUDE_FILE_GENERIC@
 # SLEPC_INCLUDE_FILE_GENERIC = @SLEPC_INCLUDE_FILE_GENERIC@
 
-parts=common interpolation units attenuation atmosphere modes libpe libbroadband modess wmod modbb epade_pe gfpe
+parts=common interpolation units attenuation linearalgebra atmosphere modes libpe libbroadband modess wmod modbb epade_pe gfpe
 build-parts=$(addprefix build-, $(parts))
 clean-parts=$(addprefix clean-, $(parts))
 test-parts=$(addprefix test-, $(parts))
@@ -52,13 +52,13 @@ endef
 all: clean $(build-parts)
 
 # NCPA Common Utility Library
-build-common build-interpolation build-units build-attenuation build-atmosphere:
+build-common build-interpolation build-units build-attenuation build-linearalgebra build-atmosphere:
 	$(build-lib)
-clean-common clean-interpolation clean-units clean-attenuation clean-atmosphere:
+clean-common clean-interpolation clean-units clean-attenuation clean-linearalgebra clean-atmosphere:
 	$(clean-lib)
-test-common test-interpolation test-units test-attenuation test-atmosphere:
+test-common test-interpolation test-units test-attenuation test-linearalgebra test-atmosphere:
 	$(test-lib)
-clean-test-common clean-test-interpolation clean-test-units clean-test-attenuation clean-test-atmosphere:
+clean-test-common clean-test-interpolation clean-test-units clean-test-attenuation clean-test-linearalgebra clean-test-atmosphere:
 	$(clean-test-lib)
 
 build-modes:

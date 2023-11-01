@@ -1,0 +1,21 @@
+
+GTESTLIBS=-lgtest_main -lgtest
+LIBNAME=../../../lib/libncpacommon.a
+LDFLAGS=@LDFLAGS@ $(LIBNAME) $(GTESTLIBS) @LIBS@
+INCFLAGS=-I../include -I../../include
+CXXFLAGS=-c -fPIC -ggdb $(INCFLAGS)
+
+SOURCES=$(wildcard test_*.cpp)
+OBJECTS=$(SOURCES:.cpp=.o)
+TARGET=linearalgebraTest
+
+test: build clean
+
+build: $(OBJECTS)
+	g++ -o $(TARGET) $^ $(LDFLAGS) && ./$(TARGET)
+	
+%.o: %.cpp
+	${CXX} $^ $(CXXFLAGS) -o $@
+	
+clean:
+	-rm $(OBJECTS) $(TARGET)

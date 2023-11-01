@@ -31,6 +31,7 @@
 	evalpoly<T>(size_t,const T*,T): T
 	evalpoly<T>(const std::vector<T>&,T): T
 	linear_interp
+	sign
 
 	Memory allocation:
 	allocate_matrix<T>(size_t,size_t): T**
@@ -1017,6 +1018,23 @@ namespace NCPA {
 			out[ i ] = val;
 		}
 		return out;
+	}
+
+	/**
+	 * Returns -1, 0, or 1 depending on the sign of the argument.
+	 * @brief Returns -1, 0, or 1 depending on the sign of the argument.
+	 * @param n The value to test for sign
+	 * @returns -1 if n<0, 1 if n>0, 0 otherwise
+	 */
+	template<typename T>
+	int sign( T n ) {
+		if (n > 0) {
+			return 1;
+		} else if (n < 0) {
+			return -1;
+		} else {
+			return 0;
+		}
 	}
 
 	/**
