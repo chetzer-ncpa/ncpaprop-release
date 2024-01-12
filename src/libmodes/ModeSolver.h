@@ -20,6 +20,7 @@ namespace NCPA {
 		// parameter control
 		virtual void setParams( ParameterSet *param, Atmosphere1D *atm_prof ) = 0;                  	
 		virtual void printParams() = 0;
+		virtual void calculateAttenuation( double freq );
 
 		// general functions
 		int getNumberOfModes(int n, double dz, double *diag, double k_min, double k_max, int *nev);
@@ -87,7 +88,7 @@ namespace NCPA {
 		double c_max; // for wavenumber filtering option
 
 		double *f_vec;
-      	double freq;
+//      	double freq;
       	std::string user_tag = "";
       	
 		NCPA::Atmosphere1D *atm_profile;

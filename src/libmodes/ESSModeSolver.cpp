@@ -113,9 +113,9 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
       		f_vec[ fi ] = f_min + ((double)fi) * f_step;
       	}
 	} else {
-		freq = param->getFloat( "freq" );
+//		freq = param->getFloat( "freq" );
 		f_vec = new double[ 1 ];
-		f_vec[ 0 ] = freq;
+		f_vec[ 0 ] = param->getFloat( "freq" );
 		Nfreq = 1;
 	}
 
@@ -221,11 +221,11 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 
 	atm_profile->calculate_wind_speed( "_WS_", "U", "V" );
 	atm_profile->calculate_wind_direction( "_WD_", "U", "V" );
-	if (usrattfile.empty()) {
-		atm_profile->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
-	} else {
-		atm_profile->read_attenuation_from_file( "_ALPHA_", usrattfile );
-	}
+//	if (usrattfile.empty()) {
+//		atm_profile->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
+//	} else {
+//		atm_profile->read_attenuation_from_file( "_ALPHA_", usrattfile );
+//	}
 	
 
 	for (int i=0; i<Nz_grid; i++) {
@@ -235,14 +235,23 @@ void NCPA::ESSModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere
 		T[i]   = atm_profile->get( "T", Hgt[i] );
 		zw[i]  = atm_profile->get( "U", Hgt[i] );
 		mw[i]  = atm_profile->get( "V", Hgt[i] );
-		alpha[i]   = atm_profile->get( "_ALPHA_", Hgt[i] );
+//		alpha[i]   = atm_profile->get( "_ALPHA_", Hgt[i] );
 	}
 }
 
 // utility to print the parameters to the screen
 void NCPA::ESSModeSolver::printParams() {
 	printf(" Effective Sound Speed Normal Modes Solver Parameters:\n");
-	printf("                   freq : %g\n", freq);
+	std::ostringstream fstr;
+	fstr << "[ ";
+	for (int i = 0; i < Nfreq; i++) {
+		if (i > 0) {
+			fstr << ", ";
+		}
+		fstr << f_vec[i];
+	}
+	fstr << " ]";
+	printf("                   freq : %s\n", fstr.str().c_str());
 	if (!Nby2Dprop) {
 		printf("                azimuth : %g\n", azi);
 	}
@@ -318,7 +327,9 @@ int NCPA::ESSModeSolver::solve() {
 	SlepcInitialize(PETSC_NULL,PETSC_NULL,(char*)0,PETSC_NULL); /* @todo move out of loop? */
 
 	for (fi = 0; fi < Nfreq; fi++) {
-		freq = f_vec[ fi ];
+		double freq = f_vec[ fi ];
+		std::cout << "Calculating at " << freq << " Hz:" << std::endl;
+		this->calculateAttenuation( freq );
 
 		//
 		// loop over azimuths (if not (N by 2D) it's only one azimuth)

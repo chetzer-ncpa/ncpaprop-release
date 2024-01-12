@@ -144,8 +144,8 @@ void NCPA::configure_modbb_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameter( new NCPA::StringParameter( "use_attn_file", "" ) );
 	ps->addParameterDescription( "Modes of Operation", "--use_attn_file", "File name containing attenuation, to override default Sutherland/Bass [n/a]. Columns are #n# Height(km) Attenuation(np/m)" );
 
-	ps->addParameter( new NCPA::FlagParameter( "use_zero_attenuation" ) );
-	ps->addParameterDescription( "Modes of Operation", "--use_zero_attenuation", "Set attenuation to zero." );
+//	ps->addParameter( new NCPA::FlagParameter( "use_zero_attenuation" ) );
+//	ps->addParameterDescription( "Modes of Operation", "--use_zero_attenuation", "Set attenuation to zero." );
 
 	ps->addParameter( new NCPA::FlagParameter( "wvnum_filter" ) );
 	ps->addParameterDescription( "Modes of Operation", "--wvnum_filter", "Use wavenumber filter by phase speed.  Requires --c_min and --c_max" );

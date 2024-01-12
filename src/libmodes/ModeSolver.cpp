@@ -13,14 +13,6 @@
 using namespace NCPA;
 using namespace std;
 
-//
-// constructor
-//
-//NCPA::ModeSolver::ModeSolver( NCPA::ParameterSet *param, NCPA::Atmosphere1D *atm_profile )
-//{
-//	setParams( param, atm_profile );           
-//}
-
 NCPA::ModeSolver::~ModeSolver() {
 	delete[] Hgt;
 	delete[] zw;
@@ -31,182 +23,21 @@ NCPA::ModeSolver::~ModeSolver() {
 	delete[] c_eff;
 	delete[] alpha;
 	delete[] f_vec;
-	// atm_profile->remove_property( "_WS_" );
-	// atm_profile->remove_property( "_WD_" );
-	// atm_profile->remove_property( "_C0_" );
-	// atm_profile->remove_property( "_ALPHA_" );
+
 }
 
-/*
-// setParams() prototype
-void NCPA::ModeSolver::setParams( NCPA::ParameterSet *param, NCPA::Atmosphere1D *atm_prof )
-{		
-
-	// obtain the parameter values from the user's options
-	atmosfile 			= param->getString( "atmosfile" );
-	gnd_imp_model 		= param->getString( "ground_impedence_model" );
-	usrattfile 			= param->getString( "use_attn_file" );
-	modstartfile 		= param->getString( "modal_starter_file" );
-  	z_min 				= param->getFloat( "zground_km" ) * 1000.0;    // meters
-  	freq 				= param->getFloat( "freq" );
-  	maxrange 			= param->getFloat( "maxrange_km" ) * 1000.0;
-  	maxheight 			= param->getFloat( "maxheight_km" ) * 1000.0;      // @todo fix elsewhere that m is required
-  	sourceheight 		= param->getFloat( "sourceheight_km" );
-  	receiverheight 		= param->getFloat( "receiverheight_km" );
-  	tol 				= 1.0e-8;
-  	Nz_grid 			= param->getInteger( "Nz_grid" );
-  	Nrng_steps 			= param->getInteger( "Nrng_steps" );
-  	Lamb_wave_BC 		= param->getBool( "Lamb_wave_BC" );
-  	write_2D_TLoss  	= param->getBool( "write_2D_TLoss" );
-  	write_phase_speeds 	= param->getBool( "write_phase_speeds" );
-  	write_speeds 		= param->getBool( "write_speeds" );
-  	write_modes 		= param->getBool( "write_modes" );
-  	write_dispersion 	= param->getBool( "write_dispersion" );
-  	Nby2Dprop 			= param->getBool( "Nby2Dprop" );
-  	turnoff_WKB 		= param->getBool( "turnoff_WKB" );
-  	z_min_specified     = param->wasFound( "zground_km" );
-
-	// default values for c_min, c_max and wvnum_filter_flg
-	c_min = 0.0;
-	c_max = 0.0;
-
-	// set c_min, c_max if wavenumber filtering is on
-	wvnum_filter_flg  	= param->getBool( "wvnum_filter" );  
-	if (wvnum_filter_flg==1) {
-		c_min = param->getFloat( "c_min" );
-		c_max = param->getFloat( "c_max" );
-	};
-
-
-	if (write_phase_speeds || write_speeds || write_2D_TLoss 
-			       || write_modes || write_dispersion) {
-		turnoff_WKB = 1; // don't use WKB least phase speed estim. when saving any of the above values
-	}
-  
-	Naz = 1; // Number of azimuths: default is a propagation along a single azimuth
-	if (Nby2Dprop) {
-		azi  		= param->getFloat( "azimuth_start" );
-		azi_max 	= param->getFloat( "azimuth_end" );
-		azi_step 	= param->getFloat( "azimuth_step" );
-		Naz      = (int) ((azi_max - azi)/azi_step) + 1;
+void NCPA::ModeSolver::calculateAttenuation( double freq ) {
+	atm_profile->remove_property( "_ALPHA_" );
+	if (usrattfile.empty()) {
+		atm_profile->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
 	} else {
-		azi 				= param->getFloat( "azimuth" );
+		atm_profile->read_attenuation_from_file( "_ALPHA_", usrattfile );
 	}
-
-	azi_min     = azi;
-	atm_profile = atm_prof;
-
-	// get Hgt, zw, mw, T, rho, Pr in SI units; they are freed in computeModes()
-	// @todo write functions to allocate and free these, it shouldn't be hidden
-	// Note units: height in m, wind speeds in m/s, pressure in Pa(?), density in
-	// kg/m3
-	Hgt   = new double [Nz_grid];
-	zw    = new double [Nz_grid];
-	mw    = new double [Nz_grid];
-	T     = new double [Nz_grid];
-	rho   = new double [Nz_grid];
-	Pr    = new double [Nz_grid];
-	c_eff = new double [Nz_grid]; // to be filled in getModalTrace(), depends on azimuth
-	alpha = new double [Nz_grid];
-
-	// Set up units of atmospheric profile object
-	atm_profile->convert_altitude_units( Units::fromString( "m" ) );
-	atm_profile->convert_property_units( "Z0", Units::fromString( "m" ) );
-	atm_profile->convert_property_units( "U", Units::fromString( "m/s" ) );
-	atm_profile->convert_property_units( "V", Units::fromString( "m/s" ) );
-	atm_profile->convert_property_units( "T", Units::fromString( "K" ) );
-	atm_profile->convert_property_units( "P", Units::fromString( "Pa" ) );
-	atm_profile->convert_property_units( "RHO", Units::fromString( "kg/m3" ) );
-  
-	//
-	// !!! ensure maxheight is less than the max height covered by the provided atm profile
-	// may avoid some errors asociated with the code thinking that it goes above 
-	// the max height when in fact the height may only differ from max height by
-	// a rounding error. This should be revisited.
-	// @todo revisit this
-	// @todo add max_valid_height to AtmosphericProfile class
 	
-	if (maxheight >= atm_profile->get_maximum_altitude()) {
-		maxheight = atm_profile->get_maximum_altitude() - 1e-6;
-		cout << endl << "maxheight adjusted to: " << maxheight
-			 << " m (max available in profile file)" << endl;
-	}
-  
-	// fill and convert to SI units
-	double dz       = (maxheight - z_min)/(Nz_grid - 1);	// the z-grid spacing
-	//double z_min_km = z_min / 1000.0;
-	//double dz_km    = dz / 1000.0;
-  
-	// Note: the rho, Pr, T, zw, mw are computed wrt ground level i.e.
-	// the first value is at the ground level e.g. rho[0] = rho(z_min)
-	// @todo make fill_vector( zvec ) methods in AtmosphericProfile()
-	// @todo add underscores to internally calculated parameter keys
-	atm_profile->calculate_sound_speed_from_pressure_and_density( "_C0_", "P", "RHO", Units::fromString( "m/s" ) );
-	atm_profile->calculate_wind_speed( "_WS_", "U", "V" );
-	atm_profile->calculate_wind_direction( "_WD_", "U", "V" );
-	atm_profile->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
-
 	for (int i=0; i<Nz_grid; i++) {
-		Hgt[i] = z_min + i*dz; // Hgt[0] = zground MSL
-		rho[i] = atm_profile->get( "RHO", Hgt[i]);
-		Pr[i]  = atm_profile->get( "P", Hgt[i] );
-		T[i]   = atm_profile->get( "T", Hgt[i] );
-		zw[i]  = atm_profile->get( "U", Hgt[i] );
-		mw[i]  = atm_profile->get( "V", Hgt[i] );
 		alpha[i]   = atm_profile->get( "_ALPHA_", Hgt[i] );
 	}
 }
-
-
-// utility to print the parameters to the screen
-void NCPA::ModeSolver::printParams() {
-	printf(" Normal Modes Solver Parameters:\n");
-	printf("                   freq : %g\n", freq);
-	if (!Nby2Dprop) {
-		printf("                azimuth : %g\n", azi);
-	}
-	else {
-		printf("     azimuth_start (deg): %g\n", azi_min);
-		printf("       azimuth_end (deg): %g\n", azi_max);
-		printf("      azimuth_step (deg): %g\n", azi_step);
-	}
-	printf("                Nz_grid : %d\n", Nz_grid);
-	printf("      z_min (meters MSL): %g\n", z_min);
-	printf("      maxheight_km (MSL): %g\n", maxheight/1000.0);
-	printf("   sourceheight_km (AGL): %g\n", sourceheight/1000.0);
-	printf(" receiverheight_km (AGL): %g\n", receiverheight/1000.0);   
-	printf("             Nrng_steps : %d\n", Nrng_steps);
-	printf("            maxrange_km : %g\n", maxrange/1000.0); 
-	printf("          gnd_imp_model : %s\n", gnd_imp_model.c_str());
-	printf("Lamb wave boundary cond : %d\n", Lamb_wave_BC);
-	printf("  SLEPc tolerance param : %g\n", tol);
-	printf("    write_2D_TLoss flag : %d\n", write_2D_TLoss);
-	printf("write_phase_speeds flag : %d\n", write_phase_speeds);
-	printf("      write_speeds flag : %d\n", write_speeds);
-	printf("  write_dispersion flag : %d\n", write_dispersion);
-	printf("       write_modes flag : %d\n", write_modes);
-	printf("         Nby2Dprop flag : %d\n", Nby2Dprop);
-	printf("       turnoff_WKB flag : %d\n", turnoff_WKB);
-	printf("    atmospheric profile : %s\n", atmosfile.c_str());
-	if (!usrattfile.empty()) {
-		printf("  User attenuation file : %s\n", usrattfile.c_str());
-	}
-	if (!modstartfile.empty()) {
-		printf(" modal starter saved in : %s\n", modstartfile.c_str());
-	}
-
-	printf("       wvnum_filter_flg : %d\n", wvnum_filter_flg);
-	if (wvnum_filter_flg==1) {
-		printf("                  c_min : %g m/s\n", c_min);
-		printf("                  c_max : %g m/s\n", c_max);
-	}
-}
-
-*/
-
-
-
-
 
 
 
