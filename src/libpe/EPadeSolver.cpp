@@ -2462,7 +2462,9 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
 	calculate_pade_coefficients( &taylor1, npade, npade+1, &P, &Q );
 
 	generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
-	PetscScalar hank_inv = pow( sqrt( 2.0 / ( PI * k0 * r_ref ) ) * exp( I * (k0 * r_ref - PI/4.0 ) ),
+
+	// Add a factor of 1000 here to change reference distance from 1m to 1km
+	PetscScalar hank_inv = 1000.0 * pow( sqrt( 2.0 / ( PI * k0 * r_ref ) ) * exp( I * (k0 * r_ref - PI/4.0 ) ),
 		-1.0 );
 
 	// Original Matlab: psi = AA * ( C \ (B * ksi) ) / hank
