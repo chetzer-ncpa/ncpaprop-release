@@ -62,7 +62,7 @@ NCPA::ModalBroadbandPropagator::ModalBroadbandPropagator( NCPA::ParameterSet *pa
 	mode_R     = dmatrix(Nfreq, MAX_MODES);
 	read_dispersion_file();
 
-	f_step = f_vec[ 1 ] - f_vec[ 0 ];
+	f_step = f_vec[ 2 ] - f_vec[ 1 ];
 
   // if the option --nfft was not passed to the main program then the 
   // NFFT default was 0. Otherwise it has the requested positive value. 

@@ -1,3 +1,13 @@
+/*
+ * @version 2.0.1
+ * @date 2024-01-30
+ * @author Claus Hetzer, claus@olemiss.edu
+ * Changelog:
+ * 		2.0.1: 	Added factor of 1000.0 to modal sums in getTLoss1D(), getTLoss1DNx2(), and
+ * 				getTLoss2D() to make signal levels relative to 1 meter instead of 1 km, to
+ * 				match documentation.
+ */
+
 #include <complex>
 #include <stdexcept>
 #include <gsl/gsl_interp.h>
@@ -338,11 +348,11 @@ int NCPA::ModeSolver::getTLoss1D(int select_modes, double dz, int n_r, double dr
       
 		// no sqrt(rho[n_zrcv]/rho[n_zsrc]) factor
 		// if (1) {
-		modal_sum_c    = expov8pi*modal_sum_c/sqrt(r);
-		modal_sum_i    = 4*PI*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
+		modal_sum_c    = 1000.0 * expov8pi*modal_sum_c/sqrt(r);
+		modal_sum_i    = 1000.0 * 4*PI*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
 		if (write_lossless) {
-			modal_sum_c_ll = expov8pi*modal_sum_c_ll/sqrt(r);
-			modal_sum_i_ll = 4*PI*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
+			modal_sum_c_ll = 1000.0 * expov8pi*modal_sum_c_ll/sqrt(r);
+			modal_sum_i_ll = 1000.0 * 4*PI*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
 		}
 		// }
       
@@ -446,11 +456,11 @@ int NCPA::ModeSolver::getTLoss1DNx2(double azimuth, int select_modes, double dz,
       
 		// no sqrt(rho[n_zrcv]/rho[n_zsrc]) factor
 		// @todo Need programmatic logic to determine which branch to take, or remove one
-		modal_sum_c    = expov8pi*modal_sum_c/sqrt(r);
-		modal_sum_i    = 4*PI*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
+		modal_sum_c    = 1000.0 * expov8pi*modal_sum_c/sqrt(r);
+		modal_sum_i    = 1000.0 * 4*PI*sqrt(modal_sum_i)*sqrt(1./8./PI/r);
 		if (write_lossless) {
-			modal_sum_c_ll = expov8pi*modal_sum_c_ll/sqrt(r);
-			modal_sum_i_ll = 4*PI*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
+			modal_sum_c_ll = 1000.0 * expov8pi*modal_sum_c_ll/sqrt(r);
+			modal_sum_i_ll = 1000.0 * 4*PI*sqrt(modal_sum_i_ll)*sqrt(1./8./PI/r);
 		}
 
       
@@ -528,9 +538,9 @@ int NCPA::ModeSolver::getTLoss2D(int nz, int select_modes, double dz, int n_r, d
 						* std::exp(I*k_pert[m].real()*r) / std::sqrt(k_pert[m].real());
 				}
 			}
-			modal_sum = expov8pi*modal_sum/sqrt(r); // no sqrt(rho[n_zrcv]/rho[n_zsrc]) factor
+			modal_sum = 1000.0 * expov8pi*modal_sum/sqrt(r); // no sqrt(rho[n_zrcv]/rho[n_zsrc]) factor
 			if (write_lossless) {
-				modal_sum_ll *= expov8pi / std::sqrt(r);
+				modal_sum_ll *= 1000.0 * expov8pi / std::sqrt(r);
 			}
 
 			fprintf(tloss_2d,"%f %f %15.8e %15.8e\n", r/1000.0, z/1000.0,
