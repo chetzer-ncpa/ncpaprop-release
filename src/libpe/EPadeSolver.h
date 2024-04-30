@@ -142,7 +142,9 @@ namespace NCPA {
 		int build_operator_matrix_with_topography( NCPA::Atmosphere2D *atm, int NZvec, double *zvec, 
 			double r, std::complex<double> *k, double k0, double h2, double z_s,
 			std::complex<double> impedence_factor, std::complex<double> *n, 
-			int boundary_index, const Mat &last_q, Mat *q, bool starter = false );
+			int &boundary_index, const Mat &last_q, Mat *q,
+			double &s_A, double &s_B, PetscScalar *&rowAbove, PetscScalar *&rowBelow,
+			bool starter = false );
 		int build_operator_matrix_without_topography( 
 			int NZvec, double *zvec, double k0, double h2, 
 			std::complex<double> impedence_factor, std::complex<double> *n, size_t nqp, 
@@ -218,9 +220,9 @@ namespace NCPA {
 
 		std::string tag_filename( std::string basename );
 
-		double *z = NULL, *z_abs = NULL, *r = NULL, *f = NULL, calc_az;
-		std::complex< double > **tl;
-		int *zgi_r = NULL;   // ground height index
+		double *z = nullptr, *z_abs = nullptr, *r = nullptr, *f = nullptr, calc_az;
+		std::complex< double > **tl = nullptr, *tl_surface = nullptr;
+		int *zgi_r = nullptr;   // ground height index
 		double freq;         // current active frequency
 		double *azi;
 		size_t NZ, NR, NR_requested, NAz, NF;
@@ -231,6 +233,7 @@ namespace NCPA {
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
 		bool write_atmosphere = false, pointsource = true, _write_source_function = false;
+		bool write_surface = false;
 		double r_max;    // range limits
 		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double zs, zr;  // source height, receiver height
