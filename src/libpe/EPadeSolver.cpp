@@ -2713,22 +2713,22 @@ void NCPA::EPadeSolver::output1DTL( std::string filename, bool append ) {
 	} else {
 		out_1d.open( filename, std::ofstream::out | std::ofstream::trunc );
 	}
-	std::ofstream out_surface( "tloss_1d.surface.pe", std::ofstream::out | std::ofstream::trunc );
+//	std::ofstream out_surface( "tloss_1d.surface.pe", std::ofstream::out | std::ofstream::trunc );
 	std::complex<double> tloss;
 	for (size_t i = 0; i < (NR-1); i++) {
-//		if (write_surface) {
-//			tloss = tl_surface[ i ];
-//		} else {
+		if (write_surface) {
+			tloss = tl_surface[ i ];
+		} else {
 			tloss = tl[ zgi_r[ i ] ][ i ];
-//		}
+		}
 		out_1d << r[ i ]/1000.0 << " "
 			   << calc_az << " "
 			   << tloss.real() << " "
 			   << tloss.imag() << std::endl;
-		out_surface << r[ i ]/1000.0 << " "
-				   << calc_az << " "
-				   << tl_surface[ i ].real() << " "
-				   << tl_surface[ i ].imag() << std::endl;
+//		out_surface << r[ i ]/1000.0 << " "
+//				   << calc_az << " "
+//				   << tl_surface[ i ].real() << " "
+//				   << tl_surface[ i ].imag() << std::endl;
 	}
 	out_1d.close();
 }
