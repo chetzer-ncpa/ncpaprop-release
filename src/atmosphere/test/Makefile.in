@@ -1,0 +1,22 @@
+
+GTESTLIBS=-lgtest_main -lgtest
+LIBNAMES=libncpaatmosphere.a libncpaunits.a libncpacommon.a
+LIBS=$(addprefix ../../../lib/, $(LIBNAMES)) -lgslcblas -lgsl
+LDFLAGS=$(LIBS) $(GTESTLIBS)
+INCFLAGS=-I../include -I../../include
+CXXFLAGS=-c -fPIC -ggdb $(INCFLAGS)
+
+SOURCES=$(wildcard test_*.cpp)
+OBJECTS=$(SOURCES:.cpp=.o)
+TARGET=atmosphereTest
+
+test: build clean
+
+build: $(OBJECTS)
+	g++ -o $(TARGET) $^ $(LDFLAGS) && ./$(TARGET)
+	
+%.o: %.cpp
+	${CXX} $^ $(CXXFLAGS) -o $@
+	
+clean:
+	-rm $(OBJECTS) $(TARGET)
