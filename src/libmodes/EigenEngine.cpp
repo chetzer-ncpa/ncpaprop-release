@@ -41,7 +41,7 @@ int NCPA::EigenEngine::doESSCalculation( double *diag, int Nz_grid, double dz, d
 	ierr = MatSetFromOptions(A); CHKERRQ(ierr);
 
 	// the following Preallocation call is needed in PETSc version 3.3
-	ierr = MatSeqAIJSetPreallocation(A, 3, PETSC_NULL); CHKERRQ(ierr);
+	ierr = MatSeqAIJSetPreallocation(A, 3, PETSC_NULLPTR); CHKERRQ(ierr);
 	// or use: ierr = MatSetUp(A); 
 
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -82,8 +82,8 @@ int NCPA::EigenEngine::doESSCalculation( double *diag, int Nz_grid, double dz, d
 	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
 	// CHH 191022: MatGetVecs() is deprecated, changed to MatCreateVecs()
-	ierr = MatCreateVecs(A,PETSC_NULL,&xr); CHKERRQ(ierr);
-	ierr = MatCreateVecs(A,PETSC_NULL,&xi); CHKERRQ(ierr);
+	ierr = MatCreateVecs(A,PETSC_NULLPTR,&xr); CHKERRQ(ierr);
+	ierr = MatCreateVecs(A,PETSC_NULLPTR,&xi); CHKERRQ(ierr);
 
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	Create the eigensolver and set various options
@@ -96,7 +96,7 @@ int NCPA::EigenEngine::doESSCalculation( double *diag, int Nz_grid, double dz, d
 	/* 
 	Set operators. In this case, it is a standard eigenvalue problem
 	*/
-	ierr = EPSSetOperators(eps,A,PETSC_NULL); CHKERRQ(ierr);
+	ierr = EPSSetOperators(eps,A,PETSC_NULLPTR); CHKERRQ(ierr);
 	ierr = EPSSetProblemType(eps,EPS_HEP); CHKERRQ(ierr);
 
 	/*
@@ -129,7 +129,7 @@ int NCPA::EigenEngine::doESSCalculation( double *diag, int Nz_grid, double dz, d
 	*/
 	ierr = EPSGetIterationNumber(eps,&its);CHKERRQ(ierr);
 	ierr = EPSGetType(eps,&type);CHKERRQ(ierr);
-	ierr = EPSGetDimensions(eps,&nev,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+	ierr = EPSGetDimensions(eps,&nev,PETSC_NULLPTR,PETSC_NULLPTR);CHKERRQ(ierr);
 	ierr = EPSGetTolerances(eps,&tol,&maxit);CHKERRQ(ierr);
 	
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -215,8 +215,8 @@ int NCPA::EigenEngine::doWideAngleCalculation( int Nz_grid, double dz, double k_
     ierr = MatSetFromOptions(B);CHKERRQ(ierr);
     
     // the following Preallocation calls are needed in PETSc version 3.3
-    ierr = MatSeqAIJSetPreallocation(A, 3, PETSC_NULL);CHKERRQ(ierr);
-    ierr = MatSeqAIJSetPreallocation(B, 2, PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(A, 3, PETSC_NULLPTR);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(B, 2, PETSC_NULLPTR);CHKERRQ(ierr);
 
     /*
     We solve the quadratic eigenvalue problem (Mk^2 + Ck +D)v = 0 where k are the 
@@ -301,10 +301,10 @@ int NCPA::EigenEngine::doWideAngleCalculation( int Nz_grid, double dz, double k_
     ierr = MatAssemblyEnd  (B,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
     // CHH 191028: MatGetVecs is deprecated, changed to MatCreateVecs
-    ierr = MatCreateVecs(A,PETSC_NULL,&xr);CHKERRQ(ierr);
-    ierr = MatCreateVecs(A,PETSC_NULL,&xi);CHKERRQ(ierr);
-    //ierr = MatGetVecs(A,PETSC_NULL,&xr);CHKERRQ(ierr);
-    //ierr = MatGetVecs(A,PETSC_NULL,&xi);CHKERRQ(ierr);
+    ierr = MatCreateVecs(A,PETSC_NULLPTR,&xr);CHKERRQ(ierr);
+    ierr = MatCreateVecs(A,PETSC_NULLPTR,&xi);CHKERRQ(ierr);
+    //ierr = MatGetVecs(A,PETSC_NULLPTR,&xr);CHKERRQ(ierr);
+    //ierr = MatGetVecs(A,PETSC_NULLPTR,&xi);CHKERRQ(ierr);
 
     /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
                   Create the eigensolver and set various options
@@ -344,7 +344,7 @@ int NCPA::EigenEngine::doWideAngleCalculation( int Nz_grid, double dz, double k_
     ierr = PetscPrintf(PETSC_COMM_WORLD," Number of iterations of the method: %d\n",its);CHKERRQ(ierr);
     ierr = EPSGetType(eps,&type);CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n\n",type);CHKERRQ(ierr);
-    ierr = EPSGetDimensions(eps,&nev_2,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+    ierr = EPSGetDimensions(eps,&nev_2,PETSC_NULLPTR,PETSC_NULLPTR);CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD," Number of requested eigenvalues: %d\n",nev_2);CHKERRQ(ierr);
     ierr = EPSGetTolerances(eps,&tol,&maxit);CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD," Stopping condition: tol=%.4g, maxit=%d\n",tol,maxit);CHKERRQ(ierr);

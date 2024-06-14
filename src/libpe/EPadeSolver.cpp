@@ -38,7 +38,7 @@ void NCPA::EPadeSolver::outputVec( Vec &v, double *z, int n, std::string filenam
 	out.precision( 12 );
 	VecGetArray(v,&array);
 	for (int i = 0; i < n; i++) {
-		if (z != NULL) {
+		if (z != nullptr) {
 			out << z[i] << "  ";
 		}
 		out << array[i].real() << "  " << array[i].imag() << std::endl;
@@ -79,8 +79,8 @@ void NCPA::EPadeSolver::set_default_values() {
 	write1d = true;
 
 	// null values otherwise.  Pointers:
-	z = NULL; z_abs = NULL; r = NULL; f = NULL; tl = NULL;
-	zgi_r = NULL; azi = NULL; atm_profile_2d = NULL;
+	z = nullptr; z_abs = nullptr; r = nullptr; f = nullptr; tl = nullptr;
+	zgi_r = nullptr; azi = nullptr; atm_profile_2d = nullptr;
 
 	// doubles
 	freq = 0.0; dz = 0.0; r_max = 0.0; z_max = 0.0; z_min = 0.0; z_ground = 0.0;
@@ -113,7 +113,7 @@ void NCPA::EPadeSolver::set_default_values() {
 	Lt = 100.0;
 	temperature_factor = 1.0e-10;
 	velocity_factor    = 1.0e-8;
-	// turbulence_vec1 = PETSC_NULL;
+	// turbulence_vec1 = PETSC_NULLPTR;
 }
 
 std::string NCPA::EPadeSolver::tag_filename( std::string basename ) {
@@ -439,9 +439,9 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 NCPA::EPadeSolver::~EPadeSolver() {
 	// delete [] z;
 	// delete [] z_abs;
-	if (azi != NULL)
+	if (azi != nullptr)
 		delete [] azi;
-	if (atm_profile_2d != NULL)
+	if (atm_profile_2d != nullptr)
 		delete atm_profile_2d;
 }
 
@@ -460,7 +460,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 	PetscInt *indices;
 	PetscScalar hank, *contents;
 	Mat B, C;   // , q;
-	Mat *qpowers = PETSC_NULL, *qpowers_starter = PETSC_NULL;
+	Mat *qpowers = PETSC_NULLPTR, *qpowers_starter = PETSC_NULLPTR;
 	Vec psi_o, Bpsi_o; //, psi_temp;
 	KSP ksp;
 
@@ -1069,7 +1069,7 @@ int NCPA::EPadeSolver::build_operator_matrix_without_topography(
 	PetscInt i;
 
 	// Set up matrices
-	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZvec, NZvec, 3, NULL, q );CHKERRQ(ierr);
+	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZvec, NZvec, 3, nullptr, q );CHKERRQ(ierr);
 	ierr = MatSetFromOptions( *q );CHKERRQ(ierr);
 
 	// populate
@@ -1148,7 +1148,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 	PetscInt *indices;
 	PetscScalar hank, *contents;
 	Mat B, C, q;    // , q_starter;
-	Mat *qpowers = PETSC_NULL, *qpowers_starter = PETSC_NULL;
+	Mat *qpowers = PETSC_NULLPTR, *qpowers_starter = PETSC_NULLPTR;
 	Vec psi_o, Bpsi_o; //, psi_temp;
 	KSP ksp;
 	// PC pc;
@@ -1387,8 +1387,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					0.0, z_ground, lossless, top_layer, freq, false, k0_starter, 
 					c0_starter, c_starter, a_starter, k_starter, n_starter );
 
-				Mat q_starter = PETSC_NULL;
-				Mat *qpowers_starter = PETSC_NULL;
+				Mat q_starter = PETSC_NULLPTR;
+				Mat *qpowers_starter = PETSC_NULLPTR;
 				build_operator_matrix_without_topography( NZ_starter, z_starter, 
 					k0_starter, h2, ground_impedence_factor, n_starter, npade+1, 0, 
 					&q_starter );
@@ -1437,7 +1437,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
 				// set up for future calculations
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
-					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
+					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULLPTR,
 					&q, true );
 				create_matrix_polynomial( npade+1, &q, &qpowers );
 				
@@ -1445,7 +1445,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 			} else if (starter == "gaussian") {
 				// qpowers_starter = qpowers;
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
-					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
+					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULLPTR,
 					&q, true );
 				create_matrix_polynomial( npade+1, &q, &qpowers );
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
@@ -1453,7 +1453,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 					ground_index, &psi_o );
 			} else if (starter == "user" ) {
 				build_operator_matrix_with_topography( atm_profile_2d, NZ, z, 0.0, k, k0, 
-					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULL, 
+					h2, z_ground, ground_impedence_factor, n, ground_index, PETSC_NULLPTR,
 					&q, true );
 				create_matrix_polynomial( npade+1, &q, &qpowers );
 				ierr = MatDestroy( &q );CHKERRQ(ierr);
@@ -1547,17 +1547,16 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 
 				// make sure the receiver height is above ground
+				if (ir == 0) {
+					// for the first step, use the ground height at the source because
+					// the starter, which is 0 below ground, hasn't had time to evolve
+					z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
+				}
 				double z0g = z_ground + zr;
-				// z0g = NCPA::max( z0g, zr );
 				zgi_r[ ir ] = (int)(NCPA::find_closest_index( z, NZ, z0g ));
 				while ( z[ zgi_r[ ir ] ] <= z_ground ) {
-//					std::cout << "Adjusting reported z for r[" << ir << "] = "
-//							<< r[ ir ] << " from "
-//							<< z[ zgi_r[ ir ] ] << " to " << z[ zgi_r[ ir ]+1 ]
-//							<< " for z_g = " << z_ground << std::endl;
 					zgi_r[ ir ]++;
 				}
-//				zgi_r[ir]++;
 				
 				if ( fmod( rr, 1.0e5 ) < dr) {
 					std::cout << " -> Range " << rr/1000.0 << " km" << std::endl;
@@ -1668,7 +1667,7 @@ int NCPA::EPadeSolver::create_matrix_polynomial( size_t nterms, const Mat *Q, Ma
 	PetscErrorCode ierr;
 	PetscInt i;
 
-	if ((*qpowers) != PETSC_NULL) {
+	if ((*qpowers) != PETSC_NULLPTR) {
 		delete_matrix_polynomial( nterms, qpowers );
 	}
 
@@ -1687,12 +1686,12 @@ int NCPA::EPadeSolver::create_matrix_polynomial( size_t nterms, const Mat *Q, Ma
 // clean up a vector of powers of a matrix
 int NCPA::EPadeSolver::delete_matrix_polynomial( size_t nterms, Mat **qpowers ) {
 	PetscErrorCode ierr;
-	if ((*qpowers) != PETSC_NULL) {
+	if ((*qpowers) != PETSC_NULLPTR) {
 		for (size_t i = 0; i < nterms; i++) {
 			ierr = MatDestroy( (*qpowers) + i ); CHKERRQ(ierr);
 		}
 		delete [] *qpowers;
-		*qpowers = PETSC_NULL;
+		*qpowers = PETSC_NULLPTR;
 	}
 
 	return 1;
@@ -1793,7 +1792,7 @@ int NCPA::EPadeSolver::generate_polymatrix( Mat *qpowers, size_t qpowers_size, s
 	PetscInt Istart, Iend, i;
 	PetscScalar value;
 
-	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZ, NZ, 2*T.size()+1, NULL, B );CHKERRQ(ierr);
+	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZ, NZ, 2*T.size()+1, nullptr, B );CHKERRQ(ierr);
 	ierr = MatSetFromOptions( *B );CHKERRQ(ierr);
 
 	// start B off as T[0]
@@ -1818,7 +1817,7 @@ int NCPA::EPadeSolver::sum_scaled_matrix_polynomial_terms( Mat *qpowers, int qpo
 	PetscInt Istart, Iend, i;
 	PetscScalar value;
 
-	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZ, NZ, 2*T.size()+1, NULL, B );CHKERRQ(ierr);
+	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZ, NZ, 2*T.size()+1, nullptr, B );CHKERRQ(ierr);
 	ierr = MatSetFromOptions( *B );CHKERRQ(ierr);
 
 	// start B off as T[0]
@@ -1846,9 +1845,9 @@ int NCPA::EPadeSolver::generate_polymatrices( Mat *qpowers, size_t npade, size_t
 	PetscInt Istart, Iend, i;
 	PetscScalar value;
 
-	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZ, NZ, 2*npade-1, NULL, B );CHKERRQ(ierr);
+	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZ, NZ, 2*npade-1, nullptr, B );CHKERRQ(ierr);
 	ierr = MatSetFromOptions( *B );CHKERRQ(ierr);
-	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZ, NZ, 2*npade+1, NULL, C );CHKERRQ(ierr);
+	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, NZ, NZ, 2*npade+1, nullptr, C );CHKERRQ(ierr);
 	ierr = MatSetFromOptions( *C );CHKERRQ(ierr);
 
 	ierr = MatGetOwnershipRange(*B,&Istart,&Iend);CHKERRQ(ierr);
@@ -1939,7 +1938,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
 
 	// Calculate matrix ratio representation of sqrt(1+Q)
 	rowDiff = NCPA::zeros<PetscScalar>( NZvec );
-	if (last_q != PETSC_NULL) {
+	if (last_q != PETSC_NULLPTR) {
 		PetscScalar I( 0.0, 1.0 ), *rowAbove, *rowBelow;
 		PetscScalar M = I * k0 * atm->get_interpolated_ground_elevation_first_derivative( r ) * h / denom;
 		Vec vecAbove, vecBelow;
@@ -2006,7 +2005,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
     	// below or above the ground surface
     	if (i == (Ji-1)) {
 
-    		if (last_q != PETSC_NULL) {
+    		if (last_q != PETSC_NULLPTR) {
 	    		// this is the alpha, beta, gamma row
 	    		std::memcpy( col, indices, NZvec*sizeof(PetscInt) );
 	    		for (j = 0; j < NZvec; j++) {
@@ -2024,7 +2023,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
     		
     	} else if (i == Ji) {
     		// this is the a, b, c row
-    		if (last_q != PETSC_NULL) {
+    		if (last_q != PETSC_NULLPTR) {
 	    		std::memcpy( col, indices, NZvec*sizeof(PetscInt) );
 	    		for (j = 0; j < NZvec; j++) {
 	    			Drow[ j ] = -rowDiff[ j ] / ( h2 * (dJ - J_s));
@@ -2063,7 +2062,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
     if (FirstBlock) {
 		    i=0; col[0]=0; col[1]=1; 
 		    if (i == (Ji-1))  {
-		    	if (last_q != PETSC_NULL) {
+		    	if (last_q != PETSC_NULLPTR) {
 			    	std::memcpy( col, indices, NZvec*sizeof(PetscInt) );
 			    	for (j = 0; j < NZvec; j++) {
 		    			Drow[ j ] = -rowDiff[ j ] / ( h2 * (J_s - dJ + 1.0));
@@ -2077,7 +2076,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography( NCPA::Atmosphere2D
 		    		Drow[ 1 ] = gamma;
 		    	}
     		} else if (i == Ji) {
-    			if (last_q != PETSC_NULL) {
+    			if (last_q != PETSC_NULLPTR) {
 	    			std::memcpy( col, indices, NZvec*sizeof(PetscInt) );
 	    			for (j = 0; j < NZvec; j++) {
 		    			Drow[ j ] = -rowDiff[ j ] / ( h2 * (dJ - J_s));
@@ -2209,7 +2208,7 @@ int NCPA::EPadeSolver::approximate_sqrt_1pQ( int NZvec, const Mat *Q, PetscInt J
 	// denominator_coefficients.push_back( 1.0 );
 	// denominator_coefficients.push_back( 0.25 );
 
-	// last_q_powers = NULL;
+	// last_q_powers = nullptr;
 	// create_matrix_polynomial( ncoeffs, Q, &last_q_powers );
 	// generate_polymatrices( last_q_powers, ncoeffs, NZvec, numerator_coefficients, denominator_coefficients, &B, &C );
 
@@ -2531,7 +2530,7 @@ int NCPA::EPadeSolver::calculate_pade_coefficients( std::vector<PetscScalar> *c,
 	KSP ksp;
 
 	// Create and populate matrix system
-	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, N, N, n_denominator, NULL, &A );CHKERRQ(ierr);
+	ierr = MatCreateSeqAIJ( PETSC_COMM_SELF, N, N, n_denominator, nullptr, &A );CHKERRQ(ierr);
 	ierr = MatSetFromOptions( A );CHKERRQ(ierr);
 	ierr = MatZeroEntries( A );CHKERRQ(ierr);
 	ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
@@ -2853,12 +2852,12 @@ int NCPA::EPadeSolver::zero_below_ground( Mat *q, int NZ, PetscInt ground_index 
 	std::vector< PetscInt > rows, cols;
 
 	for (ii = 0; ii < ground_index; ii++) {
-		ierr = MatGetRow( *q, ii, &nNonZero, &indices, PETSC_NULL );CHKERRQ(ierr);
+		ierr = MatGetRow( *q, ii, &nNonZero, &indices, PETSC_NULLPTR );CHKERRQ(ierr);
 		for (jj = 0; jj < nNonZero; jj++) {
 			rows.push_back( ii );
 			cols.push_back( indices[ jj ] );
 		}
-		ierr = MatRestoreRow( *q, ii, &nNonZero, &indices, PETSC_NULL );CHKERRQ(ierr);
+		ierr = MatRestoreRow( *q, ii, &nNonZero, &indices, PETSC_NULLPTR );CHKERRQ(ierr);
 	}
 	if (ground_index > 0) {
 		rows.push_back( ground_index );
@@ -2977,7 +2976,7 @@ void NCPA::EPadeSolver::calculate_turbulence( double r,
 // 	PetscErrorCode ierr;
 
 // 	// set up vector and matrix objects
-// 	ierr = MatCreateSeqDense( PETSC_COMM_SELF, nz, nt, NULL, &mat1 );CHKERRQ(ierr);
+// 	ierr = MatCreateSeqDense( PETSC_COMM_SELF, nz, nt, nullptr, &mat1 );CHKERRQ(ierr);
 // 	ierr = MatSetFromOptions( mat1 );CHKERRQ(ierr);
 // 	ierr = VecCreate( PETSC_COMM_SELF, &vec1 );CHKERRQ(ierr);
 // 	ierr = VecSetSizes( vec1, PETSC_DECIDE, nt );CHKERRQ(ierr);
@@ -3003,7 +3002,7 @@ void NCPA::EPadeSolver::calculate_turbulence( double r,
 // 			ierr = MatSetValues( mat1, 1, &j, 1, &i, &temp, INSERT_VALUES );CHKERRQ(ierr);
 // 		}
 // 	}
-// 	// outputVec( vec1, NULL, nt, "vec1_new.dat" );
+// 	// outputVec( vec1, nullptr, nt, "vec1_new.dat" );
 // 	ierr = MatAssemblyBegin( mat1, MAT_FINAL_ASSEMBLY );CHKERRQ(ierr);
 // 	ierr = MatAssemblyEnd( mat1, MAT_FINAL_ASSEMBLY );CHKERRQ(ierr);
 // 	// if (first_time) {
@@ -3054,9 +3053,9 @@ void NCPA::EPadeSolver::setup_turbulence(std::vector<double> &rand1,
 
 
 
-	// if (turbulence_vec1 != PETSC_NULL) {
+	// if (turbulence_vec1 != PETSC_NULLPTR) {
 	// 	PetscErrorCode ierr = VecDestroy( turbulence_vec1 );CHKERRQ(ierr);
-	// 	turbulence_vec1 = PETSC_NULL;
+	// 	turbulence_vec1 = PETSC_NULLPTR;
 	// }
 
 }

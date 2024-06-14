@@ -773,7 +773,7 @@ namespace NCPA {
 	void free_matrix3d( T ***data, size_t nd1, size_t nd2, size_t nd3 ) {
 		size_t i, j;
 		for (i=0; i < nd1; ++i) {
-		  if (data[i] != NULL) {
+		  if (data[i] != nullptr) {
 		      for (j=0; j < nd2; ++j) {
 		      	  delete [] data[i][j];
 		      }
@@ -797,7 +797,7 @@ namespace NCPA {
 				size_t nd1, size_t nd2, size_t nd3 ) {
 		size_t i, j, k;
 		for (i=0; i < nd1; ++i) {
-		  if (data[i] != NULL) {
+		  if (data[i] != nullptr) {
 		      for (j=0; j < nd2; ++j) {
 	      	  	  for (k = 0; i < nd3; k++) {
 	      	  	  	  delete data[i][j][k];
