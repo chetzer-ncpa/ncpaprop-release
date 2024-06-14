@@ -1,7 +1,7 @@
 NCPAProp Changelog
 
 
-2023-03-06: 
-* Added dummy --write_lossless flag to ModBB because Modess parameter list
-  expects it, and I can't deal with it using exception handling because 
-  clang on MacOS doesn't like exceptions.
+2024-06-14:
+Modified ground height selection in ePape to use height at source for first step.
+Changed NULL to nullptr per standard, and PETSC_NULL to PETSC_NULLPTR to stop
+  warning messages.
