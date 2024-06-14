@@ -1547,17 +1547,16 @@ int NCPA::EPadeSolver::solve_with_topography() {
 				}
 
 				// make sure the receiver height is above ground
+				if (ir == 0) {
+					// for the first step, use the ground height at the source because
+					// the starter, which is 0 below ground, hasn't had time to evolve
+					z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
+				}
 				double z0g = z_ground + zr;
-				// z0g = NCPA::max( z0g, zr );
 				zgi_r[ ir ] = (int)(NCPA::find_closest_index( z, NZ, z0g ));
 				while ( z[ zgi_r[ ir ] ] <= z_ground ) {
-//					std::cout << "Adjusting reported z for r[" << ir << "] = "
-//							<< r[ ir ] << " from "
-//							<< z[ zgi_r[ ir ] ] << " to " << z[ zgi_r[ ir ]+1 ]
-//							<< " for z_g = " << z_ground << std::endl;
 					zgi_r[ ir ]++;
 				}
-//				zgi_r[ir]++;
 				
 				if ( fmod( rr, 1.0e5 ) < dr) {
 					std::cout << " -> Range " << rr/1000.0 << " km" << std::endl;
