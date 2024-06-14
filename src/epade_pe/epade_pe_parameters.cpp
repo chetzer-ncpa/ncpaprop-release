@@ -193,6 +193,8 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Flags", "--lossless", "Ignore atmospheric attenuation" );
 	ps->addParameter( new NCPA::FlagParameter( "topo" ) );
 	ps->addParameterDescription( "Flags", "--topo", "Use topography.  Requires presence of 'Z0' parameter in atmospheric files" );
+	ps->addParameter( new NCPA::FlagParameter( "reverse_winds") );
+	ps->addParameterDescription( "Flags", "--reverse_winds", "Reverse the directions of the wind vectors" );
 	ps->addParameter( new NCPA::FlagParameter( "turbulence" ) );
 	ps->addParameterDescription( "Flags", "--turbulence", "Include turbulence." );
 

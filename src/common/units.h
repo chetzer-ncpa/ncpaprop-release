@@ -232,6 +232,8 @@ namespace NCPA {
 		// operator overloading
 		double operator []( size_t i ) const;
 		double & operator []( size_t i );
+		VectorWithUnits& operator*=( double d );
+		VectorWithUnits& operator+=( double d );
 	};
 
 	class ScalarWithUnits {
@@ -256,6 +258,8 @@ namespace NCPA {
 		virtual units_t get_units() const;
 		//virtual void revert_units();
 
+		ScalarWithUnits& operator*=( double d );
+		ScalarWithUnits& operator+=( double d );
 		
 	};
 	std::ostream &operator<<( std::ostream &output, const ScalarWithUnits &D );

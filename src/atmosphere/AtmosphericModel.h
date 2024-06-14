@@ -13,6 +13,7 @@ namespace NCPA {
 		ATMOSPHERE_STABILITY_STABLE
 	} atmospheric_stability_t;
 
+
 	class AtmosphericModel {
 	public:
 		// t in K, returns in m/s

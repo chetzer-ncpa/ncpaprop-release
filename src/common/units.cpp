@@ -416,6 +416,16 @@ void NCPA::ScalarWithUnits::set( double newval, NCPA::units_t new_units ) {
 	set_units( new_units );
 }
 
+NCPA::ScalarWithUnits& NCPA::ScalarWithUnits::operator*=( double d ) {
+	this->value_ *= d;
+	return *this;
+}
+
+NCPA::ScalarWithUnits& NCPA::ScalarWithUnits::operator+=( double d ) {
+	this->value_ += d;
+	return *this;
+}
+
 
 std::ostream &NCPA::operator<<( std::ostream &output, const NCPA::ScalarWithUnits &D ) { 
 	output << D.get() << " " << NCPA::Units::toStr( D.get_units() );
@@ -504,4 +514,18 @@ double NCPA::VectorWithUnits::operator[]( size_t i ) const {
 
 double &NCPA::VectorWithUnits::operator[]( size_t i ) {
 	return values_[ i ];
+}
+
+NCPA::VectorWithUnits& NCPA::VectorWithUnits::operator*=( double d ) {
+	for (size_t i = 0; i < this->n_; i++) {
+		this->values_[i] *= d;
+	}
+	return *this;
+}
+
+NCPA::VectorWithUnits& NCPA::VectorWithUnits::operator+=( double d ) {
+	for (size_t i = 0; i < this->n_; i++) {
+		this->values_[i] += d;
+	}
+	return *this;
 }

@@ -17,14 +17,6 @@
 #include "gsl/gsl_errno.h"
 #include "gsl/gsl_spline.h"
 
-// #ifndef GAMMA_FOR_C
-// #define GAMMA_FOR_C 1.4
-// #endif
-
-// #ifndef R_FOR_C
-// #define R_FOR_C 287.0
-// #endif
-
 #ifndef PI
 #define PI 3.14159
 #endif
@@ -452,6 +444,15 @@ void NCPA::Atmosphere1D::copy_vector_property( const std::string &old_key,
 
 NCPA::AtmosphericProperty1D *NCPA::Atmosphere1D::get_vector_property_object(
 			const std::string &key ) const {
+//	if (!contains_vector( key )) {
+//		throw std::runtime_error( "Requested key " + key + " not found." );
+//	}
+//	return contents_.at( key );
+	return this->vector_property( key );
+}
+
+NCPA::AtmosphericProperty1D *NCPA::Atmosphere1D::vector_property(
+			const std::string &key ) const {
 	if (!contains_vector( key )) {
 		throw std::runtime_error( "Requested key " + key + " not found." );
 	}
@@ -459,6 +460,15 @@ NCPA::AtmosphericProperty1D *NCPA::Atmosphere1D::get_vector_property_object(
 }
 
 NCPA::ScalarWithUnits *NCPA::Atmosphere1D::get_scalar_property_object(
+			const std::string &key ) const {
+//	if (!contains_scalar( key )) {
+//		throw std::runtime_error( "Requested key " + key + " not found." );
+//	}
+//	return scalar_contents_.at( key );
+	return this->scalar_property( key );
+}
+
+NCPA::ScalarWithUnits *NCPA::Atmosphere1D::scalar_property(
 			const std::string &key ) const {
 	if (!contains_scalar( key )) {
 		throw std::runtime_error( "Requested key " + key + " not found." );
@@ -715,6 +725,26 @@ bool NCPA::Atmosphere1D::contains_scalar( const std::string &key ) const {
 
 bool NCPA::Atmosphere1D::contains_key( const std::string &key ) const {
 	return contains_vector( key ) || contains_scalar( key );
+}
+
+void NCPA::Atmosphere1D::scale_property( const std::string &key, double factor ) {
+	if (contains_vector(key)) {
+		*(contents_[key]) *= factor;
+	} else if (contains_scalar(key)) {
+		*(scalar_contents_[key]) *= factor;
+	} else {
+		throw std::out_of_range( "No property \"" + key + "\" found" );
+	}
+}
+
+void NCPA::Atmosphere1D::offset_property( const std::string &key, double factor ) {
+	if (contains_vector(key)) {
+		*(contents_[key]) += factor;
+	} else if (contains_scalar(key)) {
+		*(scalar_contents_[key]) += factor;
+	} else {
+		throw std::out_of_range( "No property \"" + key + "\" found" );
+	}
 }
 
 double NCPA::Atmosphere1D::get_first_derivative( const std::string &key,
@@ -1110,3 +1140,4 @@ void NCPA::Atmosphere1D::calculate_attenuation( const std::string &new_key,
 	delete [] D;
 	delete [] A;
 }
+

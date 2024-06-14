@@ -111,9 +111,10 @@ namespace NCPA {
 		void copy_vector_property( const std::string &old_key, const std::string &new_key );
 		void copy_scalar_property( const std::string &old_key, const std::string &new_key );
 
-		NCPA::AtmosphericProperty1D *get_vector_property_object(
-			const std::string &key ) const;
+		NCPA::AtmosphericProperty1D *get_vector_property_object( const std::string &key ) const;
+		NCPA::AtmosphericProperty1D *vector_property( const std::string &key ) const;
 		NCPA::ScalarWithUnits *get_scalar_property_object( const std::string &key ) const;
+		NCPA::ScalarWithUnits *scalar_property( const std::string &key ) const;
 
 		/**
 		Removes a scalar or vector property from the atmosphere.  Has no effect if the property does not exist.
@@ -137,7 +138,8 @@ namespace NCPA {
 		void get_property_vector( const std::string &key, double *buffer ) const;
 		units_t get_altitude_units() const;
 		units_t get_property_units( const std::string &key ) const;
-
+		void scale_property( const std::string &key, double factor );
+		void offset_property( const std::string &key, double offset );
 
 		/**
 		Returns the minimum valid altitude in the atmospheric model, i.e. the first value in the altitude
@@ -181,7 +183,6 @@ namespace NCPA {
 		void read_attenuation_from_file( const std::string &new_key,
 			const std::string &filename );
 		
-
 		void convert_altitude_units( units_t new_units );
 		void convert_property_units( const std::string &key, units_t new_units );
 		//units_t get_property_units( std::string key );

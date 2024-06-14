@@ -239,6 +239,18 @@ double NCPA::Atmosphere2D::get_maximum_altitude( double range ) {
 	return profiles_.at( ind )->get_maximum_altitude();
 }
 
+void NCPA::Atmosphere2D::scale_property( const std::string &key, double factor ) {
+	for (auto it = profiles_.begin(); it != profiles_.end(); ++it) {
+		(*it)->scale_property( key, factor );
+	}
+}
+
+void NCPA::Atmosphere2D::offset_property( const std::string &key, double factor ) {
+	for (auto it = profiles_.begin(); it != profiles_.end(); ++it) {
+		(*it)->offset_property( key, factor );
+	}
+}
+
 bool NCPA::Atmosphere2D::contains_scalar( double range, const std::string &key ) {
 	size_t ind = get_profile_index( range );
 	return profiles_.at( ind )->contains_scalar( key );
@@ -717,3 +729,4 @@ void NCPA::Atmosphere2D::print_atmosphere(
 
 	delete [] z_;
 }
+

@@ -1,7 +1,6 @@
 NCPAProp Changelog
 
-
-2023-03-06: 
-* Added dummy --write_lossless flag to ModBB because Modess parameter list
-  expects it, and I can't deal with it using exception handling because 
-  clang on MacOS doesn't like exceptions.
+2024-06-12 - Version 2.2.3:
+* Started keeping this changelog up to date
+* Added --reverse_winds flag to ePape, and added the appropriate functionality
+  to the Units and Atmosphere libraries

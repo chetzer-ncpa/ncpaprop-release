@@ -3,6 +3,7 @@
 
 #include "AtmosphericModel.h"
 #include "Atmosphere1D.h"
+#include "AtmosphericProperty1D.h"
 #include <vector>
 #include <climits>
 
@@ -32,6 +33,8 @@ namespace NCPA {
 		void copy_vector_property( const std::string &old_key, const std::string &new_key );
 		void copy_scalar_property( const std::string &old_key, const std::string &new_key );
 		void remove_property( const std::string &key );
+		void scale_property( const std::string &key, double factor );
+		void offset_property( const std::string &key, double factor );
 
 
 		// data retrieval, single values

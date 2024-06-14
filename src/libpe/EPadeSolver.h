@@ -208,10 +208,6 @@ namespace NCPA {
 		// turbulence
 		void calculate_turbulence( double r, size_t nz, double *z,
 			double k_a, size_t ground_index, double *&mu ) const;
-		// void calculate_turbulence_topo( double r, size_t nz, double *z,
-		// 	double k_a, size_t ground_index, double *&mu ) const;
-		// void calculate_turbulence_orig( double r, size_t nz, double *z,
-		// 	double k_a, double *&mu ) const;
 		void setup_turbulence( std::vector<double> &rand1,
 			std::vector<double> &rand2 );
 		void cleanup_turbulence();
@@ -227,7 +223,7 @@ namespace NCPA {
 		double dz;
 		size_t npade;
 		bool use_atm_1d = false, use_atm_2d = false, use_atm_toy = false, use_topo = false;
-		bool z_ground_specified = false, lossless = false, top_layer = true;
+		bool z_ground_specified = false, lossless = false, top_layer = true, reverse_winds = false;
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
 		bool write_atmosphere = false, pointsource = true, _write_source_function = false;
