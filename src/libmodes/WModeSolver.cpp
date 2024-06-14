@@ -286,7 +286,7 @@ int NCPA::WModeSolver::solve() {
   z_min_km = z_min/1000.0;
 
   // Initialize Slepc
-  SlepcInitialize(PETSC_NULL,PETSC_NULL,(char*)0,PETSC_NULL);
+  SlepcInitialize(PETSC_NULLPTR,PETSC_NULLPTR,(char*)0,PETSC_NULLPTR);
   
   for (fi = 0; fi < Nfreq; fi++) {
     freq = f_vec[ fi ];

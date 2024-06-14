@@ -315,7 +315,7 @@ int NCPA::ESSModeSolver::solve() {
 	//h2       = dz*dz;
 	z_min_km = z_min / 1000.0;
 
-	SlepcInitialize(PETSC_NULL,PETSC_NULL,(char*)0,PETSC_NULL); /* @todo move out of loop? */
+	SlepcInitialize(PETSC_NULLPTR,PETSC_NULLPTR,(char*)0,PETSC_NULLPTR); /* @todo move out of loop? */
 
 	for (fi = 0; fi < Nfreq; fi++) {
 		freq = f_vec[ fi ];

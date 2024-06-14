@@ -14,8 +14,8 @@ namespace NCPA {
 	protected:
 		double *z_;
 		//NCPA::VectorWithUnits *z_vector_;
-		gsl_interp_accel *accel_ = NULL;
-		gsl_spline *spline_ = NULL;
+		gsl_interp_accel *accel_ = nullptr;
+		gsl_spline *spline_ = nullptr;
 		//std::stack< NCPA::units_t > z_units_;
 		units_t z_units_;
 
