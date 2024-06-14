@@ -1,5 +1,4 @@
-#ifndef NCPAPROP_EPADESOLVER_H_INCLUDED
-#define NCPAPROP_EPADESOLVER_H_INCLUDED
+#pragma once
 
 #include <vector>
 #include <deque>
@@ -218,9 +217,9 @@ namespace NCPA {
 
 		std::string tag_filename( std::string basename );
 
-		double *z = NULL, *z_abs = NULL, *r = NULL, *f = NULL, calc_az;
+		double *z = nullptr, *z_abs = nullptr, *r = nullptr, *f = nullptr, calc_az;
 		std::complex< double > **tl;
-		int *zgi_r = NULL;   // ground height index
+		int *zgi_r = nullptr;   // ground height index
 		double freq;         // current active frequency
 		double *azi;
 		size_t NZ, NR, NR_requested, NAz, NF;
@@ -268,6 +267,3 @@ namespace NCPA {
 	};
 
 }
-
-
-#endif
