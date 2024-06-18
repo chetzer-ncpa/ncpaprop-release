@@ -56,9 +56,15 @@ namespace NCPA {
 		units_t get_range_units() const;
 		units_t get_altitude_units( double range );
 		units_t get_property_units( double range, const std::string &key );
+		bool contains_scalar( const std::string &key ) const;
+		bool contains_vector( const std::string &key ) const;
+		bool contains_key( const std::string &key ) const;
 		bool contains_scalar( double range, const std::string &key );
 		bool contains_vector( double range, const std::string &key );
 		bool contains_key( double range, const std::string &key );
+		virtual std::vector<std::string> vector_keys( double range );
+		virtual std::vector<std::string> scalar_keys( double range );
+		virtual std::vector<std::string> keys( double range );
 		virtual double get_interpolated_ground_elevation( double range );
 		virtual double get_interpolated_ground_elevation_first_derivative( double range );
 		virtual double get_interpolated_ground_elevation_second_derivative( double range );
@@ -110,6 +116,11 @@ namespace NCPA {
 		
 		std::vector< NCPA::Atmosphere1D * >::iterator first_profile();
 		std::vector< NCPA::Atmosphere1D * >::iterator last_profile();
+
+		void extend_to_ground(
+				const std::string &ground_height_key,
+				const std::vector<std::string> taper_to_zero,
+				const std::vector<std::string> continue_linear );
 	protected:
 		void clear_last_index_();
 		void set_last_index_( size_t ind );

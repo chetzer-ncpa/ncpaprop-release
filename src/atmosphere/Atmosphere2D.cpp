@@ -266,6 +266,24 @@ bool NCPA::Atmosphere2D::contains_key( double range, const std::string &key ) {
 	return profiles_.at( ind )->contains_key( key );
 }
 
+bool NCPA::Atmosphere2D::contains_vector( const std::string &key ) const {
+	for (auto it = profiles_.cbegin(); it != profiles_.cend(); ++it) {
+		if ((*it)->contains_vector( key )) return true;
+	}
+	return false;
+}
+
+bool NCPA::Atmosphere2D::contains_scalar( const std::string &key ) const {
+	for (auto it = profiles_.cbegin(); it != profiles_.cend(); ++it) {
+		if ((*it)->contains_scalar( key )) return true;
+	}
+	return false;
+}
+
+bool NCPA::Atmosphere2D::contains_key( const std::string &key ) const {
+	return this->contains_scalar( key ) || this->contains_vector( key );
+}
+
 void NCPA::Atmosphere2D::calculate_density_from_temperature_and_pressure(
 		const std::string &new_key, const std::string &temperature_key,
 		const std::string &pressure_key, units_t density_units ) {
@@ -730,3 +748,60 @@ void NCPA::Atmosphere2D::print_atmosphere(
 	delete [] z_;
 }
 
+std::vector<std::string> NCPA::Atmosphere2D::vector_keys( double range ) {
+	return profiles_.at( get_profile_index( range ) )->get_vector_keys();
+}
+
+std::vector<std::string> NCPA::Atmosphere2D::scalar_keys( double range ) {
+	return profiles_.at( get_profile_index( range ) )->get_scalar_keys();
+}
+
+std::vector<std::string> NCPA::Atmosphere2D::keys( double range ) {
+	return profiles_.at( get_profile_index( range ) )->get_keys();
+}
+
+void NCPA::Atmosphere2D::extend_to_ground( const std::string &ground_height_key,
+		const std::vector<std::string> taper_to_zero,
+		const std::vector<std::string> continue_linear ) {
+
+	for (auto profile = profiles_.begin(); profile != profiles_.end(); ++profile) {
+		(*profile)->extend_to_ground( ground_height_key, taper_to_zero, continue_linear );
+//		double zground = (*profile)->get( ground_height_key );
+//		double zmin = (*profile)->get_minimum_altitude();
+//		double dz = zmin - zground;
+//		std::map<std::string,double> new_values;
+//		if (dz > 0.0) {
+//			std::vector<std::string> all_keys = (*profile)->get_vector_keys();
+//			std::map<std::string,size_t> keymap;
+//			for (auto all_key_it = all_keys.cbegin(); all_key_it != all_keys.cend(); ++all_key_it) {
+//				keymap[*all_key_it] = 0;
+//			}
+//			double f, df;
+//			std::map<std::string,double> new_values;
+//			for (auto key_it = taper_to_zero.cbegin(); key_it != taper_to_zero.cend(); ++key_it) {
+//				if ((*profile)->contains_vector( *key_it ) {
+//					f = (*profile)->get( *key_it, zmin );
+//					df = f;
+//					new_values[*key_it] = df / dz;
+//					keymap.erase( *key_it );
+//				}
+//			}
+//			for (auto key_it = continue_linear.cbegin(); key_it != continue_linear.cend(); ++key_it) {
+//				if ((*profile)->contains_vector( *key_it ) {
+//					f = (*profile)->get( *key_it, zmin );
+//					df = (*profile)->get_first_derivative( *key_it, zmin );
+//					new_values[*key_it] = df / dz;
+//					keymap.erase( *key_it );
+//				}
+//			}
+//
+//			// all keys not specified get continued as constants
+//			for (auto keymap_it = keymap.cbegin(); keymap_it != keymap.cend(); ++keymap_id) {
+//				f = (*profile)->get( keymap_it->first, zmin );
+//				new_values[ keymap_it->first ] = f;
+//			}
+//
+//			(*profile)->add_point( zground, new_values );
+//		}
+	}
+}

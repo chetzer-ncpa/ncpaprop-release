@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <cassert>
 
 #include "gsl/gsl_version.h"
 #include "gsl/gsl_errno.h"
@@ -1140,4 +1141,76 @@ void NCPA::Atmosphere1D::calculate_attenuation( const std::string &new_key,
 	delete [] D;
 	delete [] A;
 }
+
+void NCPA::Atmosphere1D::add_point( double new_z, const std::map<std::string,double> new_values ) {
+	assert( new_values.size() == contents_.size() );
+	for (auto new_it = new_values.cbegin(); new_it != new_values.cend(); ++new_it) {
+		this->vector_property( new_it->first )->add_point( new_z, new_it->second, true );
+	}
+	NCPA::AtmosphericProperty1D *random_prop = this->vector_property( new_values.cbegin()->first );
+	NCPA::units_t new_units;
+	size_t new_nz = random_prop->size();
+	double *new_z_values = NCPA::zeros<double>( new_nz );
+	random_prop->get_altitude_vector( new_z_values, &new_units );
+	delete z_;
+	z_ = new NCPA::VectorWithUnits( new_nz, new_z_values, new_units );
+}
+
+void NCPA::Atmosphere1D::extend_to_ground( const std::string &ground_height_key,
+		const std::vector<std::string> taper_to_zero,
+		const std::vector<std::string> continue_linear ) {
+
+	double zground = this->get( ground_height_key );
+	double zmin = this->get_minimum_altitude();
+	double dz = zground - zmin;
+//	std::cout << "zground = " << zground << std::endl
+//			<< "zmin = " << zmin << std::endl
+//			<< "dz = " << dz << std::endl;
+	std::map<std::string,double> new_values;
+	if (dz < 0.0) {
+		std::vector<std::string> all_keys = this->get_vector_keys();
+		std::map<std::string,size_t> keymap;
+		for (auto all_key_it = all_keys.cbegin(); all_key_it != all_keys.cend(); ++all_key_it) {
+			keymap[*all_key_it] = 0;
+		}
+		std::map<std::string,double> new_values;
+		for (auto key_it = taper_to_zero.cbegin(); key_it != taper_to_zero.cend(); ++key_it) {
+			if (this->contains_vector( *key_it )) {
+//				f = this->get( *key_it, zmin );
+//				df = f;
+				new_values[*key_it] = 0.0;
+				keymap.erase( *key_it );
+//				std::cout << "Adding point (" << zground << "," << new_values[*key_it]
+//						<< " to " << *key_it << std::endl;
+			}
+		}
+		for (auto key_it = continue_linear.cbegin(); key_it != continue_linear.cend(); ++key_it) {
+			if (this->contains_vector( *key_it )) {
+				double f = this->get( *key_it, zmin );
+				double dfdz = this->get_first_derivative( *key_it, zmin );
+				new_values[*key_it] = f + dz*dfdz;
+				keymap.erase( *key_it );
+//				std::cout << "Adding point (" << zground << "," << new_values[*key_it]
+//						<< " to " << *key_it << " using f=" << f << ", df/dz=" << dfdz
+//						<< std::endl;
+			}
+		}
+
+		// all keys not specified get continued as constants
+		for (auto keymap_it = keymap.cbegin(); keymap_it != keymap.cend(); ++keymap_it) {
+			double f = this->get( keymap_it->first, zmin );
+			new_values[ keymap_it->first ] = f;
+//			std::cout << "Adding point (" << zground << "," << new_values[keymap_it->first]
+//					<< " to " << keymap_it->first << " using f=" << f << ", df/dz=" << 0.0
+//					<< std::endl;
+		}
+
+		this->add_point( zground, new_values );
+	}
+}
+
+
+
+
+
 

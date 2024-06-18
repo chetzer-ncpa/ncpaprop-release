@@ -141,6 +141,8 @@ namespace NCPA {
 		void scale_property( const std::string &key, double factor );
 		void offset_property( const std::string &key, double offset );
 
+		void add_point( double new_z, const std::map<std::string,double> new_values );
+
 		/**
 		Returns the minimum valid altitude in the atmospheric model, i.e. the first value in the altitude
 		vector, in the current units.
@@ -188,6 +190,9 @@ namespace NCPA {
 		//units_t get_property_units( std::string key );
 
 		void resample( double new_dz );
+		void extend_to_ground( const std::string &ground_height_key,
+				const std::vector<std::string> taper_to_zero,
+				const std::vector<std::string> continue_linear );
 
 		std::vector< std::string > get_keys() const;
 		std::vector< std::string > get_vector_keys() const;

@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <cstdint>
 #include <algorithm>
+#include <initializer_list>
 
 #include "petscksp.h"
 
@@ -308,11 +309,17 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		z_ground = atm_profile_2d->get( 0.0, "Z0" );
 	}
 
-	// z_min = atm_profile_2d->get_minimum_altitude( 0.0 );
-	// z_ground = z_min;
-
-
-
+	// if the profiles don't reach the ground, extend them
+	std::vector<std::string> zero_at_ground( { "U", "V", "WS" } );
+	std::vector<std::string> taper_to_ground( { "T", "P", "RHO", "C0", "CEFF" } );
+	std::cout << "Extending profile to ground height when necessary..." << std::endl;
+	atm_profile_2d->extend_to_ground( "Z0", zero_at_ground, taper_to_ground );
+	if (atm_profile_2d->contains_vector( "CEFF" ) || atm_profile_2d->contains_vector( "C0" )) {
+		std::cerr << "WARNING: Precalculated sound speeds (CEFF or C0) will be interpolated linearly to the ground"
+				<< " if the supplied ground height Z0 is below the first altitude point.  If this is not the"
+				<< " behavior you want (and it shouldn't be), edit your profiles to ensure they all have a datum"
+				<< " at or below the ground height." << std::endl;
+	}
 
 	// set units
 	if (atm_profile_2d->contains_vector(0,"U")) {
@@ -1719,8 +1726,6 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
 
 	std::memset( c_vec, 0, NZvec * sizeof(double) );
 	std::memset( a_vec, 0, NZvec * sizeof(double) );
-//	std::memset( k_vec, 0, NZvec * sizeof( std::complex< double > ) );
-//	std::memset( n_vec, 0, NZvec * sizeof( std::complex< double > ) );
 	std::fill( k_vec, k_vec+NZvec, std::complex<double>{} );
 	std::fill( n_vec, n_vec+NZvec, std::complex<double>{} );
 
