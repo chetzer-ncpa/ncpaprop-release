@@ -730,9 +730,10 @@ bool NCPA::Atmosphere1D::contains_key( const std::string &key ) const {
 
 void NCPA::Atmosphere1D::scale_property( const std::string &key, double factor ) {
 	if (contains_vector(key)) {
-		*(contents_[key]) *= factor;
+		std::cout << "Atmosphere1D: Scaling " << key << " by " << factor << std::endl;
+		contents_[key]->scale( factor );
 	} else if (contains_scalar(key)) {
-		*(scalar_contents_[key]) *= factor;
+		scalar_contents_[key]->scale( factor );
 	} else {
 		throw std::out_of_range( "No property \"" + key + "\" found" );
 	}
@@ -740,9 +741,9 @@ void NCPA::Atmosphere1D::scale_property( const std::string &key, double factor )
 
 void NCPA::Atmosphere1D::offset_property( const std::string &key, double factor ) {
 	if (contains_vector(key)) {
-		*(contents_[key]) += factor;
+		contents_[key]->offset( factor );
 	} else if (contains_scalar(key)) {
-		*(scalar_contents_[key]) += factor;
+		scalar_contents_[key]->offset( factor );
 	} else {
 		throw std::out_of_range( "No property \"" + key + "\" found" );
 	}

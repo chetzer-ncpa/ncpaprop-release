@@ -242,3 +242,11 @@ void NCPA::AtmosphericProperty1D::add_points( size_t n_new_points,
 	build_splines_();
 }
 
+void NCPA::AtmosphericProperty1D::scale( double factor ) {
+	for (size_t i = 0; i < this->n_; i++) {
+		this->values_[i] *= factor;
+	}
+	this->build_splines_();
+}
+
+

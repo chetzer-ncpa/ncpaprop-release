@@ -325,12 +325,14 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 	if (atm_profile_2d->contains_vector(0,"U")) {
 		atm_profile_2d->convert_property_units( "U", NCPAPROP_EPADE_PE_UNITS_U );
 		if (reverse_winds) {
+			std::cout << "Reversing U winds..." << std::endl;
 			atm_profile_2d->scale_property( "U", -1.0 );
 		}
 	}
 	if (atm_profile_2d->contains_vector(0,"V")) {
 		atm_profile_2d->convert_property_units( "V", NCPAPROP_EPADE_PE_UNITS_V );
 		if (reverse_winds) {
+			std::cout << "Reversing V winds..." << std::endl;
 			atm_profile_2d->scale_property( "V", -1.0 );
 		}
 	}
@@ -397,6 +399,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 		atm_profile_2d->convert_property_units("WD",
 			NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
 		if (reverse_winds) {
+			std::cout << "Offsetting WD winds by +180 degrees..." << std::endl;
 			atm_profile_2d->offset_property( "WD", 180.0 );
 		}
 		atm_profile_2d->copy_vector_property( "WD", "_WD_" );

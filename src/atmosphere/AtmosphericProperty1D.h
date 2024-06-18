@@ -40,6 +40,8 @@ namespace NCPA {
 			virtual void convert_units( units_t new_units );
 
 			void resample( double new_dz );
+			virtual void scale( double d );
+//			virtual void offset( double d );
 			void add_point( double z,
 					double f,
 					bool replace =

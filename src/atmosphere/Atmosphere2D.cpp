@@ -241,6 +241,7 @@ double NCPA::Atmosphere2D::get_maximum_altitude( double range ) {
 
 void NCPA::Atmosphere2D::scale_property( const std::string &key, double factor ) {
 	for (auto it = profiles_.begin(); it != profiles_.end(); ++it) {
+		std::cout << "Atmosphere2D: Scaling property " << key << " by " << factor << std::endl;
 		(*it)->scale_property( key, factor );
 	}
 }
