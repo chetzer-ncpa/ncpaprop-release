@@ -1,5 +1,10 @@
 NCPAProp Changelog
 
+2024-06-18 - Version 2.2.4:
+* Finished adding --reverse_winds functionality.  
+* ePape now will extrapolate atmospheric parameters to ground level
+  if the bottom level is above ground.
+
 2024-06-12 - Version 2.2.3:
 * Started keeping this changelog up to date
 * Added --reverse_winds flag to ePape, and added the appropriate functionality

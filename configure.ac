@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([NCPA Propagation Modeling Suite], [2.2.3], [claus@olemiss.edu], ncpaprop)
+AC_INIT([NCPA Propagation Modeling Suite], [2.2.4], [claus@olemiss.edu], ncpaprop)
 #AM_INIT_AUTOMAKE
 
 AC_CONFIG_SRCDIR([src/common/parameterset.h])
