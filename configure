@@ -2981,7 +2981,7 @@ default_petsc_branch="release"
 default_petsc_version=""
 petsc_url="https://gitlab.com/petsc/petsc.git"
 default_slepc_build_dir="${abs_builddir}/extern/slepc"
-default_slepc_version="3.20.0"
+default_slepc_version="3.21.1"
 slepc_url_base="https://slepc.upv.es/download/distrib"
 warning_compiler_flags="-Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas"
 
