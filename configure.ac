@@ -11,13 +11,17 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_LANG([C++])
 
 # set default variables
+abs_builddir=$(pwd)
+AC_MSG_NOTICE([Building in ${abs_builddir}])
 default_petsc_build_dir="${abs_builddir}/extern/petsc"
 default_petsc_branch="release"
 default_petsc_version=""
 petsc_url="https://gitlab.com/petsc/petsc.git"
 default_slepc_build_dir="${abs_builddir}/extern/slepc"
-default_slepc_version="3.21.1"
-slepc_url_base="https://slepc.upv.es/download/distrib"
+default_slepc_branch=${default_petsc_branch}
+slepc_url="https://gitlab.com/slepc/slepc.git"
+#default_slepc_version="3.21.1"
+#slepc_url_base="https://slepc.upv.es/download/distrib"
 warning_compiler_flags="-Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas"
 
 # Need OS name for automatic default architecture name
@@ -40,11 +44,11 @@ AC_ARG_WITH([localpetscdebug],
 	[],
 	[with_localpetscdebug=no]
 )
-AC_ARG_WITH([insecuressl],
-	AS_HELP_STRING([--with-insecuressl],[Ignore SSL certificate errors when downloading SLEPc]),
-	[],
-	[with_insecuressl=no]
-)
+dnl AC_ARG_WITH([insecuressl],
+dnl 	AS_HELP_STRING([--with-insecuressl],[Ignore SSL certificate errors when downloading SLEPc]),
+dnl 	[],
+dnl 	[with_insecuressl=no]
+dnl )
 AC_ARG_ENABLE([localpetscmpi],
 	AS_HELP_STRING([--enable-localpetscmpi],[Build PETSc/SLEPc without MPI support]),
 	[],
@@ -63,8 +67,8 @@ AC_ARG_VAR(local_petsc_dir,[Override default local PETSc installation directory]
 AC_ARG_VAR(local_slepc_dir,[Override default local SLEPc installation directory])
 AC_ARG_VAR(local_petsc_arch_real,[Override automatic PETSc real architecture name])
 AC_ARG_VAR(local_petsc_arch_complex,[Override automatic PETSc complex architecture name])
-AC_ARG_VAR(local_petsc_version,Override automatic PETSc version number)
-AC_ARG_VAR(local_slepc_version,Override automatic (or outdated) SLEPc version number)
+AC_ARG_VAR(local_petsc_branch,Override automatic PETSc branch)
+AC_ARG_VAR(local_slepc_branch,Override automatic (or outdated) SLEPc version number)
 
 
 AC_CANONICAL_HOST
@@ -79,12 +83,12 @@ case $host_os in
 		;;
 	linux* )
 		# For Linux, need to know if apt-get or yum is installed
-		AC_CHECK_PROGS([default_package_manager],[apt-get yum],[])
+		AC_CHECK_PROGS([default_package_manager],[apt-get dnf yum],[])
 		AC_MSG_NOTICE([Detected package manager = ${default_package_manager}])
 		
 		AS_IF([test "x${default_package_manager}" = "x"],[
 			AS_IF([test "x$enable_autodependencies" = "xyes"],[
-				AC_MSG_ERROR([No supported package manager detected.  Option --enable-autodependencies supports apt-get and yum.])
+				AC_MSG_ERROR([No supported package manager detected.  Option --enable-autodependencies supports apt-get, dnf, and yum.])
 			])
 		])
 		AS_IF([test "x${enable_compilerwarnings}" != "xyes"],[
@@ -282,13 +286,13 @@ AS_IF(
 			[petsc_build_dir="$(pwd)/extern/petsc"])
 
 		# See if default PETSc version is overridden
-		AS_IF([test "x$local_petsc_version" = "x"],
+		AS_IF([test "x$local_petsc_branch" = "x"],
 			[
 				AC_MSG_NOTICE([Using default PETSc])
 				petsc_version=""
 			],[
 				AC_MSG_NOTICE([Using PETSc version ${local_petsc_version}])
-				petsc_version="v${local_petsc_version}"
+				petsc_version="v${local_petsc_branch}"
 			]
 		)
 
@@ -375,8 +379,9 @@ AS_IF(
 		cd ${petsc_build_dir}
 		AC_MSG_CHECKING([PETSc download])
 		AS_IF([test -f "configure"],
-			[AC_MSG_RESULT([yes])],
 			[
+				AC_MSG_RESULT([yes])
+			],[
 				AC_MSG_RESULT([no, cloning])
 				git clone -b ${default_petsc_branch} ${petsc_url} .
 			]
@@ -400,6 +405,7 @@ AS_IF(
 				AC_MSG_RESULT([no, building])
 
 				# build the real version with indicated options
+				export PETSC_ARCH=${petsc_local_arch_name_real}
 				./configure PETSC_ARCH=${petsc_local_arch_name_real} PETSC_DIR=${petsc_build_dir} ${petsc_extra_config}
 				
 				AS_IF([test $? != 0],
@@ -415,8 +421,9 @@ AS_IF(
 				AC_MSG_CHECKING([successful ${petsc_local_arch_name_real} PETSc build])
 
 				# clear the cached variable
-				unset `$as_echo "ac_cv_file_${petsc_build_dir}/${petsc_local_arch_name_real}/lib/petsc/conf/petscvariables" | $as_tr_sh`
-
+				dnl unset `$as_echo "ac_cv_file_${petsc_build_dir}/${petsc_local_arch_name_real}/lib/petsc/conf/petscvariables" | $as_tr_sh`
+				unset $(echo "ac_cv_file_${petsc_build_dir}/${petsc_local_arch_name_real}/lib/petsc/conf/petscvariables" | awk '{gsub("/","_",$0)}1' | awk '{gsub("-","_",$0)}1')
+		
 				AC_CHECK_FILE( ${petsc_build_dir}/${petsc_local_arch_name_real}/lib/petsc/conf/petscvariables,,
 					[
 						AC_MSG_ERROR([Error building real PETSc, ${petsc_build_dir}/${petsc_local_arch_name_real}/lib/petsc/conf/petscvariables not found])
@@ -432,6 +439,7 @@ AS_IF(
 				AC_MSG_RESULT([no, building])
 
 				# build the real version with indicated options
+				export PETSC_ARCH=${petsc_local_arch_name_complex}
 				./configure PETSC_ARCH=${petsc_local_arch_name_complex} PETSC_DIR=${petsc_build_dir} ${petsc_extra_config} --with-scalar-type=complex
 				
 				AS_IF([test $? != 0],
@@ -447,7 +455,9 @@ AS_IF(
 				AC_MSG_CHECKING([successful ${petsc_local_arch_name_complex} PETSc build])
 
 				# clear the cached variable
-				unset `$as_echo "ac_cv_file_${petsc_build_dir}/${petsc_local_arch_name_complex}/lib/petsc/conf/petscvariables" | $as_tr_sh`
+				dnl unset `$as_echo "ac_cv_file_${petsc_build_dir}/${petsc_local_arch_name_complex}/lib/petsc/conf/petscvariables" | $as_tr_sh`
+				unset $(echo "ac_cv_file_${petsc_build_dir}/${petsc_local_arch_name_complex}/lib/petsc/conf/petscvariables" | awk '{gsub("/","_",$0)}1' | awk '{gsub("-","_",$0)}1')
+		
 
 				AC_CHECK_FILE( ${petsc_build_dir}/${petsc_local_arch_name_complex}/lib/petsc/conf/petscvariables,,
 					[
@@ -481,7 +491,12 @@ AS_IF([test "x$PETSC_ARCH_COMPLEX" = "x"],[
 AC_CHECK_FILE( $PETSC_DIR,[
 	AC_MSG_NOTICE([PETSc directory $PETSC_DIR OK.])
 ],[
-	AC_MSG_ERROR([PETSc directory $PETSC_DIR not found.  Check your PETSC_DIR variable.])
+	AS_IF([test "x$with_localpetsc" = "xyes"],[
+		AC_MSG_NOTICE([PETSc directory $PETSC_DIR not found, creating.])
+		mkdir -p $PETSC_DIR
+	],[
+		AC_MSG_ERROR([PETSc directory $PETSC_DIR not found.  Check your PETSC_DIR variable or use --with-localpetsc to build locally.])
+	])
 ])
 AS_IF([test -d $PETSC_DIR],,[
 	AC_MSG_ERROR([Specified PETSc directory ${PETSC_DIR} is not a directory!])
@@ -505,20 +520,23 @@ AS_IF([test "x${with_localslepc}" = "xyes"],[
 	AC_MSG_RESULT([yes])
 	basedir=$(pwd)
 
-	downloader=""
-	AC_CHECK_PROGS(downloader,[wget curl])
-	AC_MSG_CHECKING([command-line downloader])
-	AS_IF([test "x${downloader}" = "x"],[
-		AC_MSG_RESULT([no])
-		AC_MSG_ERROR("Neither wget nor curl detected")
-	],[
-		AC_MSG_RESULT([$downloader])
-	])
+	dnl downloader=""
+	dnl	AC_CHECK_PROGS(downloader,[wget curl])
+	dnl	AC_MSG_CHECKING([command-line downloader])
+	dnl	AS_IF([test "x${downloader}" = "x"],[
+	dnl		AC_MSG_RESULT([no])
+	dnl		AC_MSG_ERROR("Neither wget nor curl detected")
+	dnl	],[
+	dnl		AC_MSG_RESULT([$downloader])
+	dnl	])
 
 	# See if default SLEPc directory is overridden
 	AS_IF([test "x${local_slepc_dir}" != "x"],
 		[slepc_build_dir=${local_slepc_dir}],
-		[slepc_build_dir="$(pwd)/extern/slepc"]
+		[
+			AC_MSG_NOTICE([Using default SLEPc build dir ${default_slepc_build_dir}])
+			slepc_build_dir=${default_slepc_build_dir}
+		]
 	)
 
 	# See if default SLEPc version is overridden
@@ -527,10 +545,10 @@ AS_IF([test "x${with_localslepc}" = "xyes"],[
 		[slepc_version=$local_slepc_version]
 	)
 
-	slepc_tarfile="slepc-${slepc_version}.tar.gz"
+	dnl	slepc_tarfile="slepc-${slepc_version}.tar.gz"
 	AC_MSG_NOTICE([slepc_build_dir = ${slepc_build_dir}])
 	AC_MSG_NOTICE([slepc_version = ${slepc_version}])
-	AC_MSG_NOTICE([slepc_tarfile = ${slepc_tarfile}])
+	dnl	AC_MSG_NOTICE([slepc_tarfile = ${slepc_tarfile}])
 
 	# check for extra configuration options.
 	slepc_extra_config=""
@@ -549,41 +567,54 @@ AS_IF([test "x${with_localslepc}" = "xyes"],[
 
 	# see if it's already been downloaded and/or built
 	cd ${slepc_build_dir}
-	slepc_build_dir="${slepc_build_dir}/slepc-${slepc_version}"
-	AC_MSG_CHECKING([SLEPc download])
+	dnl slepc_build_dir="${slepc_build_dir}/slepc-${slepc_version}"
+	AC_MSG_CHECKING([SLEPc git repo])
 	AS_IF([test -f "${slepc_build_dir}/configure"],
 		[
 			AC_MSG_RESULT([yes])
 		],[
-			AC_MSG_RESULT([no, installing])
-			AC_CHECK_FILE([$slepc_tarfile],,[
-				slepc_url="${slepc_url_base}/${slepc_tarfile}"
-				downloader_flags=""
-				AS_IF([test "x$downloader" = "xcurl"],[
-					downloader_flags="--output ${slepc_tarfile}"
-				])
-				AS_IF([test "x$with_insecuressl" = "xyes"],[
-					AS_IF([test "x$downloader" = "xwget"],[
-						downloader_flags="${downloader_flags} --no-check-certificate"
-					],[
-						downloader_flags="${downloader_flags} --insecure"
-					])
-				])
-				echo "Downloading using command: ${downloader} ${slepc_url} ${downloader_flags}"
-				$downloader ${slepc_url} ${downloader_flags}
-				AS_IF([test $? != 0],[
-					AC_MSG_ERROR([Error downloading ${slepc_url}, check internet connection and version number])
-				])
-			])
+			AC_MSG_RESULT([no, cloning])
+			git clone -b ${default_slepc_branch} ${slepc_url} .
+
+dnl			AC_CHECK_FILE([$slepc_tarfile],,[
+dnl				slepc_url="${slepc_url_base}/${slepc_tarfile}"
+dnl				downloader_flags=""
+dnl				AS_IF([test "x$downloader" = "xcurl"],[
+dnl					downloader_flags="--output ${slepc_tarfile}"
+dnl				])
+dnl				AS_IF([test "x$with_insecuressl" = "xyes"],[
+dnl					AS_IF([test "x$downloader" = "xwget"],[
+dnl						downloader_flags="${downloader_flags} --no-check-certificate"
+dnl					],[
+dnl						downloader_flags="${downloader_flags} --insecure"
+dnl					])
+dnl				])
+dnl				echo "Downloading using command: ${downloader} ${slepc_url} ${downloader_flags}"
+dnl				$downloader ${slepc_url} ${downloader_flags}
+dnl				AS_IF([test $? != 0],[
+dnl					AC_MSG_ERROR([Error downloading ${slepc_url}, check internet connection and version number])
+dnl				])
+dnl			])
 			
-			tar xvzf ${slepc_tarfile}
-			AS_IF([test $? != 0],[
-				AC_MSG_ERROR([Error decompressing slepc-${slepc_version}.tar.gz, check download])
-			])
+dnl			tar xvzf ${slepc_tarfile}
+dnl			AS_IF([test $? != 0],[
+dnl				AC_MSG_ERROR([Error decompressing slepc-${slepc_version}.tar.gz, check download])
+dnl			])
 		]
 	)
 	export SLEPC_DIR=${slepc_build_dir}
 	cd $SLEPC_DIR
+
+	AS_IF([test "x${slepc_version}" != "x"],
+                        [
+                                AC_MSG_NOTICE([Checking out branch ${slepc_version}])           
+                                git checkout ${slepc_version}
+                                AS_IF([test $? != 0],
+                                        [AC_MSG_ERROR([Error switching to SLEPc version ${slepc_version}])]
+                                )
+                        ]
+                )
+
 
 	AC_CHECK_FILE( ${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables,,[
 		AC_MSG_RESULT([no, building])
@@ -605,7 +636,9 @@ AS_IF([test "x${with_localslepc}" = "xyes"],[
 		AC_MSG_CHECKING([successful ${PETSC_ARCH} SLEPc build])
 
 		# clear the cached variable
-		unset `$as_echo "ac_cv_file_${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables" | $as_tr_sh`
+		dnl unset `$as_echo "ac_cv_file_${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables" | $as_tr_sh`
+		unset $(echo "ac_cv_file_${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables" | awk '{gsub("/","_",$0)}1' | awk '{gsub("-","_",$0)}1')
+		
 
 		AC_CHECK_FILE( ${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables,,[
 			AC_MSG_ERROR([Error building real SLEPc, ${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables not found])
@@ -633,8 +666,9 @@ AS_IF([test "x${with_localslepc}" = "xyes"],[
 		AC_MSG_CHECKING([successful ${PETSC_ARCH} SLEPc build])
 
 		# clear the cached variable
-		unset `$as_echo "ac_cv_file_${slepc_build_dir}/${PETSC_ARCH_COMPLEX}/lib/slepc/conf/slepcvariables" | $as_tr_sh`
-
+		
+		dnl unset `$as_echo "ac_cv_file_${slepc_build_dir}/${PETSC_ARCH_COMPLEX}/lib/slepc/conf/slepcvariables" | $as_tr_sh`
+		unset $(echo "ac_cv_file_${slepc_build_dir}/${PETSC_ARCH_COMPLEX}/lib/slepc/conf/slepcvariables" | awk '{gsub("/","_",$0)}1' | awk '{gsub("-","_",$0)}1')
 		AC_CHECK_FILE( ${slepc_build_dir}/${PETSC_ARCH_COMPLEX}/lib/slepc/conf/slepcvariables,,[
 			AC_MSG_ERROR([Error building complex SLEPc, ${slepc_build_dir}/${PETSC_ARCH_COMPLEX}/lib/slepc/conf/slepcvariables not found])
 		])

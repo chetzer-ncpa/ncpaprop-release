@@ -1,5 +1,8 @@
 NCPAProp Changelog
 
+2025-02-17:
+Modified configure script to clone SLEPc from gitlab rather than
+directly downloading tar file.
 
 2024-06-14:
 Modified ground height selection in ePape to use height at source for first step.
