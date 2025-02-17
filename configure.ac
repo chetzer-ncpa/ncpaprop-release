@@ -44,11 +44,11 @@ AC_ARG_WITH([localpetscdebug],
 	[],
 	[with_localpetscdebug=no]
 )
-AC_ARG_WITH([insecuressl],
-	AS_HELP_STRING([--with-insecuressl],[Ignore SSL certificate errors when downloading SLEPc]),
-	[],
-	[with_insecuressl=no]
-)
+dnl AC_ARG_WITH([insecuressl],
+dnl 	AS_HELP_STRING([--with-insecuressl],[Ignore SSL certificate errors when downloading SLEPc]),
+dnl 	[],
+dnl 	[with_insecuressl=no]
+dnl )
 AC_ARG_ENABLE([localpetscmpi],
 	AS_HELP_STRING([--enable-localpetscmpi],[Build PETSc/SLEPc without MPI support]),
 	[],
@@ -67,8 +67,8 @@ AC_ARG_VAR(local_petsc_dir,[Override default local PETSc installation directory]
 AC_ARG_VAR(local_slepc_dir,[Override default local SLEPc installation directory])
 AC_ARG_VAR(local_petsc_arch_real,[Override automatic PETSc real architecture name])
 AC_ARG_VAR(local_petsc_arch_complex,[Override automatic PETSc complex architecture name])
-AC_ARG_VAR(local_petsc_version,Override automatic PETSc version number)
-AC_ARG_VAR(local_slepc_version,Override automatic (or outdated) SLEPc version number)
+AC_ARG_VAR(local_petsc_branch,Override automatic PETSc branch)
+AC_ARG_VAR(local_slepc_branch,Override automatic (or outdated) SLEPc version number)
 
 
 AC_CANONICAL_HOST
@@ -286,13 +286,13 @@ AS_IF(
 			[petsc_build_dir="$(pwd)/extern/petsc"])
 
 		# See if default PETSc version is overridden
-		AS_IF([test "x$local_petsc_version" = "x"],
+		AS_IF([test "x$local_petsc_branch" = "x"],
 			[
 				AC_MSG_NOTICE([Using default PETSc])
 				petsc_version=""
 			],[
 				AC_MSG_NOTICE([Using PETSc version ${local_petsc_version}])
-				petsc_version="v${local_petsc_version}"
+				petsc_version="v${local_petsc_branch}"
 			]
 		)
 
@@ -604,6 +604,17 @@ dnl			])
 	)
 	export SLEPC_DIR=${slepc_build_dir}
 	cd $SLEPC_DIR
+
+	AS_IF([test "x${slepc_version}" != "x"],
+                        [
+                                AC_MSG_NOTICE([Checking out branch ${slepc_version}])           
+                                git checkout ${slepc_version}
+                                AS_IF([test $? != 0],
+                                        [AC_MSG_ERROR([Error switching to SLEPc version ${slepc_version}])]
+                                )
+                        ]
+                )
+
 
 	AC_CHECK_FILE( ${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables,,[
 		AC_MSG_RESULT([no, building])

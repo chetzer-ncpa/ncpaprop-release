@@ -685,8 +685,8 @@ build_os
 build_vendor
 build_cpu
 build
-local_slepc_version
-local_petsc_version
+local_slepc_branch
+local_petsc_branch
 local_petsc_arch_complex
 local_petsc_arch_real
 local_slepc_dir
@@ -736,7 +736,6 @@ enable_option_checking
 with_localpetsc
 with_localslepc
 with_localpetscdebug
-with_insecuressl
 enable_localpetscmpi
 enable_autodependencies
 enable_compilerwarnings
@@ -749,8 +748,8 @@ local_petsc_dir
 local_slepc_dir
 local_petsc_arch_real
 local_petsc_arch_complex
-local_petsc_version
-local_slepc_version
+local_petsc_branch
+local_slepc_branch
 CXX
 CXXFLAGS
 LDFLAGS
@@ -1407,7 +1406,6 @@ Optional Packages:
 
   --with-localpetscdebug  Build the debug version of PETSc/SLEPc instead of
                           the default optimized version
-  --with-insecuressl      Ignore SSL certificate errors when downloading SLEPc
   --with-blas=<lib>       use BLAS library <lib>
 
 Some influential environment variables:
@@ -1419,9 +1417,9 @@ Some influential environment variables:
               Override automatic PETSc real architecture name
   local_petsc_arch_complex
               Override automatic PETSc complex architecture name
-  local_petsc_version
-              Override automatic PETSc version number
-  local_slepc_version
+  local_petsc_branch
+              Override automatic PETSc branch
+  local_slepc_branch
               Override automatic (or outdated) SLEPc version number
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
@@ -3045,17 +3043,6 @@ then :
   withval=$with_localpetscdebug;
 else case e in #(
   e) with_localpetscdebug=no
- ;;
-esac
-fi
-
-
-# Check whether --with-insecuressl was given.
-if test ${with_insecuressl+y}
-then :
-  withval=$with_insecuressl;
-else case e in #(
-  e) with_insecuressl=no
  ;;
 esac
 fi
@@ -7853,7 +7840,7 @@ esac
 fi
 
 		# See if default PETSc version is overridden
-		if test "x$local_petsc_version" = "x"
+		if test "x$local_petsc_branch" = "x"
 then :
 
 				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: Using default PETSc" >&5
@@ -7864,7 +7851,7 @@ else case e in #(
   e)
 				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: Using PETSc version ${local_petsc_version}" >&5
 printf "%s\n" "$as_me: Using PETSc version ${local_petsc_version}" >&6;}
-				petsc_version="v${local_petsc_version}"
+				petsc_version="v${local_petsc_branch}"
 
 		 ;;
 esac
@@ -9806,6 +9793,22 @@ esac
 fi
 	export SLEPC_DIR=${slepc_build_dir}
 	cd $SLEPC_DIR
+
+	if test "x${slepc_version}" != "x"
+then :
+
+                                { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Checking out branch ${slepc_version}" >&5
+printf "%s\n" "$as_me: Checking out branch ${slepc_version}" >&6;}
+                                git checkout ${slepc_version}
+                                if test $? != 0
+then :
+  as_fn_error $? "Error switching to SLEPc version ${slepc_version}" "$LINENO" 5
+
+fi
+
+
+fi
+
 
 	as_ac_File=`printf "%s\n" "ac_cv_file_${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables" | sed "$as_sed_sh"`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ${SLEPC_DIR}/${PETSC_ARCH_REAL}/lib/slepc/conf/slepcvariables" >&5
