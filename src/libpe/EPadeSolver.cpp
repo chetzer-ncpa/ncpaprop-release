@@ -1752,10 +1752,11 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
 			drho = atm->get_first_derivative( r, "RHO", z_vec[ i ] );
 			ddrho = atm->get_second_derivative( r, "RHO", z_vec[ i ] );
 			k_vec[ i ] = std::sqrt(
+				std::complex<double>(
 							std::pow( 2.0 * PI * freq / c_vec[ i ], 2.0 )
 							- 0.75 * std::pow( drho / rho, 2.0 )
 							+ 0.5 * ddrho / rho
-						) + (a_vec[ i ] + abslayer[ i ]) * I;
+						,0.0)) + (a_vec[ i ] + abslayer[ i ]) * I;
 			//k_vec[ i ] = 2.0 * PI * freq / c_vec[ i ] + a_vec[ i ] * I;
 		}
 		n_vec[ i ] = k_vec[ i ] / k0;
