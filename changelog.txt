@@ -1,5 +1,10 @@
 NCPAProp Changelog
 
+2025-02-20:
+Fixed bug in ePape where in a rare case a square root of a negative number was
+computed and returned NaN; calculation was changed to assume complex values
+from the beginning.
+
 2025-02-17:
 Modified configure script to clone SLEPc from gitlab rather than
 directly downloading tar file.
