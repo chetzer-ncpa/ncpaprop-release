@@ -19,7 +19,7 @@ int NCPA::EigenEngine::doESSCalculation( double *diag, int Nz_grid, double dz, d
 	KSP            kspx;
 	PC             pcx;
 	EPSType        type;        // CHH 191022: removed const qualifier
-	PetscReal      re, im;
+	PetscReal      re;
 	PetscScalar    kr, ki, *xr_;
 	Vec            xr, xi;
 	PetscInt       Istart, Iend, col[3], its, maxit;
@@ -147,10 +147,10 @@ int NCPA::EigenEngine::doESSCalculation( double *diag, int Nz_grid, double dz, d
 			ierr = EPSGetEigenpair(eps,i,&kr,&ki,xr,xi);CHKERRQ(ierr);
 #if defined(PETSC_USE_COMPLEX)
 			re = PetscRealPart(kr);
-			im = PetscImaginaryPart(kr);
+			// im = PetscImaginaryPart(kr);
 #else
 			re = kr;
-			im = ki;
+			// double im = ki;
 #endif 
 			k2[(*nconv)-i-1] = re; // proper count of modes
 			ierr = VecGetArray(xr,&xr_);CHKERRQ(ierr);
@@ -179,7 +179,7 @@ int NCPA::EigenEngine::doWideAngleCalculation( int Nz_grid, double dz, double k_
 	EPS            eps;  		// eigenproblem solver context      
 	ST             stx;
 	EPSType  type;		// CHH 191028: removed const qualifier
-	PetscReal      re, im;
+	PetscReal      re;
 	PetscScalar    kr, ki, *xr_;
 	Vec            xr, xi;
 	PetscInt       Istart, Iend, col[3], its, maxit;
@@ -362,10 +362,10 @@ int NCPA::EigenEngine::doWideAngleCalculation( int Nz_grid, double dz, double k_
             ierr = EPSGetEigenpair(eps,i,&kr,&ki,xr,xi);CHKERRQ(ierr);
             #ifdef PETSC_USE_COMPLEX
                 re = PetscRealPart(kr);
-                im = PetscImaginaryPart(kr);
+                // im = PetscImaginaryPart(kr);
             #else
                 re = kr;
-                im = ki;
+                // im = ki;
             #endif 
             kH[i] = re;
             ierr = VecScatterCreateToAll(xr,&ctx,&V_SEQ);CHKERRQ(ierr);

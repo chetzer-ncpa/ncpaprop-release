@@ -648,13 +648,13 @@ void NCPA::ProfileGridAtmosphere3D::calculate_wind_component(
 	std::map<std::string,NCPA::VectorAtmosphericProperty3D*>::iterator s_it, d_it;
 	size_t nx, ny, nz, i, j, k;
 	double ***s, ***d, ***c;
-	NCPA::units_t s_units, d_units;
+	NCPA::units_t s_units;
 	s_it = vector_contents_.find( wind_speed_key );
 	s_it->second->as_matrix( s, nx, ny, nz );
 	s_units = s_it->second->get_property_units();
 	d_it = vector_contents_.find( wind_direction_key );
 	d_it->second->as_matrix( d, nx, ny, nz );
-	d_units = d_it->second->get_property_units();
+	// d_units = d_it->second->get_property_units();
 	double az_rad = NCPA::Units::convert( azimuth,
 		NCPA::UNITS_ANGLE_DEGREES, NCPA::UNITS_ANGLE_RADIANS );
 
@@ -958,7 +958,7 @@ void NCPA::ProfileGridAtmosphere3D::read_attenuation_from_file( const std::strin
 	}
 
 	// get new property template
-	double ***a_mat, *x_vec, *y_vec, *z_vec;
+	double ***a_mat = nullptr, *x_vec = nullptr, *y_vec = nullptr, *z_vec = nullptr;
 	size_t nx_vec, ny_vec, nz_vec;
 	NCPA::units_t xunits, yunits, z_units, alt_units;
 	alt_units = get_altitude_units();

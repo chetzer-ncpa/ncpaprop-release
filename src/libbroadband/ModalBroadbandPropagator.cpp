@@ -141,11 +141,10 @@ int NCPA::ModalBroadbandPropagator::read_dispersion_file() {
 int NCPA::ModalBroadbandPropagator::calculate_waveform() {
 	int i,n;
   double rr, tskip, fmx, t0;	
-  std::complex<double> cup, *dft_vec, *pulse_vec, *arg_vec;
+  std::complex<double> *dft_vec, *pulse_vec, *arg_vec;
   //complex<double> I = complex<double> (0.0, 1.0);
   FILE *f;
   
-
   // if zero attenuation requested set the imaginary part of the wavenumber = 0
   if (zero_attn_flag) {
     for (n=0; n<Nfreq; n++) {

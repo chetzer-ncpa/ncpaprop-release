@@ -219,12 +219,12 @@ double LANL::eval_ddf(double x, struct natural_cubic_spline_1D & spline){
 
 double LANL::eval_dddf(double x, struct natural_cubic_spline_1D & spline){
     int k;
-    double dx, X, df, A, B;
+    double dx, df, A, B;
 
     k = find_segment(x, spline.x_vals, spline.length, spline.accel);
     
     dx = spline.x_vals[k + 1] - spline.x_vals[k];
-    X = (x - spline.x_vals[k]) / dx;
+    // X = (x - spline.x_vals[k]) / dx;
 
     df = spline.f_vals[k + 1] - spline.f_vals[k];
     A = spline.slopes[k] * dx - df;
@@ -397,12 +397,12 @@ double LANL::eval_node_ddfdydy(double y, struct natural_cubic_spline_2D spline, 
 }
 
 double LANL::eval_node_dddfdydydy(double y, struct natural_cubic_spline_2D spline, int nx, int ny){
-    double df, dy, X, A, B;
+    double df, dy, A, B;
 
     df = spline.f_vals[nx][ny + 1] - spline.f_vals[nx][ny];
     dy = spline.y_vals[ny + 1] - spline.y_vals[ny];
     
-    X = (y - spline.y_vals[ny]) / dy;
+    // X = (y - spline.y_vals[ny]) / dy;
     A = spline.f_slopes[nx][ny] * dy - df;
     B = -spline.f_slopes[nx][ny + 1] * dy + df;
 

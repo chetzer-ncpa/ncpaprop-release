@@ -80,7 +80,8 @@ void NCPA::EPadeSolver::error( const std::string& output ) {
 }
 
 void NCPA::EPadeSolver::error( std::ostringstream& oss ) {
-    error( oss );
+    error( oss.str() );
+	oss.str("");
 }
 
 void NCPA::EPadeSolver::warn( const std::string& output, std::ostream& os ) {
@@ -1345,7 +1346,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
     // set up z grid for flat ground.  When we add terrain we will need to move
     // this inside the range loop
-    int profile_index;
+    // int profile_index;
     double minlimit, maxlimit;
     atm_profile_2d->get_maximum_altitude_limits( minlimit, maxlimit );
     z_max            = NCPA::min( z_max, minlimit );  // lowest valid top value
@@ -1491,7 +1492,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
             << " deg";
         info( oss );
 
-        profile_index = -1;
+        // profile_index = -1;
         calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
 
         for ( size_t freqind = 0; freqind < NF; freqind++ ) {
@@ -2781,8 +2782,7 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
     Vec rhs, ksi, Bksi, tempvec;
     Mat /*A, AA,*/ B, C;
     KSP /*ksp,*/ ksp2;
-    PetscScalar I( 0.0, 1.0 ), tempsc, zeroval = 0.0;
-    // PetscInt ii, Istart, Iend;
+    PetscScalar I( 0.0, 1.0 );
     PetscErrorCode ierr;
 
     // create rhs vector
@@ -2916,7 +2916,7 @@ int NCPA::EPadeSolver::calculate_pade_coefficients(
     }
 
     // double delta = k0 * dr;
-    std::complex<double> j( 0.0, 1.0 );
+    // std::complex<double> j( 0.0, 1.0 );
     PetscErrorCode ierr;
     PetscInt Istart, Iend, ii, jj, *indices;
     // PetscBool      FirstBlock=PETSC_FALSE, LastBlock=PETSC_FALSE;
