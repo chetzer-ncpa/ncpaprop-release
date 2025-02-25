@@ -177,10 +177,14 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 
 	// Setup flags
 	//ps->addUsageLine( "Flags:" );
+	ps->addParameter( new NCPA::FlagParameter( "quiet" ) );
+	ps->addParameterDescription( "Flags", "--quiet", "Suppress non-error output messages" );
+	ps->addParameter( new NCPA::FlagParameter( "warn_on_error" ) );
+	ps->addParameterDescription( "Flags", "--warn_on_error", "If an error is encountered, warn and attempt to continue" );
+	ps->addParameter( new NCPA::FlagParameter( "ignore_warnings" ) );
+	ps->addParameterDescription( "Flags", "--ignore_warnings", "Ignore and suppress warning messages" );
 	ps->addParameter( new NCPA::FlagParameter( "write_2d_tloss" ) );
 	ps->addParameterDescription( "Flags", "--write_2d_tloss", "Output 2-D transfer function to tloss_2d.pe" );
-	// ps->addParameter( new NCPA::FlagParameter( "write_atm_profile" ) );
-	// ps->addParameterDescription( "Flags", "--write_atm_profile", "Output atmospheric profile to atm_profile.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_starter" ) );
 	ps->addParameterDescription( "Flags", "--write_starter", "Output starter to starter.pe" );
 	ps->addParameter( new NCPA::FlagParameter( "write_source" ) );
