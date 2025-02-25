@@ -216,6 +216,12 @@ namespace NCPA {
 		void cleanup_turbulence();
 
 		std::string tag_filename( std::string basename );
+		void info( const std::string& output, std::ostream& os = std::cout );
+		void info( std::ostringstream& oss, std::ostream& os = std::cout );
+		void warn( const std::string& output, std::ostream& os = std::cerr );
+		void warn( std::ostringstream& oss, std::ostream& os = std::cerr );
+		void error( const std::string& output );
+		void error( std::ostringstream& oss );
 
 		double *z = nullptr, *z_abs = nullptr, *r = nullptr, *f = nullptr, calc_az;
 		std::complex< double > **tl;
@@ -230,6 +236,7 @@ namespace NCPA {
 		bool multiprop = false, write1d = true, write2d = false, calculate_attn = true;
 		bool broadband = false, write_starter = false, write_topo = false;
 		bool write_atmosphere = false, pointsource = true, _write_source_function = false;
+		bool verbose = true, warn_on_error = false, ignore_warnings = false;
 		double r_max;    // range limits
 		double z_max, z_min, z_ground, z_bottom;  // atmosphere profile limits
 		double zs, zr;  // source height, receiver height

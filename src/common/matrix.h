@@ -658,7 +658,7 @@ namespace NCPA {
 					inds1.begin(), inds1.end(),
 					inds2.begin(), inds2.end(),
 					u.begin() );
-				size_t n = it - u.begin();
+				// size_t n = it - u.begin();
 				for (it = u.begin(); it != u.end(); ++it) {
 					sum->set( i, *it,
 						this->get( i, *it ) + term->get( i, *it ) );

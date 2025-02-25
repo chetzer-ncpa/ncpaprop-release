@@ -379,7 +379,7 @@ NCPA::ScalarAtmosphericProperty3D::ScalarAtmosphericProperty3D(
 
 	key_ = key;
 	LANL::prep( spline_, nx, ny );
-	NCPA::ScalarWithUnits *temp_prop;
+	// NCPA::ScalarWithUnits *temp_prop;
 
 	// populate index variables
 	size_t i, j;
@@ -393,7 +393,7 @@ NCPA::ScalarAtmosphericProperty3D::ScalarAtmosphericProperty3D(
 
 	for (i = 0; i < nx; i++) {
 		for (j = 0; j < ny; j++) {
-			temp_prop = prop_mat[ i ][ j ];
+			// temp_prop = prop_mat[ i ][ j ];
 			spline_.f_vals[ i ][ j ] = prop_mat[ i ][ j ]->get();
 		}
 	}

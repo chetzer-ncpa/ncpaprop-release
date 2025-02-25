@@ -264,19 +264,19 @@ int NCPA::ModeSolver::doPerturb(int nz, double z_min, double dz, int n_modes, do
 		double *k, double **v, double *alpha, complex<double> *k_pert) {
 	int i, j;
 	double absorption, gamma, c_T;
-	double z_km, dz_km;
+	// double dz_km;
 	double omega = 2*PI*freq;
 	complex<double> I (0.0, 1.0);    // @todo replace with I macro from <complex>
 	gamma = 1.4;
 	
-	dz_km = dz/1000.0;
+	// dz_km = dz/1000.0;
 	for (j=0; j<n_modes; j++) {
 		absorption = 0.0;
-		z_km=z_min/1000.0;
+		// z_km=z_min/1000.0;
 		for (i=0; i<nz; i++) {
 			c_T = sqrt(gamma*Pr[i]/rho[i]); // in m/s  @todo create and get from c0 vector?
 			absorption = absorption + dz*v[i][j]*v[i][j]*(omega/c_T)*alpha[i]*2;
-			z_km += dz_km;
+			// z_km += dz_km;
 		}			
 		k_pert[j] = sqrt(k[j]*k[j] + I*absorption);
 	}
@@ -305,7 +305,7 @@ int NCPA::ModeSolver::getTLoss1D(int select_modes, double dz, int n_r, double dr
 	int i, m;
 	int n_zsrc = (int) ceil(z_src/dz);
 	int n_zrcv = (int) ceil(z_rcv/dz);
-	double r, sqrtrho_ratio;
+	double r;
 	double modal_sum_i, modal_sum_i_ll; // for incoherent sum if desired
 	complex<double> modal_sum_c, modal_sum_c_ll;
 	complex<double> I (0.0, 1.0);
@@ -313,7 +313,7 @@ int NCPA::ModeSolver::getTLoss1D(int select_modes, double dz, int n_r, double dr
 	// the 4*PI factor ensures that the modal sum below ends up being the actual TL
 	complex<double> expov8pi =  4*PI*I*exp(-I*PI*0.25)/sqrt(8.0*PI); 
   
-	sqrtrho_ratio  = sqrt(rho[n_zrcv]/rho[n_zsrc]);
+	// sqrtrho_ratio  = sqrt(rho[n_zrcv]/rho[n_zsrc]);
   
     FILE *tloss_1d, *tloss_ll_1d;
 	tloss_1d    = fopen( filename_lossy.c_str(), "w");
@@ -397,7 +397,7 @@ int NCPA::ModeSolver::getTLoss1DNx2(double azimuth, int select_modes, double dz,
 	int i, m;
 	int n_zsrc = (int) ceil(z_src/dz);
 	int n_zrcv = (int) ceil(z_rcv/dz);
-	double r, sqrtrho_ratio;
+	double r;
 	double modal_sum_i, modal_sum_i_ll;
 	complex<double> modal_sum_c, modal_sum_c_ll;
 	complex<double> I (0.0, 1.0);
@@ -406,7 +406,7 @@ int NCPA::ModeSolver::getTLoss1DNx2(double azimuth, int select_modes, double dz,
 	complex<double> expov8pi =  4*PI*I*exp(-I*PI*0.25)/sqrt(8.0*PI); 
 	FILE *tloss_1d, *tloss_ll_1d;
   
-	sqrtrho_ratio = sqrt(rho[n_zrcv]/rho[n_zsrc]);
+	// sqrtrho_ratio = sqrt(rho[n_zrcv]/rho[n_zsrc]);
 	
 	if (iter==0) {
 		tloss_1d    = fopen(filename_lossy.c_str(),"w");
@@ -501,14 +501,14 @@ int NCPA::ModeSolver::getTLoss2D(int nz, int select_modes, double dz, int n_r, d
   
 	int i, j, m, stepj;
 	int n_zsrc = (int) ceil(z_src/dz);
-	double r, z, sqrtrhoj, rho_atzsrc;
+	double r, z;
 	complex<double> modal_sum, modal_sum_ll;
 	complex<double> I (0.0, 1.0);
 	
 	// the 4*PI factor ensures that the modal sum below ends up being the actual TL
 	complex<double> expov8pi = 4*PI*I*exp(-I*PI*0.25)/sqrt(8.0*PI); 
   
-	rho_atzsrc = rho[n_zsrc];
+	// rho_atzsrc = rho[n_zsrc];
 
 	stepj = nz/500; // controls the vertical sampling of 2D data saved 
 	if (stepj==0) {
@@ -525,7 +525,7 @@ int NCPA::ModeSolver::getTLoss2D(int nz, int select_modes, double dz, int n_r, d
 		r = (i+1)*dr;
 		for (j=0; j<nz; j=j+stepj) {
 			z = (j)*dz;
-			sqrtrhoj = sqrt(rho[j]);
+			// sqrtrhoj = sqrt(rho[j]);
 			modal_sum = 0.0;
 			modal_sum_ll = 0.0;
           
@@ -592,7 +592,7 @@ int NCPA::ModeSolver::writeDispersion(int select_modes, double dz, double z_src,
 	double z_rcv, double freq, complex<double> *k_pert, double **v_s, double *rho) {
 
 	char dispersion_file[128];
-	sprintf(dispersion_file,"dispersion_%e.nm", freq);
+	snprintf(dispersion_file,128,"dispersion_%e.nm", freq);
 	FILE *dispersion = fopen(dispersion_file,"w");
 	int rval = writeDispersion( dispersion, select_modes, dz, z_src, z_rcv, freq, k_pert, v_s, rho );
 	fclose( dispersion );
@@ -624,7 +624,7 @@ int NCPA::ModeSolver::writeEigenFunctions(int nz, int select_modes,
 	double dz_km = dz/1000.0;
 
 	for (j=0; j<select_modes; j++) {
-		sprintf(mode_output,"mode_%d.%s", j, file_extension.c_str());
+		snprintf(mode_output,40,"mode_%d.%s", j, file_extension.c_str());
 		FILE *eigenfunction= fopen(tag_filename(mode_output).c_str(), "w");
 		chk = 0.0;
 		for (n=0; n<nz; n++) {

@@ -118,7 +118,7 @@ std::string NCPA::dms_str( double coord ) {
 	degs *= sign;
 	
 	char buffer[ 256 ];
-	std::sprintf( buffer, "%dd%02d'%06.3f\"", degs, mins, coord );
+	std::snprintf( buffer, 256, "%dd%02d'%06.3f\"", degs, mins, coord );
 	std::string s( buffer );
 	return s;
 }

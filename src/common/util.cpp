@@ -25,7 +25,7 @@ std::string NCPA::timeAsString(double d) {
     fpart = std::modf( d, &ipart);
     char holder[50];
 
-    std::sprintf(holder,"%4d-%02d-%02d %02d:%02d:%06.3f GMT",
+    std::snprintf(holder,50,"%4d-%02d-%02d %02d:%02d:%06.3f GMT",
             (unsigned char)(uttime->tm_year)+1900,
 			(unsigned char)(uttime->tm_mon+1),
 			(unsigned char)(uttime->tm_mday),

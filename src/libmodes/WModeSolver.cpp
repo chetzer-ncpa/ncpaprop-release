@@ -258,8 +258,8 @@ int NCPA::WModeSolver::solve() {
   PetscErrorCode ierr;
   PetscInt nconv;
 
-  int    i, select_modes, nev, it, fi;
-  double dz, admittance, h2, rng_step, z_min_km;
+  int    select_modes, nev, it, fi;
+  double dz, admittance, rng_step;
   double k_min, k_max;			
   double *diag, *kd, *md, *cd, *kH, *k_s, **v, **v_s;	
   complex<double> *k_pert;
@@ -281,9 +281,9 @@ int NCPA::WModeSolver::solve() {
 
   rng_step = maxrange/Nrng_steps;  		// range step [meters]
   dz       = (maxheight - z_min)/Nz_grid;	// the z-grid spacing
-  h2       = dz*dz;
+  // h2       = dz*dz;
   //dz_km    = dz/1000.0;
-  z_min_km = z_min/1000.0;
+  // z_min_km = z_min/1000.0;
 
   // Initialize Slepc
   SlepcInitialize(PETSC_NULLPTR,PETSC_NULLPTR,(char*)0,PETSC_NULLPTR);
@@ -349,7 +349,7 @@ int NCPA::WModeSolver::solve() {
       //
       // Get the main diagonal and the number of modes
       //		
-      i = getModalTrace(Nz_grid, z_min, sourceheight, receiverheight, dz, atm_profile, 
+      getModalTrace(Nz_grid, z_min, sourceheight, receiverheight, dz, atm_profile, 
         admittance, freq, diag, kd, md, cd, &k_min, &k_max, turnoff_WKB);
 
       // if wavenumber filtering is on, redefine k_min, k_max
@@ -358,7 +358,7 @@ int NCPA::WModeSolver::solve() {
           k_max = 2*PI*freq/c_min;
       }
 
-      i = getNumberOfModes(Nz_grid,dz,diag,k_min,k_max,&nev);
+      getNumberOfModes(Nz_grid,dz,diag,k_min,k_max,&nev);
       
       //
       // set up parameters for eigenvalue estimation; double dimension of problem for linearization
@@ -372,7 +372,7 @@ int NCPA::WModeSolver::solve() {
           << " m/s" << std::endl
           << " -> Quadratic eigenvalue problem  - double dimensionality.";
 
-      i = NCPA::EigenEngine::doWideAngleCalculation( Nz_grid, dz, k_min, k_max,
+      NCPA::EigenEngine::doWideAngleCalculation( Nz_grid, dz, k_min, k_max,
         tol, nev, kd, md, cd, &nconv, kH, v, oss.str() );
 
       // select modes and do perturbation
@@ -517,7 +517,7 @@ int NCPA::WModeSolver::getModalTrace(int nz, double z_min, double sourceheight, 
   //     the vector diag can be used to solve the modal problem
   //     also returns the bounds on the wavenumber spectrum, [k_min,k_max]
   int i, top;
-  double azi_rad, gamma, omega, bnd_cnd, windz, ceffmin, ceffmax, ceff_grnd, cefftop, cz;
+  double omega, bnd_cnd, windz, ceffmin, ceffmax, ceff_grnd, cefftop, cz;
   double z_min_km, z_km, dz_km;
   double kk, dkk, k_eff, k_gnd, k_max_full, wkbIntegral, wkbTerm;
   //double rho_factor; 
@@ -526,12 +526,12 @@ int NCPA::WModeSolver::getModalTrace(int nz, double z_min, double sourceheight, 
 
   //FILE *profile= fopen("profile.int", "w");
 
-  gamma    = 1.4;
+  // gamma    = 1.4;
   z_min_km = z_min/1000.0;
   dz_km    = dz/1000.0;
   omega    = 2*PI*freq;
 
-  azi_rad  = NCPA::Units::convert( p->get( "_AZ_" ), NCPA::UNITS_ANGLE_DEGREES, UNITS_ANGLE_RADIANS );
+  // azi_rad  = NCPA::Units::convert( p->get( "_AZ_" ), NCPA::UNITS_ANGLE_DEGREES, UNITS_ANGLE_RADIANS );
 
   z_km      = z_min_km; 
   cz        = p->get( "_C0_", z_min );

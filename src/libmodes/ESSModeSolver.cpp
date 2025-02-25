@@ -292,8 +292,8 @@ int NCPA::ESSModeSolver::solve() {
 	PetscInt nconv;
 	PetscErrorCode ierr;
 
-	int    i, select_modes, nev, it, fi;
-	double dz, admittance, rng_step, z_min_km;  // , h2;
+	int    select_modes, nev, it, fi;
+	double dz, admittance, rng_step;
 	double k_min, k_max;			
 	double *diag, *k2, *k_s, **v, **v_s;
 	complex<double> *k_pert;
@@ -313,7 +313,7 @@ int NCPA::ESSModeSolver::solve() {
 	rng_step = maxrange/Nrng_steps;         		// range step [meters]
 	dz       = (maxheight - z_min)/(Nz_grid - 1);	// the z-grid spacing
 	//h2       = dz*dz;
-	z_min_km = z_min / 1000.0;
+	// z_min_km = z_min / 1000.0;
 
 	SlepcInitialize(PETSC_NULLPTR,PETSC_NULLPTR,(char*)0,PETSC_NULLPTR); /* @todo move out of loop? */
 
@@ -359,7 +359,7 @@ int NCPA::ESSModeSolver::solve() {
 			//
 			// Get the main diagonal and the number of modes
 			//		
-			i = getModalTrace(Nz_grid, z_min, sourceheight, receiverheight, dz, atm_profile, 
+			getModalTrace(Nz_grid, z_min, sourceheight, receiverheight, dz, atm_profile, 
 					admittance, freq, azi, diag, &k_min, &k_max, turnoff_WKB, c_eff);
 
 			// if wavenumber filtering is on, redefine k_min, k_max
@@ -368,13 +368,13 @@ int NCPA::ESSModeSolver::solve() {
 				k_max = 2 * PI * freq / c_min;
 			}
 
-			i = getNumberOfModes(Nz_grid,dz,diag,k_min,k_max,&nev);
+			getNumberOfModes(Nz_grid,dz,diag,k_min,k_max,&nev);
 
 			printf ("______________________________________________________________________\n\n");
 			printf (" -> Normal mode solution at %5.3f Hz and %5.2f deg (%d modes)...\n", freq, azi, nev);
 			printf (" -> Discrete spectrum: %5.2f m/s to %5.2f m/s\n", 2*PI*freq/k_max, 2*PI*freq/k_min);
 	    
-	    	i = NCPA::EigenEngine::doESSCalculation( diag, Nz_grid, dz, tol,
+	    	NCPA::EigenEngine::doESSCalculation( diag, Nz_grid, dz, tol,
 	    		&k_min, &k_max, &nconv, k2, v );
 
 			// select modes and do perturbation
@@ -522,22 +522,21 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 	// use atmospherics input for the trace of the matrix.
 	// the vector diag can be used to solve the modal problem
 	// also returns the bounds on the wavenumber spectrum, [k_min,k_max]
-	int    i, top;
-	double azi_rad, z_km, z_min_km, dz_km, omega, gamma, bnd_cnd; 
-	double cz, windz, ceffmin, ceffmax, ceff_grnd, cefftop; 
+	// int    i, top;
+	int i;
+	double omega, bnd_cnd; 
+	double ceffmin, ceffmax, ceff_grnd; 
 	double kk, dkk, k_eff, k_gnd, k_max_full, wkbIntegral, wkbTerm;
-	z_min_km = z_min / 1000.0;
-	dz_km    = dz / 1000.0;
+	// z_min_km = z_min / 1000.0;
+	// dz_km    = dz / 1000.0;
 	omega    = 2*PI*freq;
   
-	azi_rad  = NCPA::Units::convert( p->get( "_AZ_" ), NCPA::UNITS_ANGLE_DEGREES, UNITS_ANGLE_RADIANS );
-  
-	gamma = 1.4;  
+	// double azi_rad  = NCPA::Units::convert( p->get( "_AZ_" ), NCPA::UNITS_ANGLE_DEGREES, UNITS_ANGLE_RADIANS );
+	// double gamma = 1.4;  
+	// double z_km      = z_min_km;
 	
-	z_km      = z_min_km;
-	
-	cz        = p->get( "_C0_", z_min );
-	windz     = p->get( "_WC_", z_min );
+	// double cz        = p->get( "_C0_", z_min );
+	// double windz     = p->get( "_WC_", z_min );
 	ceff_grnd = p->get( "_CEFF_", z_min );
 	ceffmin   = ceff_grnd;  // in m/s; initialize ceffmin
 	ceffmax   = ceffmin;    // initialize ceffmax   
@@ -552,7 +551,7 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 		if (ceffz[i] > ceffmax)
 			ceffmax = ceffz[i];
 
-		z_km += dz_km;		
+		// z_km += dz_km;		
 	}
   
 	bnd_cnd = (1./(dz*admittance+1))/(pow(dz,2)); // bnd cnd assuming centered fd
@@ -582,13 +581,13 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 				wkbIntegral = 0.0;
 				wkbTerm     = 1.0;  
 				i           = 0;
-				z_km        = z_min_km;
+				// z_km        = z_min_km;
 				while (wkbTerm > dkk) {
 					k_eff       = omega/ceffz[i];
 					wkbTerm     = abs(kk - pow(k_eff,2));
 					wkbIntegral = wkbIntegral + dz*sqrt(wkbTerm); // dz should be in meters					
 					i++;
-					z_km += dz_km;
+					// z_km += dz_km;
 				} 
 
 				if (wkbIntegral >= 10.0) {
@@ -606,12 +605,12 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 		*k_max = omega/ceffmin; // same as k_max_full
 	}  
 
-	top     = nz - ((int) nz/10);
-	z_km    = z_min_km + (top+1)*dz_km;  
-	cz      = p->get( "_C0_", Hgt[ top+1 ] );
-	windz   = p->get( "_WC_", Hgt[ top+1 ] );
-	cefftop = p->get( "_CEFF_", Hgt[ top+1 ] );
-	*k_min  = omega/cefftop;
+	// top     = nz - ((int) nz/10);
+	// z_km    = z_min_km + (top+1)*dz_km;  
+	// cz      = p->get( "_C0_", Hgt[ top+1 ] );
+	// windz   = p->get( "_WC_", Hgt[ top+1 ] );
+	// cefftop = p->get( "_CEFF_", Hgt[ top+1 ] );
+	// *k_min  = omega/cefftop;
 
 	if (used_WKB && (*k_max < *k_min)) {
 		std::cout << "Calculated k_max less than k_min, turning off WKB"
@@ -622,24 +621,24 @@ int NCPA::ESSModeSolver::getModalTrace( int nz, double z_min, double sourceheigh
 
 	// optional save ceff
 	// @todo add flag to turn on/off
-	if (0) {
-		double *target, *zvec;
-		size_t nz = p->nz();
-		target = new double[ nz ];
-		zvec   = new double[ nz ];
-		p->get_property_vector( "_CEFF_", target );
-		p->get_altitude_vector( zvec );
+	// if (0) {
+	// 	double *target, *zvec;
+	// 	size_t nz = p->nz();
+	// 	target = new double[ nz ];
+	// 	zvec   = new double[ nz ];
+	// 	p->get_property_vector( "_CEFF_", target );
+	// 	p->get_altitude_vector( zvec );
 		
-		FILE *fp = fopen("ceff.nm", "w");    
-		for ( size_t ii = 0; ii < nz; ii++ ) {     
-			z_km = zvec[ ii ];
-			fprintf(fp, "%8.3f %15.6e\n", zvec[ ii ], target[ ii ]);
-		}
-		fclose(fp);
-		printf("ceff saved in ceff.nm\n");
-		delete [] target;
-		delete [] zvec;
-	}
+	// 	FILE *fp = fopen("ceff.nm", "w");    
+	// 	for ( size_t ii = 0; ii < nz; ii++ ) {     
+	// 		// z_km = zvec[ ii ];
+	// 		fprintf(fp, "%8.3f %15.6e\n", zvec[ ii ], target[ ii ]);
+	// 	}
+	// 	fclose(fp);
+	// 	printf("ceff saved in ceff.nm\n");
+	// 	delete [] target;
+	// 	delete [] zvec;
+	// }
 
 	return 0;
 }

@@ -413,7 +413,7 @@ int NCPA::GFPESolver::solve() {
 	double Am = (1.0 - 0.2) / (1000.0 - 30.0);
 	double Ab = 1.0 - Am * 1000.0;
 	std::vector<double>::const_iterator f, az, vdit;
-	std::vector<double>::iterator findit;
+	// std::vector<double>::iterator findit;
 
 	// for suite mode
 	std::vector<size_t> r_indices, z_indices;
@@ -827,7 +827,7 @@ void NCPA::GFPESolver::compute_starter( size_t Ntrans, double deltak,
 	std::complex<double> *integrand = NCPA::zeros<std::complex<double>>( Ntrans );
 	std::complex<double> *result = NCPA::zeros<std::complex<double>>( Ntrans );
 	std::complex<double> ks = k0 / Zhat;
-	std::complex<double> tmpcmp, factor1, factor2, f2_1, f2_2, R;
+	std::complex<double> factor1, factor2, f2_1, f2_2, R;
 
 	for (i = 0; i < Ntrans; i++) {
 		R = (kprime[ i ] - ks) / (kprime[ i ] + ks);
