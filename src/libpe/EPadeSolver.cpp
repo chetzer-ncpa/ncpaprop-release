@@ -81,7 +81,7 @@ void NCPA::EPadeSolver::error( const std::string& output ) {
 
 void NCPA::EPadeSolver::error( std::ostringstream& oss ) {
     error( oss.str() );
-	oss.str("");
+    oss.str( "" );
 }
 
 void NCPA::EPadeSolver::warn( const std::string& output, std::ostream& os ) {
@@ -228,6 +228,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     write_atmosphere       = param->wasFound( "write_atm_profile" );
     verbose                = !( param->wasFound( "quiet" ) );
     warn_on_error          = param->wasFound( "warn_on_error" );
+    ignore_warnings        = param->wasFound( "ignore_warnings" );
 
     // Handle differences based on single vs multiprop
     double min_az, max_az, step_az;

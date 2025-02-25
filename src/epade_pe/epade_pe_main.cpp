@@ -89,7 +89,9 @@ int main( int argc, char **argv ) {
 		solver->solve();
 		high_resolution_clock::time_point t2 = high_resolution_clock::now();
 		duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-		cout << "Elapsed time: " << time_span.count() << " seconds." << endl;
+		if (!param->wasFound("quiet")) {
+			cout << "Elapsed time: " << time_span.count() << " seconds." << endl;
+		}
 		delete solver;
 	} catch (std::runtime_error& e) {
 		std::cout << "ePape run failed with the following error:"

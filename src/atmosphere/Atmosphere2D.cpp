@@ -43,7 +43,7 @@ void NCPA::Atmosphere2D::set_maximum_valid_range( double maxrange ) {
 
 	max_valid_range_ = maxrange;
 
-	std::cout << "Setting maximum range to " << maxrange << " " << NCPA::Units::toString( range_units_ ) << std::endl;
+	// std::cout << "Setting maximum range to " << maxrange << " " << NCPA::Units::toString( range_units_ ) << std::endl;
 }
 
 double NCPA::Atmosphere2D::get_maximum_valid_range() const {
