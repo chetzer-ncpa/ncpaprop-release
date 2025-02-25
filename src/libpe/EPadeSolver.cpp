@@ -2020,12 +2020,12 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
             if ( argument <= 0.0 ) {
                 std::ostringstream oss;
                 if ( warn_on_error ) {
-                    oss << "Strong density gradient at z = " << z_vec[ i ]
+                    oss << "Strong density gradient at r = " << r/1000.0 << ", z = " << z_vec[ i ]
                         << " is causing wavenumber calculation to go complex. "
                            " Double-check your density profile!";
                     warn( oss );
                 } else {
-                    oss << "Strong density gradient at z = " << z_vec[ i ]
+                    oss << "Strong density gradient at r = " << r << ", z = " << z_vec[ i ]
                         << " is causing wavenumber calculation to go complex. "
                            " If this is OK, run again using --warn_on_error "
                            "flag.";
