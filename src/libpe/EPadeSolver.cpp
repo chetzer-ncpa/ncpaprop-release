@@ -546,8 +546,16 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 }
 
 NCPA::EPadeSolver::~EPadeSolver() {
-    if ( azi != nullptr ) delete[] azi;
-    if ( atm_profile_2d != nullptr ) delete atm_profile_2d;
+    NCPA::free_array( azi );
+    NCPA::free_pointer( atm_profile_2d );
+    NCPA::free_array( z );
+    NCPA::free_array( z_abs );
+    NCPA::free_array( r );
+    NCPA::free_array( f );
+    // if ( azi != nullptr ) delete[] azi;
+    // if ( atm_profile_2d != nullptr ) delete atm_profile_2d;
+    // if ( z != nullptr ) delete [] z;
+    // if ( z_abs != nullptr ) delete [] z;
 }
 
 int NCPA::EPadeSolver::solve() {
@@ -1630,6 +1638,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
                 delete[] n_starter;
                 delete[] c_starter;
                 delete[] a_starter;
+                NCPA::free_array( source_starter );
                 delete[] starter_indices;
                 delete[] z_indices;
                 delete[] psi_orig;
@@ -1876,9 +1885,12 @@ int NCPA::EPadeSolver::solve_with_topography() {
             if ( attnfile.length() == 0 ) {
                 atm_profile_2d->remove_property( "_ALPHA_" );
             }
-            delete[] r;
-            delete[] zgi_r;
+            // delete[] r;
+            NCPA::free_array( r );
+            // delete[] zgi_r;
+            NCPA::free_array( zgi_r );
             NCPA::free_cmatrix( tl, NZ, NR - 1 );
+            tl = nullptr;
         }
 
         if ( write_topo ) {
@@ -1904,14 +1916,23 @@ int NCPA::EPadeSolver::solve_with_topography() {
     ierr = KSPDestroy( &ksp );
     CHKERRQ( ierr );
 
-    delete[] k;
-    delete[] n;
-    delete[] c;
-    delete[] a_t;
-    delete[] contents;
-    delete[] indices;
-    delete[] z;
-    delete[] z_abs;
+    NCPA::free_array( k );
+    NCPA::free_array( n );
+    NCPA::free_array( c );
+    NCPA::free_array( source );
+    NCPA::free_array( a_t );
+    NCPA::free_array( contents );
+    NCPA::free_array( indices );
+    NCPA::free_array( z );
+    NCPA::free_array( z_abs );
+    // delete[] k;
+    // delete[] n;
+    // delete[] c;
+    // delete[] a_t;
+    // delete[] contents;
+    // delete[] indices;
+    // delete[] z;
+    // delete[] z_abs;
 
     return 1;
 }
@@ -2037,6 +2058,7 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
         }
         n_vec[ i ] = k_vec[ i ] / k0;
     }
+    NCPA::free_array( abslayer );
 }
 
 void NCPA::EPadeSolver::fill_atm_vector_relative(
@@ -2879,6 +2901,8 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
     CHKERRQ( ierr );
     ierr = KSPDestroy( &ksp2 );
     CHKERRQ( ierr );
+
+    NCPA::free_array( indices );
 
     return 1;
 }

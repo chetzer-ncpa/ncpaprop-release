@@ -16,6 +16,36 @@
 
 namespace NCPA {
 
+	template<typename T>
+	void free_array( T*& ptr ) {
+		if (ptr != nullptr) {
+			delete [] ptr;
+			ptr = nullptr;
+		}
+	}
+
+	template<typename T>
+	void free_array( T**& ptr, size_t n ) {
+		if (ptr != nullptr) {
+			for (size_t i = 0; i < n; ++i) {
+				if (ptr[i] != nullptr) {
+					delete [] ptr[i];
+					ptr[i] = nullptr;
+				}
+			}
+			delete [] ptr;
+			ptr = nullptr;
+		}
+	}
+
+	template<typename T>
+	void free_pointer( T*& ptr ) {
+		if (ptr != nullptr) {
+			delete ptr;
+			ptr = nullptr;
+		}
+	}
+
 	/**
 	Converts a numerical time to its equivalent time string in the
 	format yyyy-mm-dd hh:mm:ss.mmm
