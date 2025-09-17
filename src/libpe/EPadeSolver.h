@@ -259,7 +259,6 @@ namespace NCPA {
 		std::string linesourcefile;
 		std::string source_type;
 
-
 		// turbulence parameters
 		NCPA::Turbulence *turbulence;
 		// turbulence parameters

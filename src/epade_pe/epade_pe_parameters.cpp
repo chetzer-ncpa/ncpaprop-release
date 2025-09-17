@@ -48,9 +48,12 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Atmosphere", "--atmosfile2d", "2-D atmospheric summary filename (see manual)" );
 
 	// Required parameters
-	ps->addParameter( new NCPA::FloatParameter( "freq" ) );
-	ps->addTest( new NCPA::RequiredTest( "freq" ) );
-	ps->addTest( new NCPA::FloatGreaterThanTest( "freq", 0.0 ) );
+	ps->addParameter( new NCPA::FloatParameter( "freq", 0.0 ) );
+	// ps->addTest( new NCPA::RequiredTest( "freq" ) ); // Only required if not using broadband
+	ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "freq", "singleprop" ) );
+	ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "freq", "multiprop" ) );
+
+	// ps->addTest( new NCPA::FloatGreaterThanTest( "freq", 0.0 ) ); // Removed as freq is no longer always required (test moved to EpadeSolver ParameterSet())
 	ps->addParameterDescription( "Required Parameters", "--freq", "Frequency of analysis (Hz)" );
 
 	ps->addParameter( new NCPA::StringParameter( "starter", "self" ) );
@@ -71,12 +74,12 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Required Parameters", "--maxrange_km", "Maximum range in km to use for modeling" );
 
 	// Modes of operation
-	std::string modes_of_operation[ 2 ] = { "singleprop", "multiprop" };
-	for (unsigned int i = 0; i < 2; i++) {
+	std::string modes_of_operation[ 3 ] = { "singleprop", "multiprop", "broadband" };
+	for (unsigned int i = 0; i < 3; i++) {
 		std::string tmpStr( modes_of_operation[ i ] );
 		ps->addParameter( new NCPA::FlagParameter( tmpStr ) );
 	}
-	ps->addTest( new NCPA::RadioButtonTest( "operation_mode", 2, modes_of_operation ) );
+	ps->addTest( new NCPA::RadioButtonTest( "operation_mode", 3, modes_of_operation ) );
 	ps->addParameterDescription( "Modes of Operation", "--singleprop", "Single azimuth propagation.  Requires --azimuth" );
 	
 	// for single propagation, must specify azimuth

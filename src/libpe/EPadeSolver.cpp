@@ -294,12 +294,21 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
                 "Broadband propagation requested, disabling topography flag" );
             use_topo = false;
         }
+
+        receiver_range_km = param->getFloat( "receiver_range_km" );
+        // Default to r_max if not specified
+        if ( receiver_range_km > 0.0 ) {
+            r_max = receiver_range_km * 1000.0; 
+        }
         f_min  = param->getFloat( "f_min" );
         f_step = param->getFloat( "f_step" );
         f_max  = param->getFloat( "f_max" );
         source_type = param->getString( "source" ); 
 
-        
+        oss << "Using broadband propagation with f_min = " << f_min
+            << ", f_step = " << f_step << ", f_max = " << f_max;
+        info( oss );
+
         // sanity checks
         if ( f_min >= f_max ) {
             if ( warn_on_error ) {
@@ -310,20 +319,18 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
             }
         }
 
-        oss << "Using broadband propagation with f_min = " << f_min
-            << ", f_step = " << f_step << ", f_max = " << f_max;
-        info( oss );
-
-        NF = (size_t)( std::floor( ( f_max - f_min ) / f_step ) ) + 1;
+        NF = (size_t)( std::floor( ( f_max - f_min ) / f_step ) ) + 2; 
+        // Note: The DC is included in f[0], but skipped in the propagation
         f  = NCPA::zeros<double>( NF );
-        for ( size_t fi = 0; fi < NF; fi++ ) {
-            f[ fi ] = f_min + ( (double)fi ) * f_step;
+        for ( size_t fi = 1; fi < NF; fi++ ) {
+            f[ fi ] = f_min + ( (double)fi - 1) * f_step;
         }
+        freq = f_max/5; // Use f_max/5 to calculate default z resolution @todo: Check if this assumption is valid 
     } else {
         freq   = param->getFloat( "freq" );
-        f      = NCPA::zeros<double>( 1 );
-        f[ 0 ] = freq;
-        NF     = 1;
+        f      = NCPA::zeros<double>( 2 );
+        f[ 1 ] = freq;
+        NF     = 2; // DC + freq
     }
 
     if ( starter == "user" && user_starter_file.size() == 0 ) {
@@ -441,7 +448,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     // z_ground = atm_profile_2d->get( 0.0, "Z0" );
 
     // calculate derived quantities
-    double c0;
+    // double c0;
     for ( std::vector<NCPA::Atmosphere1D *>::iterator it
           = atm_profile_2d->first_profile();
           it != atm_profile_2d->last_profile(); ++it ) {
@@ -512,6 +519,8 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     // calculate/check z resolution
     dz             = param->getFloat( "dz_m" );
     double lambda0 = c0 / freq;
+    std::cout << "Using c0 = " << c0 << " m/s, freq = " << freq
+              << " Hz, lambda0 = " << lambda0 << " m" << std::endl;
     if ( dz <= 0.0 ) {
         dz = lambda0 / 20.0;
         double nearestpow10
@@ -693,7 +702,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     double dr;
 
     // set up for source atmosphere
-    double k0 = 0.0, c0 = 0.0;
+    double k0 = 0.0; //, c0 = 0.0; --> c0 is the reference ceff as default to calculate dz in the frequency loop
     double prev_dz = dz; // Store previous dz for potential reuse
     double *c               = NCPA::zeros<double>( NZ );
     double *a_t             = NCPA::zeros<double>( NZ );
@@ -746,7 +755,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
         // atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_",
         // "_WC_" );
 
-        for ( size_t freqind = 0; freqind < NF; freqind++ ) {
+        for ( size_t freqind = 1; freqind < NF; freqind++ ) {
             freq = f[ freqind ];
 
             // If the broadband mode is enabled, we need to adjust dz based on the frequency 
@@ -755,12 +764,16 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 // Calculate frequency-dependent dz
                 double lambda0 = c0 / freq;
                 dz = lambda0 / 20.0;  // Default resolution 
-                
+
+                std::cout << "lambda0 = " << lambda0 << " m for f = " << freq << " Hz" << std::endl;
+                std::cout << "Initial dz = " << dz << " m" << std::endl;
                 // Round dz to a reasonable value
                 double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
                 double factor = std::floor( dz / nearestpow10 );
                 dz = nearestpow10 * factor;
-                
+                std::cout << "Rounded dz = " << dz << " m" << std::endl;
+
+
                 // Check if dz is reasonable
                 if ( dz > ( lambda0 / 10.0 ) ) {
                     if ( warn_on_error ) {
@@ -775,27 +788,21 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                         error( oss );
                     }
                 }
-                // Adjust dz such that zr (receiver height) is a multiple of dz. 
-                // This is crucial for the broadband mode such that all frequencies hit the receiver height exactly 
-                // dr and NR are similarly adjusted later 
-                // if ( zr > 0.0 && std::fmod(zr, dz) > 1e-2) { // Only adjust if dz misses zr by more than 10 cm
-                //     std::cout << "Adjusting dz to match receiver height." << std::endl;
-                //     std::cout << "fmod: " << std::fmod(zr, dz) << 
-                //         " for zr = " << zr << " and dz = " << dz << std::endl;  
-                //     int zr_N = (int)std::ceil( zr / dz );
-                //     std::cout << "zr_N = " << zr_N << std::endl;
-                //     dz = zr / zr_N;  // Adjust dz to match the receiver height
-                // }
-            }
 
-            oss << "Setting dz to " << dz << " m for frequency " << freq << " Hz";
-            info( oss );
-            oss << "Setting NZ to " << NZ; 
-            info( oss );
+                // Snap dz to ensure it divides receiver height exactly
+                if ( zr > 0.0 ) {
+                    int zr_steps = (int)round( zr / dz );
+                    dz = zr / (double)zr_steps;
+                }
+            
+            }
 
             // If dz has changed, we need to recreate all variables that depend on dz and/or NZ
             if ( broadband && dz != prev_dz ) {
-                std::cout << "New dz: " << dz << " m, previous dz: " << prev_dz << " m" << std::endl;
+                oss << "Setting dz to " << dz << " m for frequency " << freq << " Hz";
+                info( oss );
+                oss << "Setting NZ to " << NZ; 
+                info( oss );
                 prev_dz = dz; 
                 // Clean up previous arrays that depend on NZ since they need to change size
                 if ( z != nullptr ) delete[] z;
@@ -870,6 +877,10 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             if ( NR_requested == 0 ) {
                 dr = 340.0 / freq;
                 NR = (int)ceil( r_max / dr );
+                // double dr0 = 340.0 / freq;                 // physics-based guess
+                // int steps   = std::max(1, (int)std::ceil(r_max / dr0));
+                // dr = r_max / (double)steps;                // snap so steps*dr = r_max
+                // NR = steps + 1;                            // nodes = steps + 1 (include r=0 and r_max)
             } else {
                 NR = NR_requested;
                 dr = r_max / NR;
@@ -1084,7 +1095,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             }
             if ( broadband && transf != nullptr ) {
                 transf[ freqind ] = tl[ zr_i ][ NR - 2 ];
-                // transf[ freqind ] = tl_row[ NR - 2 ];
+                std::cout << "Receiver is at z = " << z[ zr_i ] << ", r = " << r[ NR - 2 ] << std::endl;
             }
 
             if ( multiprop ) {
@@ -1203,8 +1214,6 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     if ( broadband ){
         if ( source != nullptr ) delete[] source;
     }
-    return 1;
-
     return 1;
 }
 
