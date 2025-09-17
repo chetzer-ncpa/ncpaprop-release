@@ -131,6 +131,9 @@ void NCPA::EPadeSolver::set_default_values() {
     zr                    = 0.0;
     calc_az               = 0.0;
     top_layer_thickness_m = -1.0;
+    f_min                 = 0.0;
+    f_max                 = 0.0;
+    f_step                = 0.0;
 
     // complex
     user_ground_impedence = 0.0;
@@ -169,6 +172,8 @@ void NCPA::EPadeSolver::set_default_values() {
     attnfile          = "";
     user_starter_file = "";
     topofile          = "";
+    source_type       = "impulse";
+
 
     // turbulence
     use_turbulence     = false;
@@ -229,6 +234,8 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     verbose                = !( param->wasFound( "quiet" ) );
     warn_on_error          = param->wasFound( "warn_on_error" );
     ignore_warnings        = param->wasFound( "ignore_warnings" );
+    broadband             = param->wasFound( "broadband" );
+
 
     // Handle differences based on single vs multiprop
     double min_az, max_az, step_az;
@@ -287,11 +294,12 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
                 "Broadband propagation requested, disabling topography flag" );
             use_topo = false;
         }
-        double f_min, f_step, f_max;
         f_min  = param->getFloat( "f_min" );
         f_step = param->getFloat( "f_step" );
         f_max  = param->getFloat( "f_max" );
+        source_type = param->getString( "source" ); 
 
+        
         // sanity checks
         if ( f_min >= f_max ) {
             if ( warn_on_error ) {
@@ -301,6 +309,10 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
                 error( "f_min must be less than f_max!" );
             }
         }
+
+        oss << "Using broadband propagation with f_min = " << f_min
+            << ", f_step = " << f_step << ", f_max = " << f_max;
+        info( oss );
 
         NF = (size_t)( std::floor( ( f_max - f_min ) / f_step ) ) + 1;
         f  = NCPA::zeros<double>( NF );
@@ -566,7 +578,16 @@ int NCPA::EPadeSolver::solve() {
     }
 }
 
-int NCPA::EPadeSolver::solve_without_topography() {
+int NCPA::EPadeSolver::solve( std::complex<double> *transf ) {
+    // Overloaded solve method for broadband mode
+    if (use_topo) {
+        return solve_with_topography();
+    } else {
+        return solve_without_topography( transf );
+    }
+}
+
+int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) {
     size_t i;
     std::complex<double> I( 0.0, 1.0 );
     PetscErrorCode ierr;
@@ -673,6 +694,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
     // set up for source atmosphere
     double k0 = 0.0, c0 = 0.0;
+    double prev_dz = dz; // Store previous dz for potential reuse
     double *c               = NCPA::zeros<double>( NZ );
     double *a_t             = NCPA::zeros<double>( NZ );
     std::complex<double> *k = NCPA::zeros<std::complex<double>>( NZ );
@@ -702,11 +724,11 @@ int NCPA::EPadeSolver::solve_without_topography() {
     }
 
     // write broadband header for testing
-    if ( broadband ) {
-        write_broadband_header(
-            tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ), azi, NAz, f,
-            NF, 1.0e8 );
-    }
+    // if ( broadband ) {
+    //     write_broadband_header(
+    //         tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ), azi, NAz, f,
+    //         NF, 1.0e8 );
+    // }
 
     // freq and calc_az hold the current values of azimuth and frequency,
     // respectively these are used in the output routines, so make sure they
@@ -726,6 +748,120 @@ int NCPA::EPadeSolver::solve_without_topography() {
 
         for ( size_t freqind = 0; freqind < NF; freqind++ ) {
             freq = f[ freqind ];
+
+            // If the broadband mode is enabled, we need to adjust dz based on the frequency 
+            // It is important that dz divides the receiver height exactly 
+            if ( broadband ) {
+                // Calculate frequency-dependent dz
+                double lambda0 = c0 / freq;
+                dz = lambda0 / 20.0;  // Default resolution 
+                
+                // Round dz to a reasonable value
+                double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
+                double factor = std::floor( dz / nearestpow10 );
+                dz = nearestpow10 * factor;
+                
+                // Check if dz is reasonable
+                if ( dz > ( lambda0 / 10.0 ) ) {
+                    if ( warn_on_error ) {
+                        oss << "Altitude resolution of " << dz
+                            << " meters is too coarse for frequency " << freq 
+                            << " Hz, setting to " << lambda0 / 10.0 << " meters.";
+                        warn( oss );
+                        dz = lambda0 / 10.0;
+                    } else {
+                        oss << "Altitude resolution is too coarse for frequency " << freq 
+                            << " Hz. Must be <= " << lambda0 / 10.0 << " meters.";
+                        error( oss );
+                    }
+                }
+                // Adjust dz such that zr (receiver height) is a multiple of dz. 
+                // This is crucial for the broadband mode such that all frequencies hit the receiver height exactly 
+                // dr and NR are similarly adjusted later 
+                // if ( zr > 0.0 && std::fmod(zr, dz) > 1e-2) { // Only adjust if dz misses zr by more than 10 cm
+                //     std::cout << "Adjusting dz to match receiver height." << std::endl;
+                //     std::cout << "fmod: " << std::fmod(zr, dz) << 
+                //         " for zr = " << zr << " and dz = " << dz << std::endl;  
+                //     int zr_N = (int)std::ceil( zr / dz );
+                //     std::cout << "zr_N = " << zr_N << std::endl;
+                //     dz = zr / zr_N;  // Adjust dz to match the receiver height
+                // }
+            }
+
+            oss << "Setting dz to " << dz << " m for frequency " << freq << " Hz";
+            info( oss );
+            oss << "Setting NZ to " << NZ; 
+            info( oss );
+
+            // If dz has changed, we need to recreate all variables that depend on dz and/or NZ
+            if ( broadband && dz != prev_dz ) {
+                std::cout << "New dz: " << dz << " m, previous dz: " << prev_dz << " m" << std::endl;
+                prev_dz = dz; 
+                // Clean up previous arrays that depend on NZ since they need to change size
+                if ( z != nullptr ) delete[] z;
+                if ( z_abs != nullptr ) delete[] z_abs;
+                if ( indices != nullptr ) delete[] indices;
+                if ( contents != nullptr ) delete[] contents;
+                if ( c != nullptr ) delete[] c;
+                if ( a_t != nullptr ) delete[] a_t;
+                if ( k != nullptr ) delete[] k;
+                if ( n != nullptr ) delete[] n;
+                if ( source != nullptr ) delete[] source;
+
+                // Recalculate NZ and create new z-grid
+                NZ = ( (int)std::floor( ( z_max - z_ground ) / dz ) ) + 1;
+                z = NCPA::zeros<double>( NZ );
+                z_abs = NCPA::zeros<double>( NZ );
+                indices = NCPA::zeros<PetscInt>( NZ );
+                // contents = NCPA::zeros<PetscScalar>( NZ );
+                
+                for ( i = 0; i < NZ; i++ ) {
+                    z[ i ]       = ( (double)i ) * dz;
+                    z_abs[ i ]   = z[ i ] + z_ground;
+                    indices[ i ] = i;
+                }
+                
+                // Recalculate receiver index
+                zr_i = NCPA::find_closest_index<double>( z, NZ, zr );
+                oss << "Closest z = " << z[zr_i]; 
+                info( oss );
+
+                // Recreate atmosphere parameter arrays
+                c = NCPA::zeros<double>( NZ );
+                a_t = NCPA::zeros<double>( NZ );
+                k = NCPA::zeros<std::complex<double>>( NZ );
+                n = NCPA::zeros<std::complex<double>>( NZ );
+                source = NCPA::zeros<std::complex<double>>( NZ );
+
+                if ( starter == "self" ) {
+                    if ( pointsource ) {
+                        oss << "Generating point source at " << zs << "m";
+                        info( oss );
+                        make_point_source( NZ, z, zs + z_ground, z_ground, source );
+                    } else {
+                        oss << "Reading line source from " << linesourcefile;
+                        info( oss );
+                        read_line_source_from_file( NZ, z, z_ground, linesourcefile,
+                                                    source );
+                    }
+
+                    // output source file for checking
+                    if ( _write_source_function ) {
+                        oss << "Writing source function to "
+                            << tag_filename( NCPAPROP_EPADE_PE_FILENAME_SOURCE );
+                        info( oss );
+                        write_source( tag_filename( NCPAPROP_EPADE_PE_FILENAME_SOURCE ),
+                                    source, z, NZ );
+                    }
+                }
+
+            }
+            h = dz;
+            h2 = h * h;
+
+
+
+
             if ( ( !lossless ) && ( attnfile.length() == 0 ) ) {
                 atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P",
                                                        "RHO", freq );
@@ -739,8 +875,24 @@ int NCPA::EPadeSolver::solve_without_topography() {
                 dr = r_max / NR;
             }
 
-            oss << "Setting dr to " << dr << " meters.";
-            info( oss );
+            if ( NR_requested == 0 ) {
+                dr = 340.0 / freq;
+                NR = (int)ceil( r_max / dr );
+                // Quick fix to ensure we hit r_max for all freqs when in broadband mode
+                dr = r_max / NR; 
+            } else {
+                NR = NR_requested;
+                dr = r_max / NR;
+            }
+            // Increase NR by 1 to account for the boundary and make sure 
+            // the range we use for all freqs in broadband mode is r_max
+            NR = NR + 1; 
+
+            if ( !broadband ) {
+                oss << "Setting dr to " << dr << " meters.";
+                info( oss );
+            }
+
 
             r     = NCPA::zeros<double>( NR );
             zgi_r = NCPA::zeros<int>( NR );
@@ -760,13 +912,15 @@ int NCPA::EPadeSolver::solve_without_topography() {
                 ground_impedence_factor
                     = I * 2.0 * PI * freq * rho0 / user_ground_impedence
                     + lambBC;
-                oss << "Using user ground impedence of "
-                    << user_ground_impedence;
-                info( oss );
+                if ( !broadband ) {
+                    oss << "Using user ground impedence of "
+                        << user_ground_impedence;
+                    info( oss );
+                }
             } else {
                 ground_impedence_factor.real( lambBC );
                 ground_impedence_factor.imag( 0.0 );
-                info( "Using default rigid ground with Lamb BC" );
+                if ( !broadband ) info( "Using default rigid ground with Lamb BC" );
             }
 
             calculate_atmosphere_parameters(
@@ -822,14 +976,14 @@ int NCPA::EPadeSolver::solve_without_topography() {
                     tag_filename( NCPAPROP_EPADE_PE_FILENAME_STARTER ) );
             }
 
-            info( "Finding ePade coefficients..." );
+            if ( !broadband ) info( "Finding ePade coefficients..." );
             std::vector<std::complex<double>> P, Q;
             std::vector<PetscScalar> taylor
                 = taylor_exp_id_sqrt_1pQ_m1( 2 * npade, k0 * dr );
             calculate_pade_coefficients( &taylor, npade, npade + 1, &P, &Q );
             generate_polymatrices( qpowers_starter, npade, NZ, P, Q, &B, &C );
 
-            info( "Marching out field..." );
+            if ( !broadband ) info( "Marching out field..." );
             ierr = VecDuplicate( psi_o, &Bpsi_o );
             CHKERRQ( ierr );
             contents = NCPA::zeros<PetscScalar>( NZ );
@@ -865,9 +1019,11 @@ int NCPA::EPadeSolver::solve_without_topography() {
                     ierr = MatZeroEntries( C );
                     CHKERRQ( ierr );
                     generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
-                    oss << "Switching to atmosphere index " << profile_index
-                        << " at range = " << rr / 1000.0 << " km";
-                    info( oss );
+                    if ( !broadband ) {
+                        oss << "Switching to atmosphere index " << profile_index
+                            << " at range = " << rr / 1000.0 << " km";
+                        info( oss );
+                    }
                 }
 
                 // get values for current step
@@ -910,7 +1066,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
                 }
                 zgi_r[ ir ] = zr_i;  // constant receiver height
 
-                if ( fmod( rr, 1.0e5 ) < dr ) {
+                if ( fmod( rr, 1.0e5 ) < dr && !broadband ) {
                     oss << " -> Range " << rr / 1000.0 << " km";
                     info( oss );
                 }
@@ -922,8 +1078,14 @@ int NCPA::EPadeSolver::solve_without_topography() {
                 ierr = KSPSolve( ksp, Bpsi_o, psi_o );
                 CHKERRQ( ierr );
             }
-            oss << "Stopped at range " << r[ NR - 1 ] / 1000.0 << " km";
-            info( oss );
+            if ( !broadband ) {
+                oss << "Stopped at range " << r[ NR - 1 ] / 1000.0 << " km";
+                info( oss );
+            }
+            if ( broadband && transf != nullptr ) {
+                transf[ freqind ] = tl[ zr_i ][ NR - 2 ];
+                // transf[ freqind ] = tl_row[ NR - 2 ];
+            }
 
             if ( multiprop ) {
                 if ( write1d ) {
@@ -936,7 +1098,7 @@ int NCPA::EPadeSolver::solve_without_topography() {
                         true );
                 }
             } else {
-                if ( write1d ) {
+                if ( write1d && !broadband ) {
                     oss << "Writing 1-D output to "
                         << tag_filename( NCPAPROP_EPADE_PE_FILENAME_1D );
                     info( oss );
@@ -994,25 +1156,40 @@ int NCPA::EPadeSolver::solve_without_topography() {
             if ( attnfile.length() == 0 ) {
                 atm_profile_2d->remove_property( "_ALPHA_" );
             }
-            delete[] r;
+            ierr = MatDestroy(&B);      CHKERRQ(ierr);
+            ierr = MatDestroy(&C);      CHKERRQ(ierr);
+            ierr = VecDestroy(&psi_o);  CHKERRQ(ierr);
+            ierr = VecDestroy(&Bpsi_o); CHKERRQ(ierr);
+            ierr = KSPDestroy(&ksp);    CHKERRQ(ierr);
+
+            delete[] contents; contents = nullptr;
+
+            // if ( broadband ) {
+            //     delete[] tl_row; tl_row = nullptr;
+            // } else {
+                // delete[] zgi_r;
+                // NCPA::free_cmatrix(tl, NZ, NR - 1);
+                // }
             delete[] zgi_r;
-            NCPA::free_cmatrix( tl, NZ, NR - 1 );
+            NCPA::free_cmatrix(tl, NZ, NR - 1);
+                
+            delete[] r; r = nullptr;
         }
 
         atm_profile_2d->remove_property( "_CEFF_" );
         // atm_profile_2d->remove_property( "_WC_" );
     }
 
-    ierr = MatDestroy( &B );
-    CHKERRQ( ierr );
-    ierr = MatDestroy( &C );
-    CHKERRQ( ierr );
-    ierr = VecDestroy( &psi_o );
-    CHKERRQ( ierr );
-    ierr = VecDestroy( &Bpsi_o );
-    CHKERRQ( ierr );
-    ierr = KSPDestroy( &ksp );
-    CHKERRQ( ierr );
+    // ierr = MatDestroy( &B );
+    // CHKERRQ( ierr );
+    // ierr = MatDestroy( &C );
+    // CHKERRQ( ierr );
+    // ierr = VecDestroy( &psi_o );
+    // CHKERRQ( ierr );
+    // ierr = VecDestroy( &Bpsi_o );
+    // CHKERRQ( ierr );
+    // ierr = KSPDestroy( &ksp );
+    // CHKERRQ( ierr );
 
     delete[] k;
     delete[] n;
@@ -1020,8 +1197,13 @@ int NCPA::EPadeSolver::solve_without_topography() {
     delete[] a_t;
     delete[] contents;
     delete[] indices;
-    delete[] z;
-    delete[] z_abs;
+    // delete[] z;
+    // delete[] z_abs;
+
+    if ( broadband ){
+        if ( source != nullptr ) delete[] source;
+    }
+    return 1;
 
     return 1;
 }
