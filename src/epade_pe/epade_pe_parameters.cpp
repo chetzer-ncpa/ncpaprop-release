@@ -108,6 +108,43 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Modes of Operation", "--azimuth_step", "Azimuth step, in degrees CW from North [0,360)" );
 	ps->resetParameterIndent();
 
+	// Broadband parameters, must specify f_min, f_max and f_step @todo: Implement the sources for ePape
+	ps->addParameter( new NCPA::FlagParameter( "broadband" ) );
+	ps->addParameterDescription( "Modes of Operation", "--broadband", "Calculate at multiple frequencies for a single azimuth. Requires --f_min, --f_max, and f_step, disables --atmosfile2d." );
+	ps->addParameter( new NCPA::FloatParameter( "receiver_range_km", 0.0 ) );
+	// ps->addTest( new NCPA::FloatGreaterThanOrEqualToTest( "receiver_range_km", 0.0 ) ); @todo: finish logic such that max_range_km is not required for broadband mode
+	// ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "receiver_range_km", "broadband" ) ); 
+	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
+	ps->addParameterDescription( "Modes of Operation", "--receiver_range_km", "Range at which to calculate the transfer function (km)" );
+	ps->addParameter( new NCPA::FloatParameter( "f_min", 0.0 ) );
+	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
+	ps->addParameterDescription( "Modes of Operation", "--f_min", "Minimum frequency for broadband mode (Hz)" );
+	ps->addParameter( new NCPA::FloatParameter( "f_max", 0.0 ) );
+	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
+	ps->addParameterDescription( "Modes of Operation", "--f_max", "Maximum frequency for broadband mode (Hz)" );
+	ps->addParameter( new NCPA::FloatParameter( "f_step", 0.0 ) );
+	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
+	ps->addParameterDescription( "Modes of Operation", "--f_step", "Frequency step for broadband mode (Hz)" );
+	ps->addParameter( new NCPA::FloatParameter( "max_celerity", 340.0 ) );
+	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
+	ps->addParameterDescription( "Modes of Operation", "--max_celerity", "Maximum celerity used for calculation [340.0 m/s]" );
+	// if broadband mode check if the frequency parameters are valid
+	ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "f_min", "broadband" ) );
+	ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "f_max", "broadband" ) );
+	ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "f_step", "broadband" ) );
+
+	// Add source type 
+	ps->addParameter( new NCPA::StringParameter( "source", "impulse" ) );
+	test = ps->addTest( new NCPA::StringSetTest( "source" ) ); 
+	test->addStringParameter( "impulse" );
+	test->addStringParameter( "pulse1" );
+	test->addStringParameter( "pulse2" );
+	test->addStringParameter( "waveform" );
+	test->addStringParameter( "spectrum" );
+	ps->setParameterIndent( 2 * DEFAULT_PARAMETER_INDENT );
+	ps->addParameterDescription( "Modes of Operation", "--source", "Source type.  Options include: {impulse,pulse1,pulse2,spectrum,waveform} [impulse]" );
+
+
 
 
 	// optional parameters
