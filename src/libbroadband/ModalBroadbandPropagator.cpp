@@ -213,7 +213,7 @@ int NCPA::ModalBroadbandPropagator::calculate_waveform() {
           //std::memset( transfer_function,  0, Nfreq * sizeof( std::complex< double > ) );
           std::fill( transfer_function, transfer_function + Nfreq, std::complex<double>{} );
           compute_modal_sum( rr );
-
+          std::cout << "The first two elements in f_vec: " << f_vec[0] << ", " << f_vec[1] << std::endl;
           // the call with NFFT as argument			            
           fft_pulse_prop( t0, rr, dft_vec, pulse_vec );
 
@@ -221,7 +221,7 @@ int NCPA::ModalBroadbandPropagator::calculate_waveform() {
           // (e.g. Roger Waxler's modal code)
           double factor = 2.0;								              
           for(i=0;i<NFFT;i++){
-              fprintf(f,"%10.3f %12.6f %15.6e\n", rr/1000.0, 1.0*i/fmx+t0, factor*real(pulse_vec[i]));
+              fprintf(f,"%10.3f %12.6f %15.6e %15.6e\n", rr/1000.0, 1.0*i/fmx+t0, factor*real(pulse_vec[i]), factor*imag(pulse_vec[i]));
           }
           fprintf(f,"\n");
       }
@@ -231,6 +231,13 @@ int NCPA::ModalBroadbandPropagator::calculate_waveform() {
       printf("Propagation results saved in file: %s\n", waveform_out_file.c_str());
       printf("with columns: R (km) | time (s) | pulse(R,t) |\n");
   // }
+
+  FILE *transf_file; 
+  transf_file = fopen("transfer_function_modbb.dat", "w");
+  for (i = 0; i < Nfreq; i++) {
+      fprintf(transf_file, "%5.6f %15.6e %15.6e\n", f_vec[i], real(transfer_function[i]), imag(transfer_function[i]));
+  }
+  fclose(transf_file);
 
   delete [] pulse_vec;
   delete [] arg_vec;

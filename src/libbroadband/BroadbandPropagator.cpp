@@ -653,9 +653,10 @@ void NCPA::BroadbandPropagator::fft_pulse_prop(
     std::complex<double> t_phase, *arg_vec;
     std::complex<double> I( 0.0, 1.0 );
     // std::complex<double> expov8pir = I*exp(-I*Pi*0.25)/sqrt(8.0*Pi*range);
-    double df = f_vec[ 1 ] - f_vec[ 0 ];
+    // double df = f_vec[ 1 ] - f_vec[ 0 ];
+    double df = f_vec[ 2] - f_vec[ 1 ];  // because the DC is always included
     fftw_plan p;
-
+    std::cout << "calculated df = " << df << std::endl;
     if ( NFFT < Nfreq ) {
         throw std::invalid_argument(
             "fft too short (i.e. NFFT < Nfreq), exiting." );

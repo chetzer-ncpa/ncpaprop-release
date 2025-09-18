@@ -320,6 +320,16 @@ int NCPA::ESSModeSolver::solve() {
 	for (fi = 0; fi < Nfreq; fi++) {
 		freq = f_vec[ fi ];
 
+		// Calculate attenuation for this frequency if we are doing broadband
+		if ( Nfreq > 1 && usrattfile.empty() ) {
+            atm_profile->remove_property( "_ALPHA_" );
+
+			atm_profile->calculate_attenuation( "_ALPHA_", "T", "P", "RHO", freq );
+			for (int i=0; i<Nz_grid; i++) {
+				alpha[i]   = atm_profile->get( "_ALPHA_", Hgt[i] );
+			}
+		}
+
 		//
 		// loop over azimuths (if not (N by 2D) it's only one azimuth)
 		//
@@ -333,6 +343,7 @@ int NCPA::ESSModeSolver::solve() {
 			atm_profile->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
 			atm_profile->get_property_vector( "_CEFF_", c_eff );
 			atm_profile->add_property( "_AZ_", azi, NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
+
 
 			//
 			// ground impedance model
@@ -493,6 +504,7 @@ int NCPA::ESSModeSolver::solve() {
 		} // end loop by azimuths
 
 	} // end loop by frequencies
+	atm_profile->remove_property( "_ALPHA_" );
   
 	// Finalize Slepc
 	ierr = SlepcFinalize();CHKERRQ(ierr);
