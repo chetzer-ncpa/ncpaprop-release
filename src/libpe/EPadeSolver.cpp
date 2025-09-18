@@ -304,6 +304,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
         f_step = param->getFloat( "f_step" );
         f_max  = param->getFloat( "f_max" );
         source_type = param->getString( "source" ); 
+        max_cel = param->getFloat("max_celerity");
 
         oss << "Using broadband propagation with f_min = " << f_min
             << ", f_step = " << f_step << ", f_max = " << f_max;
@@ -601,7 +602,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     std::complex<double> I( 0.0, 1.0 );
     PetscErrorCode ierr;
     PetscInt *indices;
-    PetscScalar hank, *contents;
+    PetscScalar hank, *contents = nullptr;
     Mat B, C;           // , q;
     Mat *qpowers = PETSC_NULLPTR, *qpowers_starter = PETSC_NULLPTR;
     Vec psi_o, Bpsi_o;  //, psi_temp;
@@ -763,60 +764,36 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             if ( broadband ) {
                 // Calculate frequency-dependent dz
                 double lambda0 = c0 / freq;
-                dz = lambda0 / 20.0;  // Default resolution 
+                dz = lambda0 / 10.0;  // Default resolution 
 
                 std::cout << "lambda0 = " << lambda0 << " m for f = " << freq << " Hz" << std::endl;
                 std::cout << "Initial dz = " << dz << " m" << std::endl;
                 // Round dz to a reasonable value
                 double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
                 double factor = std::floor( dz / nearestpow10 );
-                dz = nearestpow10 * factor;
-                std::cout << "Rounded dz = " << dz << " m" << std::endl;
-
-
-                // Check if dz is reasonable
-                if ( dz > ( lambda0 / 10.0 ) ) {
-                    if ( warn_on_error ) {
-                        oss << "Altitude resolution of " << dz
-                            << " meters is too coarse for frequency " << freq 
-                            << " Hz, setting to " << lambda0 / 10.0 << " meters.";
-                        warn( oss );
-                        dz = lambda0 / 10.0;
-                    } else {
-                        oss << "Altitude resolution is too coarse for frequency " << freq 
-                            << " Hz. Must be <= " << lambda0 / 10.0 << " meters.";
-                        error( oss );
-                    }
-                }
-
-                // Snap dz to ensure it divides receiver height exactly
-                if ( zr > 0.0 ) {
-                    int zr_steps = (int)round( zr / dz );
-                    dz = zr / (double)zr_steps;
-                }
-            
+                dz = nearestpow10 * factor; // @todo: Snap dz to zr in case it does not divide it exactly (works for ground)
             }
 
             // If dz has changed, we need to recreate all variables that depend on dz and/or NZ
             if ( broadband && dz != prev_dz ) {
-                oss << "Setting dz to " << dz << " m for frequency " << freq << " Hz";
-                info( oss );
-                oss << "Setting NZ to " << NZ; 
-                info( oss );
                 prev_dz = dz; 
                 // Clean up previous arrays that depend on NZ since they need to change size
                 if ( z != nullptr ) delete[] z;
                 if ( z_abs != nullptr ) delete[] z_abs;
                 if ( indices != nullptr ) delete[] indices;
-                if ( contents != nullptr ) delete[] contents;
+                // if ( contents != nullptr ) delete[] contents;
                 if ( c != nullptr ) delete[] c;
                 if ( a_t != nullptr ) delete[] a_t;
                 if ( k != nullptr ) delete[] k;
                 if ( n != nullptr ) delete[] n;
                 if ( source != nullptr ) delete[] source;
-
+                
                 // Recalculate NZ and create new z-grid
                 NZ = ( (int)std::floor( ( z_max - z_ground ) / dz ) ) + 1;
+                oss << "Setting dz to " << dz << " m for frequency " << freq << " Hz";
+                info( oss );
+                oss << "Setting NZ to " << NZ; 
+                info( oss );
                 z = NCPA::zeros<double>( NZ );
                 z_abs = NCPA::zeros<double>( NZ );
                 indices = NCPA::zeros<PetscInt>( NZ );
@@ -866,44 +843,27 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             h = dz;
             h2 = h * h;
 
-
-
-
             if ( ( !lossless ) && ( attnfile.length() == 0 ) ) {
                 atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P",
                                                        "RHO", freq );
             }
 
             if ( NR_requested == 0 ) {
-                dr = 340.0 / freq;
+                dr = c0 / (1.5*freq); // default resolution
                 NR = (int)ceil( r_max / dr );
-                // double dr0 = 340.0 / freq;                 // physics-based guess
-                // int steps   = std::max(1, (int)std::ceil(r_max / dr0));
-                // dr = r_max / (double)steps;                // snap so steps*dr = r_max
-                // NR = steps + 1;                            // nodes = steps + 1 (include r=0 and r_max)
             } else {
                 NR = NR_requested;
-                dr = r_max / NR;
-            }
-
-            if ( NR_requested == 0 ) {
-                dr = 340.0 / freq;
-                NR = (int)ceil( r_max / dr );
-                // Quick fix to ensure we hit r_max for all freqs when in broadband mode
-                dr = r_max / NR; 
-            } else {
-                NR = NR_requested;
-                dr = r_max / NR;
             }
             // Increase NR by 1 to account for the boundary and make sure 
             // the range we use for all freqs in broadband mode is r_max
             NR = NR + 1; 
+            dr = r_max / (NR - 1);
+            
 
             if ( !broadband ) {
                 oss << "Setting dr to " << dr << " meters.";
                 info( oss );
             }
-
 
             r     = NCPA::zeros<double>( NR );
             zgi_r = NCPA::zeros<int>( NR );
@@ -911,7 +871,9 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             for ( i = 0; i < NR; i++ ) {
                 r[ i ] = ( (double)( i + 1 ) ) * dr;
             }
+            assert(std::abs(r[NR - 2] - r_max) < 1e-6);
             tl = NCPA::cmatrix( NZ, NR - 1 );
+
 
             // calculate ground impedence (script A in notes in eq. 12)
             double rho0 = atm_profile_2d->get( 0.0, "RHO", z_ground );
@@ -1072,9 +1034,11 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
 
                 hank = sqrt( 2.0 / ( PI * k0 * rr ) )
                      * exp( I * ( k0 * rr - PI / 4.0 ) );
+
                 for ( i = 0; i < NZ; i++ ) {
                     tl[ i ][ ir ] = contents[ i ] * hank;
                 }
+                
                 zgi_r[ ir ] = zr_i;  // constant receiver height
 
                 if ( fmod( rr, 1.0e5 ) < dr && !broadband ) {

@@ -249,7 +249,7 @@ namespace NCPA {
 		std::complex<double> user_ground_impedence;
 		bool user_ground_impedence_found = false;
 		double receiver_range_km, f_min, f_max, f_step; // broadband parameters
-		double c0;
+		double c0, max_cel;
 
 		std::string starter;
 		std::string attnfile;

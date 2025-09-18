@@ -1,4 +1,6 @@
 #include "EPadeBroadbandPropagator.h"
+#include "Atmosphere1D.h"
+
 
 namespace NCPA {
 
@@ -22,25 +24,21 @@ namespace NCPA {
 		std::cout << "Source type: " << source_type << std::endl; 
 		receiver_range_km = param->getFloat( "receiver_range_km" );
 		rr = receiver_range_km * 1000.0; // Convert to meters
-		max_cel = param->getFloat( "max_celerity" ); //340; // @todo: Include this as an optional parameter
+		max_cel = param->getFloat( "max_celerity" );
+
+		// @todo: Need to calculate the carrier celerity 
 		t0 = rr / max_cel;
 
 		EPadeSolver *solver = new EPadeSolver( param );
 		solver->solve( transfer_function );
 		std::cout << "Transfer function calculated." << std::endl;
 
-		// multiply the transfer function by 4*1000*PI to agree with ModBB
-		const double factor = 4.0 * 1000.0 * PI;
+		// scale the transfer function by i / 4*1000*PI to agree with ModBB
+		const double _factor = 4.0 * 1000.0 * PI;
 		for (size_t i = 1; i < Nfreq; i++) {
-			transfer_function[i] = transfer_function[i] / factor;
+			transfer_function[i] = transfer_function[i] / _factor;
 		}
 
-		// // Multiply the transfer function by i (imaginary unit)
-		// for (size_t i = 0; i < Nfreq; i++) {
-		// 	transfer_function[i] *= std::complex<double>(0.0, 1.0);
-		// }
-		// std::cout << "Transfer function multiplied by i." << std::endl;
-		// std::cout << " deleting the solver..." << std::endl;
 		delete solver;
 	}
 
@@ -73,13 +71,6 @@ namespace NCPA {
 		          << receiver_range_km << " km" << std::endl;
 
 		fft_pulse_prop( t0, rr, dft_vec, pulse_vec );
-		// save only the dft_vec to file
-		FILE *test_file;
-		test_file = fopen("test_epape_dft_vec.dat", "w");
-		for (size_t i = 0; i < Nfreq; i++) {
-			fprintf(test_file, "%5.6f %15.6e %15.6e\n", f_vec[i], real(dft_vec[i]), imag(dft_vec[i]));
-		}
-		fclose(test_file);
 
 		 // @todo: Remove this after testing 
 		// output the transfer function to file 
@@ -97,11 +88,13 @@ namespace NCPA {
 		// save propagated pulse to file
 		std::cout << "--> Saving propagated pulse to file: 'waveform.pe'" << std::endl;
 		FILE *f_pulse = fopen("waveform.pe","w");
-		double factor = 2.0;								              
+		double factor = 2.0; // Same factor as in ModBB, but we also implicitly multiply with I to agree with ModBB convention
 		for(size_t i=0; i<NFFT; i++){
 			fprintf(f_pulse,"%10.3f %12.6f %15.6e %15.6e\n", rr/1000.0, 1.0*i/fmx+t0, factor*real(pulse_vec[i]), factor*imag(pulse_vec[i]));
 		}
 		fclose(f_pulse);
+
+
 
 		delete[] arg_vec; 
 		delete[] pulse_vec;
