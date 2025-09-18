@@ -1,5 +1,4 @@
 #include "EPadeBroadbandPropagator.h"
-#include "Atmosphere1D.h"
 
 
 namespace NCPA {
@@ -89,8 +88,9 @@ namespace NCPA {
 		std::cout << "--> Saving propagated pulse to file: 'waveform.pe'" << std::endl;
 		FILE *f_pulse = fopen("waveform.pe","w");
 		double factor = 2.0; // Same factor as in ModBB, but we also implicitly multiply with I to agree with ModBB convention
+		// Note implicit multiplication with I to agree with ModBB convention
 		for(size_t i=0; i<NFFT; i++){
-			fprintf(f_pulse,"%10.3f %12.6f %15.6e %15.6e\n", rr/1000.0, 1.0*i/fmx+t0, factor*real(pulse_vec[i]), factor*imag(pulse_vec[i]));
+			fprintf(f_pulse,"%10.3f %12.6f %15.6e %15.6e\n", rr/1000.0, 1.0*i/fmx+t0, -factor*imag(pulse_vec[i]), factor*real(pulse_vec[i]));
 		}
 		fclose(f_pulse);
 
