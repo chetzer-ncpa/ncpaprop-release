@@ -1659,7 +1659,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
         // profile_index = -1;
         calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
 
-        for ( size_t freqind = 0; freqind < NF; freqind++ ) {
+        for ( size_t freqind = 1; freqind < NF; freqind++ ) {
             freq = f[ freqind ];
 
             // calculate attenuation as a function of frequency if not
