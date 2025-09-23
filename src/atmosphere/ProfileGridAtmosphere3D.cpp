@@ -197,7 +197,8 @@ void NCPA::ProfileGridAtmosphere3D::read_atmosphere_from_file( const std::string
 
 	NCPA::free_matrix_and_contents( profilemat, nx, ny );
 	if (zvec_from_profiles) {
-		delete [] zvec;
+		NCPA::free_array( zvec );
+		// delete [] zvec;
 	}
 }
 
@@ -401,9 +402,12 @@ void NCPA::ProfileGridAtmosphere3D::add_property( const std::string &key, double
 	vector_contents_[ key ] = new NCPA::VectorAtmosphericProperty3D(
 		key, nx, x, ny, y, nz, z, prop, basis->get_range_units(),
 		basis->get_altitude_units(), prop_units );
-	delete [] x;
-	delete [] y;
-	delete [] z;
+	NCPA::free_array( x );
+	NCPA::free_array( y );
+	NCPA::free_array( z );
+	// delete [] x;
+	// delete [] y;
+	// delete [] z;
 }
 
 
@@ -426,8 +430,10 @@ void NCPA::ProfileGridAtmosphere3D::add_property( const std::string &key, double
 
 	scalar_contents_[ key ] = new NCPA::ScalarAtmosphericProperty3D(
 		key, nx, x, ny, y, prop, basis->get_range_units(), units );
-	delete [] x;
-	delete [] y;
+	NCPA::free_array( x );
+	NCPA::free_array( y );
+	// delete [] x;
+	// delete [] y;
 }
 
 
@@ -786,7 +792,8 @@ void NCPA::ProfileGridAtmosphere3D::calculate_attenuation(
 	t_it->second->free_matrix( t );
 	p_it->second->free_matrix( p );
 	d_it->second->free_matrix( d );
-	delete [] z;
+	NCPA::free_array( z );
+	// delete [] z;
 }
 
 
@@ -858,9 +865,12 @@ void NCPA::ProfileGridAtmosphere3D::free_property_template(
 				size_t nx, double *x,
 				size_t ny, double *y,
 				double **prop ) const {
-	NCPA::free_matrix<double>( prop, nx, ny );
-	delete [] x;
-	delete [] y;
+	// NCPA::free_matrix<double>( prop, nx, ny );
+	NCPA::free_array( prop, nx );
+	NCPA::free_array( x );
+	NCPA::free_array( y );
+	// delete [] x;
+	// delete [] y;
 }
 
 void NCPA::ProfileGridAtmosphere3D::free_property_template(
@@ -869,9 +879,12 @@ void NCPA::ProfileGridAtmosphere3D::free_property_template(
 				size_t nz, double *z,
 				double ***prop ) const {
 	NCPA::free_matrix3d<double>( prop, nx, ny, nz );
-	delete [] x;
-	delete [] y;
-	delete [] z;
+	NCPA::free_array( x );
+	NCPA::free_array( y );
+	NCPA::free_array( z );
+	// delete [] x;
+	// delete [] y;
+	// delete [] z;
 }
 
 NCPA::AtmosphericProperty3D *NCPA::ProfileGridAtmosphere3D::get_property(
