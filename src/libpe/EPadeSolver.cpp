@@ -446,7 +446,6 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
             }
         }
     }
-    // z_ground = atm_profile_2d->get( 0.0, "Z0" );
 
     // calculate derived quantities
     // double c0;
@@ -1090,11 +1089,11 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             }
 
             // write broadband body for testing
-            if ( broadband ) {
-                write_broadband_results(
-                    tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ),
-                    calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
-            }
+            // if ( broadband ) {
+            //     write_broadband_results(
+            //         tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ),
+            //         calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
+            // }
 
             if ( write_atmosphere ) {
                 oss << "Writing source atmosphere to "
@@ -1641,11 +1640,11 @@ int NCPA::EPadeSolver::solve_with_topography() {
     }
 
     // write broadband header for testing
-    if ( broadband ) {
-        write_broadband_header(
-            tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ), azi, NAz, f,
-            NF, 1.0e8 );
-    }
+    // if ( broadband ) {
+    //     write_broadband_header(
+    //         tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ), azi, NAz, f,
+    //         NF, 1.0e8 );
+    // }
 
     // freq and calc_az hold the current values of azimuth and frequency,
     // respectively these are used in the output routines, so make sure they
