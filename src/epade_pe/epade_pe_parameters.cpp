@@ -113,7 +113,7 @@ void NCPA::configure_epade_pe_parameter_set( NCPA::ParameterSet *ps ) {
 
 	// Broadband parameters, must specify f_min, f_max and f_step @todo: Implement the sources for ePape
 	ps->addParameter( new NCPA::FlagParameter( "broadband" ) );
-	ps->addParameterDescription( "Modes of Operation", "--broadband", "Calculate at multiple frequencies for a single azimuth. Requires --f_min, --f_max, and f_step, disables --atmosfile2d." );
+	ps->addParameterDescription( "Modes of Operation", "--broadband", "Calculate at multiple frequencies for a single azimuth. Requires --f_min, --f_max, and --f_step. Disables --topo." );
 	ps->addParameter( new NCPA::FloatParameter( "receiver_range_km", 0.0 ) );
 	// ps->addTest( new NCPA::FloatGreaterThanOrEqualToTest( "receiver_range_km", 0.0 ) ); @todo: finish logic such that max_range_km is not required for broadband mode
 	// ps->addTest( new NCPA::RequiredIfOtherIsPresentTest( "receiver_range_km", "broadband" ) ); 
