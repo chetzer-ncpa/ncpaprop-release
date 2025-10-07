@@ -763,7 +763,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             if ( broadband ) {
                 // Calculate frequency-dependent dz
                 double lambda0 = c0 / freq;
-                dz = lambda0 / 10.0;  // Default resolution 
+                dz = lambda0 / 20.0;  // Default resolution 
 
                 std::cout << "lambda0 = " << lambda0 << " m for f = " << freq << " Hz" << std::endl;
                 std::cout << "Initial dz = " << dz << " m" << std::endl;
@@ -771,6 +771,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
                 double factor = std::floor( dz / nearestpow10 );
                 dz = nearestpow10 * factor; // @todo: Snap dz to zr in case it does not divide it exactly (works for ground)
+                // snap dz to zr
             }
 
             // If dz has changed, we need to recreate all variables that depend on dz and/or NZ
@@ -870,7 +871,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             for ( i = 0; i < NR; i++ ) {
                 r[ i ] = ( (double)( i + 1 ) ) * dr;
             }
-            assert(std::abs(r[NR - 2] - r_max) < 1e-6);
+            // assert(std::abs(r[NR - 2] - r_max) < 1e-6);
             tl = NCPA::cmatrix( NZ, NR - 1 );
 
 
@@ -1057,8 +1058,24 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 info( oss );
             }
             if ( broadband && transf != nullptr ) {
-                transf[ freqind ] = tl[ zr_i ][ NR - 2 ];
-                std::cout << "Receiver is at z = " << z[ zr_i ] << ", r = " << r[ NR - 2 ] << std::endl;
+                if ( zr_i == 0 || std::abs(zr - z[zr_i]) < 1e-6 ) {
+                    transf[ freqind ] = tl[ zr_i ][ NR - 2 ];
+                    std::cout << "Receiver is at z = " << z[ zr_i ] << ", z_ri = " << z[ zr_i ] << ", r = " << r[ NR - 2 ] << std::endl;
+                } else {
+                    // we need to interpolate to get the value at the receiver height
+                    // @todo use a local interpolation instead
+                    std::vector<std::complex<double>> temp_rcol(NZ);
+                    for (size_t i = 0; i < NZ; ++i) temp_rcol[i] = tl[i][NR - 2];
+    
+                    std::complex<double> cR;
+    
+                    interpolate_complex(
+                        NZ, z, temp_rcol.data(),
+                        1, &zr, &cR                         // new grid of size 1
+                    );
+                    transf[freqind] = cR;
+                }
+
             }
 
             if ( multiprop ) {
