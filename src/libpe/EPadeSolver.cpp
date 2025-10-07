@@ -519,8 +519,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     // calculate/check z resolution
     dz             = param->getFloat( "dz_m" );
     double lambda0 = c0 / freq;
-    std::cout << "Using c0 = " << c0 << " m/s, freq = " << freq
-              << " Hz, lambda0 = " << lambda0 << " m" << std::endl;
+
     if ( dz <= 0.0 ) {
         dz = lambda0 / 20.0;
         double nearestpow10
@@ -742,39 +741,35 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     // freq and calc_az hold the current values of azimuth and frequency,
     // respectively these are used in the output routines, so make sure they
     // get set correctly whenever you change frequencies and azimuths
+
     for ( size_t azind = 0; azind < NAz; azind++ ) {
         calc_az = azi[ azind ];
-        oss << "Infrasound PE code at f = " << freq << " Hz, azi = " << calc_az
-            << " deg";
-        info( oss );
-
+        
         profile_index = -1;
         calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
         // atm_profile_2d->calculate_wind_component( "_WC_", "_WS_", "_WD_",
         // 	calc_az );
         // atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_",
         // "_WC_" );
-
+        
         for ( size_t freqind = 1; freqind < NF; freqind++ ) {
             freq = f[ freqind ];
+            oss << "Infrasound PE code at f = " << freq << " Hz, azi = " << calc_az << " deg";
+            info( oss );
 
-            // If the broadband mode is enabled, we need to adjust dz based on the frequency 
-            // It is important that dz divides the receiver height exactly 
+            // If the broadband mode is enabled, we need to adjust dz based on the frequency
+            // We use the same auto dz as before and re-initialize arrays if it changes
             if ( broadband ) {
                 // Calculate frequency-dependent dz
                 double lambda0 = c0 / freq;
                 dz = lambda0 / 20.0;  // Default resolution 
 
-                std::cout << "lambda0 = " << lambda0 << " m for f = " << freq << " Hz" << std::endl;
-                std::cout << "Initial dz = " << dz << " m" << std::endl;
                 // Round dz to a reasonable value
                 double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
                 double factor = std::floor( dz / nearestpow10 );
-                dz = nearestpow10 * factor; // @todo: Snap dz to zr in case it does not divide it exactly (works for ground)
-                // snap dz to zr
+                dz = nearestpow10 * factor; 
             }
 
-            // If dz has changed, we need to recreate all variables that depend on dz and/or NZ
             if ( broadband && dz != prev_dz ) {
                 prev_dz = dz; 
                 // Clean up previous arrays that depend on NZ since they need to change size
@@ -792,8 +787,6 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 NZ = ( (int)std::floor( ( z_max - z_ground ) / dz ) ) + 1;
                 oss << "Setting dz to " << dz << " m for frequency " << freq << " Hz";
                 info( oss );
-                oss << "Setting NZ to " << NZ; 
-                info( oss );
                 z = NCPA::zeros<double>( NZ );
                 z_abs = NCPA::zeros<double>( NZ );
                 indices = NCPA::zeros<PetscInt>( NZ );
@@ -807,7 +800,6 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 
                 // Recalculate receiver index
                 zr_i = NCPA::find_closest_index<double>( z, NZ, zr );
-                oss << "Closest z = " << z[zr_i]; 
                 info( oss );
 
                 // Recreate atmosphere parameter arrays
@@ -819,8 +811,10 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
 
                 if ( starter == "self" ) {
                     if ( pointsource ) {
-                        oss << "Generating point source at " << zs << "m";
-                        info( oss );
+                        if ( !broadband ) {
+                            oss << "Generating point source at " << zs << "m";
+                            info( oss );
+                        }
                         make_point_source( NZ, z, zs + z_ground, z_ground, source );
                     } else {
                         oss << "Reading line source from " << linesourcefile;
@@ -849,16 +843,15 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             }
 
             if ( NR_requested == 0 ) {
-                dr = c0 / (1.5*freq); // default resolution
+                dr = c0 / freq; // default resolution
                 NR = (int)ceil( r_max / dr );
             } else {
                 NR = NR_requested;
             }
-            // Increase NR by 1 to account for the boundary and make sure 
-            // the range we use for all freqs in broadband mode is r_max
+            // Increase NR by 1 to account for the boundary 
+            // The receiver will be at idx NR - 2
             NR = NR + 1; 
             dr = r_max / (NR - 1);
-            
 
             if ( !broadband ) {
                 oss << "Setting dr to " << dr << " meters.";
@@ -1058,12 +1051,15 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 info( oss );
             }
             if ( broadband && transf != nullptr ) {
+                    // first remove the density scaling as it is not needed for waveforms
+                    double rho_zrcv = atm_profile_2d->get( r[ NR - 2 ], "RHO",  zr );
+                    // double rho_factor = sqrt(rho_zrcv/rho_zsrc);
+                    double rho_factor = sqrt(rho_zrcv);
                 if ( zr_i == 0 || std::abs(zr - z[zr_i]) < 1e-6 ) {
-                    transf[ freqind ] = tl[ zr_i ][ NR - 2 ];
-                    std::cout << "Receiver is at z = " << z[ zr_i ] << ", z_ri = " << z[ zr_i ] << ", r = " << r[ NR - 2 ] << std::endl;
+                    transf[ freqind ] = tl[ zr_i ][ NR - 2 ] * rho_factor;
                 } else {
                     // we need to interpolate to get the value at the receiver height
-                    // @todo use a local interpolation instead
+                    // @todo should optimize by local interpolation
                     std::vector<std::complex<double>> temp_rcol(NZ);
                     for (size_t i = 0; i < NZ; ++i) temp_rcol[i] = tl[i][NR - 2];
     
@@ -1071,9 +1067,9 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     
                     interpolate_complex(
                         NZ, z, temp_rcol.data(),
-                        1, &zr, &cR                         // new grid of size 1
+                        1, &zr, &cR                
                     );
-                    transf[freqind] = cR;
+                    transf[freqind] = cR * rho_factor;
                 }
 
             }
@@ -3020,7 +3016,7 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
     CHKERRQ( ierr );
 
     // get starter
-    info( "Finding ePade starter coefficients..." );
+    if ( !broadband) ( "Finding ePade starter coefficients..." );
     double r_ref = 2 * PI / k0;
     std::vector<PetscScalar> P, Q;
     std::vector<PetscScalar> taylor1

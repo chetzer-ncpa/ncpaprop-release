@@ -25,15 +25,14 @@ namespace NCPA {
 		rr = receiver_range_km * 1000.0; // Convert to meters
 		max_cel = param->getFloat( "max_celerity" );
 
-		// @todo: Need to calculate the carrier celerity 
 		t0 = rr / max_cel;
 
 		EPadeSolver *solver = new EPadeSolver( param );
 		solver->solve( transfer_function );
 		std::cout << "Transfer function calculated." << std::endl;
 
-		// scale the transfer function by i / 4*1000*PI to agree with ModBB
-		const double _factor = 4.0 * 1000.0 * PI;
+		// scale the transfer function by 1 / 4*1000*PI to agree with ModBB
+		const double _factor = 4000.0 * PI;
 		for (size_t i = 1; i < Nfreq; i++) {
 			transfer_function[i] = transfer_function[i] / _factor;
 		}
@@ -47,7 +46,6 @@ namespace NCPA {
 
 	int EPadeBroadbandPropagator::calculate_waveform() {
 		// Apply the half-hann window to the transfer function as done in ModBB
-		std::cout << "Inside the calculate_waveform method." << std::endl;
 		int smooth_space=(int)floor(0.1*Nfreq); // smoothly zero out on right; as in RW (July 2012)
 
 
@@ -63,11 +61,8 @@ namespace NCPA {
 
 		double fmx = ((double)NFFT)*f_step; // max frequency
 		
-		std::cout << " getting source spectrum..." << std::endl;
   		get_source_spectrum( dft_vec, pulse_vec, arg_vec );
 
-		std::cout << "--> Doing pulse propagation source-to-receiver at one range: " 
-		          << receiver_range_km << " km" << std::endl;
 
 		fft_pulse_prop( t0, rr, dft_vec, pulse_vec );
 
@@ -79,12 +74,8 @@ namespace NCPA {
 			fprintf(f_transf, "%5.6f %15.6e %15.6e\n", f_vec[i], real(transfer_function[i]), imag(transfer_function[i]));
 		}
 		fclose(f_transf);
-		std::cout << "--> Transfer function saved in file: 'transf.pe'" << std::endl;
-		std::cout << "Number of frequencies: " << Nfreq << std::endl;
-		std::cout << "NFFT: " << NFFT << std::endl;
 
-		// @todo: Remove this after testing
-		// save propagated pulse to file
+
 		std::cout << "--> Saving propagated pulse to file: 'waveform.pe'" << std::endl;
 		FILE *f_pulse = fopen("waveform.pe","w");
 		double factor = 2.0; // Same factor as in ModBB, but we also implicitly multiply with I to agree with ModBB convention
