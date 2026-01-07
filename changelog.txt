@@ -1,5 +1,9 @@
 NCPAProp Changelog
 
+2026-01-07:
+Disabled --turnoff_WKB flag in Modess and WMod, made this behavior the default
+Added --use_WKB flag to Modess and WMod
+
 2025-02-20:
 Fixed bug in ePape where in a rare case a square root of a negative number was
 computed and returned NaN; calculation was changed to assume complex values

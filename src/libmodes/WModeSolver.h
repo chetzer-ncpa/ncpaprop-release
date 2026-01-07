@@ -1,5 +1,4 @@
-#ifndef NCPAPROP_WMODESOLVER_H_INCLUDED
-#define NCPAPROP_WMODESOLVER_H_INCLUDED
+#pragma once
 
 #ifndef NCPAPROP_WMOD_FILENAME_1D
 #define NCPAPROP_WMOD_FILENAME_1D "tloss_1d.wnm"
@@ -61,7 +60,3 @@ namespace NCPA {
 	};
 }
 
-
-
-
-#endif

@@ -1,6 +1,8 @@
+#include "WModeSolver.h"
+
 #include "Atmosphere1D.h"
 #include "EigenEngine.h"
-#include "modes.h"
+#include "ModeSolver.h"
 #include "slepceps.h"
 #include "slepcst.h"
 #include "util.h"
@@ -13,8 +15,6 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
-
-#define MAX_MODES 4000
 
 using namespace NCPA;
 using namespace std;
@@ -74,7 +74,8 @@ void NCPA::WModeSolver::setParams( NCPA::ParameterSet *param,
 
     // if (write_phase_speeds || write_2D_TLoss || write_modes
     //     || ( !dispersion_file.empty() )) {
-    //     use_WKB = false;  // don't use WKB least phase speed estim. when saving
+    //     use_WKB = false;  // don't use WKB least phase speed estim. when
+    //     saving
     //                       // any of the above values
     // }
 
@@ -277,11 +278,11 @@ int NCPA::WModeSolver::solve() {
     kd     = new double[ Nz_grid ];
     md     = new double[ Nz_grid ];
     cd     = new double[ Nz_grid ];
-    kH     = new double[ MAX_MODES ];
-    k_s    = new double[ MAX_MODES ];
-    k_pert = new complex<double>[ MAX_MODES ];
-    v      = dmatrix( Nz_grid, MAX_MODES );
-    v_s    = dmatrix( Nz_grid, MAX_MODES );
+    kH     = new double[ NCPAPROP_MAX_MODES ];
+    k_s    = new double[ NCPAPROP_MAX_MODES ];
+    k_pert = new complex<double>[ NCPAPROP_MAX_MODES ];
+    v      = dmatrix( Nz_grid, NCPAPROP_MAX_MODES );
+    v_s    = dmatrix( Nz_grid, NCPAPROP_MAX_MODES );
 
     nev   = 0;
     k_min = 0;
@@ -519,8 +520,8 @@ int NCPA::WModeSolver::solve() {
     delete[] kH;
     delete[] k_s;
     delete[] k_pert;
-    free_dmatrix( v, Nz_grid, MAX_MODES );
-    free_dmatrix( v_s, Nz_grid, MAX_MODES );
+    free_dmatrix( v, Nz_grid, NCPAPROP_MAX_MODES );
+    free_dmatrix( v_s, Nz_grid, NCPAPROP_MAX_MODES );
 
     return 0;
 }
@@ -660,9 +661,9 @@ int NCPA::WModeSolver::getModalTrace( int nz, double z_min,
 
         *k_max = sqrt( kk );  // use this for ground-to-ground 1D Tloss
                               //(uses WKB trick to include only non-vanishing
-                              //modes at the ground)
+                              // modes at the ground)
                               // *k_max = k_max_full;
-    } else {                  // not ground-to-ground propagation
+    } else {                       // not ground-to-ground propagation
         *k_max = omega / ceffmin;  // same as k_max_full
     }
 

@@ -1,8 +1,11 @@
-#ifndef NCPAPROP_MODESOLVER_H_INCLUDED
-#define NCPAPROP_MODESOLVER_H_INCLUDED
+#pragma once
 
 #ifndef NCPAPROP_MODESOLVER_K_DOMAIN_FRACTION
 #  define NCPAPROP_MODESOLVER_K_DOMAIN_FRACTION 0.9
+#endif
+
+#ifndef NCPAPROP_MAX_MODES
+#define NCPAPROP_MAX_MODES 4000
 #endif
 
 #include "Atmosphere1D.h"
@@ -123,5 +126,3 @@ namespace NCPA {
             std::string dispersion_file;
     };
 }  // namespace NCPA
-
-#endif
