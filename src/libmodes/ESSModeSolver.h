@@ -66,7 +66,7 @@ namespace NCPA {
 			double *k_s, double **v_s, int *select_modes );
 		int getModalTrace(int nz, double z_min, double sourceheight, double receiverheight, 
 			double dz, NCPA::Atmosphere1D *p, double admittance, double freq, double azi, 
-			double *diag, double *k_min, double *k_max, bool turnoff_WKB, double *c_eff);
+			double *diag, double *k_min, double *k_max, bool use_WKB, double *c_eff);
 		void getModalStarter(int nz, int select_modes, double dz, double freq,  double z_src, 
 			double z_rcv, double *rho, std::complex<double> *k_pert, double **v_s, 
 			const std::string &modstartfile);
