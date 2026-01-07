@@ -166,7 +166,10 @@ void NCPA::configure_modess_parameter_set( NCPA::ParameterSet *ps ) {
 	ps->addParameterDescription( "Flags", "--Lamb_wave_BC", "Use admittance = -1/2*dln(rho)/dz" );
 
 	ps->addParameter( new NCPA::FlagParameter( "turnoff_WKB" ) );
-	ps->addParameterDescription( "Flags", "--turnoff_WKB", "Turn off the WKB least phase speed estimation" );
+	ps->addParameterDescription( "Flags", "--turnoff_WKB", "Turn off the WKB least phase speed estimation [deprecated; this is now the default]" );
+
+	ps->addParameter( new NCPA::FlagParameter( "use_WKB" ) );
+	ps->addParameterDescription( "Flags", "--use_WKB", "Use the WKB least phase speed estimation" );
 
 	ps->addParameter( new NCPA::FlagParameter( "wvnum_filter" ) );
 	ps->addParameterDescription( "Flags", "--wvnum_filter", "Use wavenumber filter by phase speed.  Requires --c_min and --c_max" );
