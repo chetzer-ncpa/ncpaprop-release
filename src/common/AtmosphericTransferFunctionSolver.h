@@ -1,5 +1,4 @@
-#ifndef NCPAPROP_ATMOSPHERICTRANSFERFUNCTIONSOLVER_H_INCLUDED
-#define NCPAPROP_ATMOSPHERICTRANSFERFUNCTIONSOLVER_H_INCLUDED
+#pragma once
 
 namespace NCPA {
 
@@ -13,9 +12,3 @@ namespace NCPA {
 
 }
 
-
-
-
-
-
-#endif

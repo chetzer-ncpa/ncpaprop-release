@@ -1,15 +1,19 @@
 NCPAProp Changelog
 
-2025-02-20:
+2026-01-07: v2.2.4
+Disabled --turnoff_WKB flag in Modess and WMod, made this behavior the default
+Added --use_WKB flag to Modess and WMod
+
+2025-02-20: v2.2.3
 Fixed bug in ePape where in a rare case a square root of a negative number was
 computed and returned NaN; calculation was changed to assume complex values
 from the beginning.
 
-2025-02-17:
+2025-02-17: v2.2.2
 Modified configure script to clone SLEPc from gitlab rather than
 directly downloading tar file.
 
-2024-06-14:
+2024-06-14: v2.2.1
 Modified ground height selection in ePape to use height at source for first step.
 Changed NULL to nullptr per standard, and PETSC_NULL to PETSC_NULLPTR to stop
   warning messages.

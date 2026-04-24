@@ -1133,6 +1133,7 @@ int NCPA::EPadeSolver::solve_without_topography(
                 keylist.push_back( "P" );
                 keylist.push_back( "_C0_" );
                 keylist.push_back( "_CEFF_" );
+                keylist.push_back( "_ALPHA_" );
                 std::ofstream atmout( tag_filename( "atm_profile.pe" ) );
                 atm_profile_2d->print_atmosphere( keylist, 0.0, "Z", atmout );
                 atmout.close();
@@ -1284,8 +1285,10 @@ int NCPA::EPadeSolver::get_starter_user( std::string filename, int NZ,
     ierr = VecAssemblyEnd( *psi );
     CHKERRQ( ierr );
 
-    delete[] this_z;
-    delete[] this_c;
+    NCPA::free_array( this_z );
+    NCPA::free_array( this_c );
+    // delete[] this_z;
+    // delete[] this_c;
     return 1;
 }
 
@@ -1301,8 +1304,10 @@ void NCPA::EPadeSolver::interpolate_complex( size_t NZ_orig, double *z_orig,
     }
     interpolate_complex( NZ_orig, z_orig, r_orig, i_orig, NZ_new, z_new,
                          c_new );
-    delete[] r_orig;
-    delete[] i_orig;
+    // delete[] r_orig;
+    // delete[] i_orig;
+    NCPA::free_array( r_orig );
+    NCPA::free_array( i_orig );
 }
 
 void NCPA::EPadeSolver::interpolate_complex( size_t NZ_orig, double *z_orig,
@@ -1820,16 +1825,25 @@ int NCPA::EPadeSolver::solve_with_topography() {
                 CHKERRQ( ierr );
 
                 // clean up temp variables
-                delete[] z_starter;
-                delete[] k_starter;
-                delete[] n_starter;
-                delete[] c_starter;
-                delete[] a_starter;
+                // delete[] z_starter;
+                // delete[] k_starter;
+                // delete[] n_starter;
+                // delete[] c_starter;
+                // delete[] a_starter;
+                NCPA::free_array( z_starter );
+                NCPA::free_array( k_starter );
+                NCPA::free_array( n_starter );
+                NCPA::free_array( c_starter );
+                NCPA::free_array( a_starter );
                 NCPA::free_array( source_starter );
-                delete[] starter_indices;
-                delete[] z_indices;
-                delete[] psi_orig;
-                delete[] psi_new;
+                NCPA::free_array( starter_indices );
+                NCPA::free_array( z_indices );
+                NCPA::free_array( psi_orig );
+                NCPA::free_array( psi_new );
+                // delete[] starter_indices;
+                // delete[] z_indices;
+                // delete[] psi_orig;
+                // delete[] psi_new;
                 ierr = MatDestroy( &q_starter );
                 CHKERRQ( ierr );
                 delete_matrix_polynomial( npade + 1, &qpowers_starter );
@@ -2058,8 +2072,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
             }
 
             if (use_turbulence) {
-                delete[] mu_r;
-                delete[] mu_rpdr;
+                // delete[] mu_r;
+                // delete[] mu_rpdr;
+                NCPA::free_array( mu_r );
+                NCPA::free_array( mu_rpdr );
                 cleanup_turbulence();
             }
 
@@ -2205,6 +2221,13 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
             tlt = NCPA::min<double>( c0 / freq, 5000.0 );
         }
         absorption_layer( tlt, z_vec, NZvec, abslayer );
+        if (write_top_layer) {
+            std::ofstream ofs("absorbing_layer.pe", std::ios::out | std::ios::trunc );
+            for (size_t i = 0; i < NZvec; ++i) {
+                ofs << z_vec[i] << " " << abslayer[i] << std::endl;
+            }
+            ofs.close();
+        }
     }
 
     k0 = 2.0 * PI * freq / c0;
@@ -2392,11 +2415,17 @@ int NCPA::EPadeSolver::generate_polymatrices(
         ierr = MatAXPY( *C, Q[ i ], qpowers[ i - 1 ],
                         DIFFERENT_NONZERO_PATTERN );
         CHKERRQ( ierr );
+        // oss << "C." << i << ".debug";
+        // outputSparseMat( *C, NZ, oss.str() );
+        // oss.str("");
     }
     for (i = 1; i < (PetscInt)( P.size() ); i++) {
         ierr = MatAXPY( *B, P[ i ], qpowers[ i - 1 ],
                         DIFFERENT_NONZERO_PATTERN );
         CHKERRQ( ierr );
+        // oss << "B." << i << ".debug";
+        // outputSparseMat( *B, NZ, oss.str() );
+        // oss.str("");
     }
     return 1;
 }
@@ -2489,8 +2518,10 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
             rowDiff[ i ] = rowAbove[ i ] - rowBelow[ i ];
         }
 
-        delete[] rowAbove;
-        delete[] rowBelow;
+        // delete[] rowAbove;
+        // delete[] rowBelow;
+        NCPA::free_array( rowAbove );
+        NCPA::free_array( rowBelow );
         ierr = VecDestroy( &vecAbove );
         CHKERRQ( ierr );
         ierr = VecDestroy( &vecBelow );
@@ -2652,11 +2683,16 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
     ierr = MatAssemblyEnd( *q, MAT_FINAL_ASSEMBLY );
     CHKERRQ( ierr );
 
-    delete[] nonzeros;
-    delete[] indices;
-    delete[] col;
-    delete[] Drow;
-    delete[] rowDiff;
+    // delete[] nonzeros;
+    // delete[] indices;
+    // delete[] col;
+    // delete[] Drow;
+    // delete[] rowDiff;
+    NCPA::free_array( nonzeros );
+    NCPA::free_array( indices );
+    NCPA::free_array( col );
+    NCPA::free_array( Drow );
+    NCPA::free_array( rowDiff );
     return 1;
 }
 
@@ -2985,9 +3021,12 @@ void NCPA::EPadeSolver::read_line_source_from_file(
                           NCPAPROP_EPADE_PE_UNITS_Z, z_orig );
     std::fill( source, source + NZ, std::complex<double> {} );
     interpolate_complex( nvals, z_orig, r_orig, i_orig, NZ, z, source );
-    delete[] z_orig;
-    delete[] r_orig;
-    delete[] i_orig;
+    // delete[] z_orig;
+    // delete[] r_orig;
+    // delete[] i_orig;
+    NCPA::free_array( z_orig );
+    NCPA::free_array( r_orig );
+    NCPA::free_array( i_orig );
 }
 
 int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
@@ -3039,6 +3078,7 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
     CHKERRQ( ierr );
     ierr = VecCopy( rhs, ksi );
     CHKERRQ( ierr );
+    // outputVec( rhs, z, NZ, "ksi.vec" );
 
     // get starter
     if (!broadband) info( "Finding ePade starter coefficients..." );
@@ -3047,14 +3087,29 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
     std::vector<PetscScalar> taylor1
         = taylor_sqrt_1pQ_exp_id_sqrt_1pQ_m1( 2 * npade, k0 * r_ref );
     calculate_pade_coefficients( &taylor1, npade, npade + 1, &P, &Q );
+    // std::cout << "Taylor coefficients:" << std::endl;
+    // for (PetscScalar x: taylor1) {
+    //     std::cout << x << std::endl;
+    // }
+    // std::cout << "P coefficients:" << std::endl;
+    // for (PetscScalar x: P) {
+    //     std::cout << x << std::endl;
+    // }
+    // std::cout << "Q coefficients:" << std::endl;
+    // for (PetscScalar x: Q) {
+    //     std::cout << x << std::endl;
+    // }
 
     generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
+    // outputSparseMat( B, NZ, "B.mat" );
+    // outputSparseMat( C, NZ, "C.mat" );
 
     // Add a factor of 1000 here to change reference distance from 1m to 1km
     PetscScalar hank_inv = 1000.0
                          * pow( sqrt( 2.0 / ( PI * k0 * r_ref ) )
                                     * exp( I * ( k0 * r_ref - PI / 4.0 ) ),
                                 -1.0 );
+    std::cout << "hank_inv = " << hank_inv << std::endl;
 
     // Original Matlab: psi = AA * ( C \ (B * ksi) ) / hank
     // compute product of B and ksi
@@ -3062,6 +3117,7 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
     ierr = VecDuplicate( ksi, &tempvec );
     ierr = VecDuplicate( ksi, psi );
     ierr = MatMult( B, ksi, Bksi );
+    // outputVec( Bksi, z, NZ, "Bksi.vec" );
 
     // solve for tempvec = C \ Bksi
     ierr = KSPCreate( PETSC_COMM_WORLD, &ksp2 );
@@ -3223,8 +3279,10 @@ int NCPA::EPadeSolver::calculate_pade_coefficients(
     for (ii = n; ii < N; ii++) {
         denominator_coefficients->push_back( contents[ ii ] );
     }
-    delete[] contents;
-    delete[] indices;
+    // delete[] contents;
+    // delete[] indices;
+    NCPA::free_array( contents );
+    NCPA::free_array( indices );
 
     // clean up memory
     ierr = KSPDestroy( &ksp );
@@ -3410,7 +3468,8 @@ void NCPA::EPadeSolver::write_broadband_header(
     ofs.write( (char *)buffer, n_f * sizeof( int64_t ) );
     ofs.close();
 
-    delete[] buffer;
+    // delete[] buffer;
+    NCPA::free_array( buffer );
 }
 
 /*
@@ -3492,7 +3551,8 @@ void NCPA::EPadeSolver::write_broadband_results(
         }
     }
     ofs.close();
-    delete[] buffer;
+    NCPA::free_array( buffer );
+    // delete[] buffer;
 }
 
 int NCPA::EPadeSolver::zero_below_ground( Mat *q, int NZ,
@@ -3653,7 +3713,8 @@ void NCPA::EPadeSolver::setup_turbulence( std::vector<double>& rand1,
 }
 
 void NCPA::EPadeSolver::cleanup_turbulence() {
-    delete turbulence;
+    // delete turbulence;
+    NCPA::free_pointer( turbulence );
 
     gsl_vector_free( t_vec1 );
     gsl_vector_free( t_vec_mu );

@@ -21,3 +21,16 @@ bin/gfpe
 src/gfpe/gfpe
 config.status
 docs/NCPA_prop_manual.pdf
+scratch/*
+samples/tloss_1d.pe*
+*.pe
+*.nm
+*.wnm
+.vscode/*
+*.m
+a.out
+samples/*.png
+samples/*.petsc
+samples/*.debug
+samples/*.perl
+samples/*.cpp
