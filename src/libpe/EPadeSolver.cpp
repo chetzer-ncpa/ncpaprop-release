@@ -36,8 +36,8 @@ void NCPA::EPadeSolver::outputVec( Vec& v, double *z, int n,
     std::ofstream out( filename );
     out.precision( 12 );
     VecGetArray( v, &array );
-    for ( int i = 0; i < n; i++ ) {
-        if ( z != nullptr ) {
+    for (int i = 0; i < n; i++) {
+        if (z != nullptr) {
             out << z[ i ] << "  ";
         }
         out << array[ i ].real() << "  " << array[ i ].imag() << std::endl;
@@ -53,9 +53,9 @@ void NCPA::EPadeSolver::outputSparseMat( Mat& m, size_t nrows,
     const PetscScalar *vals;
     std::ofstream out( filename );
     out << nrows << std::endl;
-    for ( size_t i = 0; i < nrows; i++ ) {
+    for (size_t i = 0; i < nrows; i++) {
         MatGetRow( m, (PetscInt)i, &ncols, &cols, &vals );
-        for ( PetscInt j = 0; j < ncols; j++ ) {
+        for (PetscInt j = 0; j < ncols; j++) {
             out << i << " " << cols[ j ] << " " << vals[ j ].real() << " "
                 << vals[ j ].imag() << std::endl;
         }
@@ -65,7 +65,7 @@ void NCPA::EPadeSolver::outputSparseMat( Mat& m, size_t nrows,
 }
 
 void NCPA::EPadeSolver::info( const std::string& output, std::ostream& os ) {
-    if ( verbose ) {
+    if (verbose) {
         os << output << std::endl;
     }
 }
@@ -85,7 +85,7 @@ void NCPA::EPadeSolver::error( std::ostringstream& oss ) {
 }
 
 void NCPA::EPadeSolver::warn( const std::string& output, std::ostream& os ) {
-    if ( !ignore_warnings ) {
+    if (!ignore_warnings) {
         os << output << std::endl
            << "To suppress this warning, re-run with --ignore_warnings flag."
            << std::endl;
@@ -197,9 +197,9 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
     // obtain the parameter values from the user's options
     // @todo add units to input scalar quantities
-    r_max = param->getFloat( "maxrange_km" ) * 1000.0;
-    z_max = param->getFloat( "maxheight_km" )
-          * 1000.0;  // @todo fix elsewhere that m is required
+    r_max             = param->getFloat( "maxrange_km" ) * 1000.0;
+    z_max             = param->getFloat( "maxheight_km" )
+                      * 1000.0;  // @todo fix elsewhere that m is required
     zs                = param->getFloat( "sourceheight_km" ) * 1000.0;
     zr                = param->getFloat( "receiverheight_km" ) * 1000.0;
     NR_requested      = param->getInteger( "Nrng_steps" );
@@ -210,12 +210,12 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     user_starter_file = param->getString( "starterfile" );
     topofile          = param->getString( "topofile" );
     user_tag          = param->getString( "filetag" );
-    if ( user_tag.size() > 0 ) {
+    if (user_tag.size() > 0) {
         user_tag += ".";
     }
     top_layer_thickness_m = param->getFloat( "top_layer_thickness_m" );
     linesourcefile        = param->getString( "linesourcefile" );
-    if ( linesourcefile.size() > 0 ) {
+    if (linesourcefile.size() > 0) {
         pointsource = false;
     }
 
@@ -234,22 +234,22 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     verbose                = !( param->wasFound( "quiet" ) );
     warn_on_error          = param->wasFound( "warn_on_error" );
     ignore_warnings        = param->wasFound( "ignore_warnings" );
-    broadband             = param->wasFound( "broadband" );
+    broadband              = param->wasFound( "broadband" );
 
 
     // Handle differences based on single vs multiprop
     double min_az, max_az, step_az;
-    if ( multiprop ) {
-        if ( use_atm_2d ) {
+    if (multiprop) {
+        if (use_atm_2d) {
             error( "Range-dependent 2-D atmosphere incompatible with "
                    "multiple azimuth propagation" );
         }
-        if ( write2d ) {
+        if (write2d) {
             info( "Multi-azimuth propagation requested, disabling "
                   "2-D output" );
             write2d = false;
         }
-        if ( use_topo ) {
+        if (use_topo) {
             info( "Multi-azimuth propagation requested, disabling "
                   "topography flag" );
             use_topo = false;
@@ -259,7 +259,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
         step_az = param->getFloat( "azimuth_step" );
 
         // set up azimuth vector
-        while ( min_az > max_az ) {
+        while (min_az > max_az) {
             // crossover the zero azimuth point
             min_az -= 360.0;
         }
@@ -280,16 +280,16 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
         step_az = 0;
     }
     azi = NCPA::zeros<double>( NAz );
-    for ( size_t i = 0; i < NAz; i++ ) {
+    for (size_t i = 0; i < NAz; i++) {
         azi[ i ] = min_az + i * step_az;
     }
 
-    if ( broadband ) {
-        if ( write2d ) {
+    if (broadband) {
+        if (write2d) {
             info( "Broadband propagation requested, disabling 2-D output" );
             write2d = false;
         }
-        if ( use_topo ) {
+        if (use_topo) {
             info(
                 "Broadband propagation requested, disabling topography flag" );
             use_topo = false;
@@ -297,22 +297,22 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
         receiver_range_km = param->getFloat( "receiver_range_km" );
         // Default to r_max if not specified
-        if ( receiver_range_km > 0.0 ) {
-            r_max = receiver_range_km * 1000.0; 
+        if (receiver_range_km > 0.0) {
+            r_max = receiver_range_km * 1000.0;
         }
-        f_min  = param->getFloat( "f_min" );
-        f_step = param->getFloat( "f_step" );
-        f_max  = param->getFloat( "f_max" );
-        source_type = param->getString( "source" ); 
-        max_cel = param->getFloat("max_celerity");
+        f_min       = param->getFloat( "f_min" );
+        f_step      = param->getFloat( "f_step" );
+        f_max       = param->getFloat( "f_max" );
+        source_type = param->getString( "source" );
+        max_cel     = param->getFloat( "max_celerity" );
 
         oss << "Using broadband propagation with f_min = " << f_min
             << ", f_step = " << f_step << ", f_max = " << f_max;
         info( oss );
 
         // sanity checks
-        if ( f_min >= f_max ) {
-            if ( warn_on_error ) {
+        if (f_min >= f_max) {
+            if (warn_on_error) {
                 warn( "f_min must be less than f_max, swapping" );
                 std::swap( f_min, f_max );
             } else {
@@ -320,30 +320,31 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
             }
         }
 
-        NF = (size_t)( std::floor( ( f_max - f_min ) / f_step ) ) + 2; 
+        NF = (size_t)( std::floor( ( f_max - f_min ) / f_step ) ) + 2;
         // Note: The DC is included in f[0], but skipped in the propagation
         f  = NCPA::zeros<double>( NF );
-        for ( size_t fi = 1; fi < NF; fi++ ) {
-            f[ fi ] = f_min + ( (double)fi - 1) * f_step;
+        for (size_t fi = 1; fi < NF; fi++) {
+            f[ fi ] = f_min + ( (double)fi - 1 ) * f_step;
         }
-        freq = f_max/5; // Use f_max/5 to calculate default z resolution @todo: Check if this assumption is valid 
+        freq = f_max / 5;  // Use f_max/5 to calculate default z resolution
+                           // @todo: Check if this assumption is valid
     } else {
         freq   = param->getFloat( "freq" );
         f      = NCPA::zeros<double>( 2 );
         f[ 1 ] = freq;
-        NF     = 2; // DC + freq
+        NF     = 2;  // DC + freq
     }
 
-    if ( starter == "user" && user_starter_file.size() == 0 ) {
+    if (starter == "user" && user_starter_file.size() == 0) {
         error( "User starter requested but no starter file specified!" );
     }
 
     // NCPA::Atmosphere1D *atm_profile_1d;
-    if ( use_atm_1d ) {
+    if (use_atm_1d) {
         atm_profile_2d = new NCPA::StratifiedAtmosphere2D(
             param->getString( "atmosfile" ),
             param->getString( "atmosheaderfile" ) );
-    } else if ( use_atm_2d ) {
+    } else if (use_atm_2d) {
         atm_profile_2d = new NCPA::ProfileSeriesAtmosphere2D(
             param->getString( "atmosfile2d" ),
             param->getString( "atmosheaderfile" ) );
@@ -352,7 +353,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
                "or --atmosfile2d" );
     }
     atm_profile_2d->convert_range_units( NCPAPROP_EPADE_PE_UNITS_R );
-    if ( r_max > atm_profile_2d->get_maximum_valid_range() ) {
+    if (r_max > atm_profile_2d->get_maximum_valid_range()) {
         atm_profile_2d->set_maximum_valid_range( r_max );
     }
 
@@ -361,13 +362,13 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
     // Ground height is treated differently depending on whether we're
     // using topography or not
-    if ( use_topo ) {
+    if (use_topo) {
         // first, do we get topography from a file?
-        if ( topofile.size() > 0 ) {
+        if (topofile.size() > 0) {
             atm_profile_2d->remove_property( "Z0" );
             atm_profile_2d->read_elevation_from_file( topofile );
             z_ground_specified = true;
-        } else if ( param->wasFound( "groundheight_km" ) ) {
+        } else if (param->wasFound( "groundheight_km" )) {
             z_ground           = param->getFloat( "groundheight_km" ) * 1000.0;
             z_ground_specified = true;
             oss << "Overriding profile Z0 value with command-line value "
@@ -383,7 +384,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
         z_ground = atm_profile_2d->get_interpolated_ground_elevation( 0.0 );
     } else {
         // constant elevation
-        if ( param->wasFound( "groundheight_km" ) ) {
+        if (param->wasFound( "groundheight_km" )) {
             z_ground           = param->getFloat( "groundheight_km" ) * 1000.0;
             z_ground_specified = true;
             oss << "Overriding profile Z0 value with command-line value "
@@ -393,7 +394,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
             atm_profile_2d->add_property( "Z0", z_ground,
                                           NCPAPROP_EPADE_PE_UNITS_Z );
         } else {
-            if ( !( atm_profile_2d->contains_scalar( 0, "Z0" ) ) ) {
+            if (!( atm_profile_2d->contains_scalar( 0, "Z0" ) )) {
                 z_ground = atm_profile_2d->get_minimum_altitude( 0.0 );
                 atm_profile_2d->add_property(
                     "Z0", z_ground,
@@ -410,35 +411,35 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
 
     // set units
-    if ( atm_profile_2d->contains_vector( 0, "U" ) ) {
+    if (atm_profile_2d->contains_vector( 0, "U" )) {
         atm_profile_2d->convert_property_units( "U",
                                                 NCPAPROP_EPADE_PE_UNITS_U );
     }
-    if ( atm_profile_2d->contains_vector( 0, "V" ) ) {
+    if (atm_profile_2d->contains_vector( 0, "V" )) {
         atm_profile_2d->convert_property_units( "V",
                                                 NCPAPROP_EPADE_PE_UNITS_V );
     }
-    if ( atm_profile_2d->contains_vector( 0, "T" ) ) {
+    if (atm_profile_2d->contains_vector( 0, "T" )) {
         atm_profile_2d->convert_property_units( "T",
                                                 NCPAPROP_EPADE_PE_UNITS_T );
     }
-    if ( atm_profile_2d->contains_vector( 0, "P" ) ) {
+    if (atm_profile_2d->contains_vector( 0, "P" )) {
         atm_profile_2d->convert_property_units( "P",
                                                 NCPAPROP_EPADE_PE_UNITS_P );
     }
 
     // need density
-    if ( atm_profile_2d->contains_vector( 0, "RHO" ) ) {
+    if (atm_profile_2d->contains_vector( 0, "RHO" )) {
         atm_profile_2d->convert_property_units( "RHO",
                                                 NCPAPROP_EPADE_PE_UNITS_RHO );
     } else {
         info(
             "No density provided, calculating from temperature and pressure" );
-        for ( std::vector<NCPA::Atmosphere1D *>::iterator it
-              = atm_profile_2d->first_profile();
-              it != atm_profile_2d->last_profile(); ++it ) {
-            if ( ( *it )->contains_vector( "T" )
-                 && ( *it )->contains_vector( "P" ) ) {
+        for (std::vector<NCPA::Atmosphere1D *>::iterator it
+             = atm_profile_2d->first_profile();
+             it != atm_profile_2d->last_profile(); ++it) {
+            if (( *it )->contains_vector( "T" )
+                && ( *it )->contains_vector( "P" )) {
                 ( *it )->calculate_density_from_temperature_and_pressure(
                     "RHO", "T", "P", NCPAPROP_EPADE_PE_UNITS_RHO );
             } else {
@@ -449,24 +450,24 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
 
     // calculate derived quantities
     // double c0;
-    for ( std::vector<NCPA::Atmosphere1D *>::iterator it
-          = atm_profile_2d->first_profile();
-          it != atm_profile_2d->last_profile(); ++it ) {
-        if ( ( *it )->contains_vector( "C0" ) ) {
+    for (std::vector<NCPA::Atmosphere1D *>::iterator it
+         = atm_profile_2d->first_profile();
+         it != atm_profile_2d->last_profile(); ++it) {
+        if (( *it )->contains_vector( "C0" )) {
             ( *it )->convert_property_units( "C0", NCPAPROP_EPADE_PE_UNITS_C );
             ( *it )->copy_vector_property( "C0", "_C0_" );
             c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
         } else {
-            if ( ( *it )->contains_vector( "P" )
-                 && ( *it )->contains_vector( "RHO" ) ) {
+            if (( *it )->contains_vector( "P" )
+                && ( *it )->contains_vector( "RHO" )) {
                 ( *it )->calculate_sound_speed_from_pressure_and_density(
                     "_C0_", "P", "RHO", NCPAPROP_EPADE_PE_UNITS_C );
                 c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-            } else if ( ( *it )->contains_vector( "T" ) ) {
+            } else if (( *it )->contains_vector( "T" )) {
                 ( *it )->calculate_sound_speed_from_temperature(
                     "_C0_", "T", NCPAPROP_EPADE_PE_UNITS_C );
                 c0 = atm_profile_2d->get( 0.0, "_C0_", z_ground );
-            } else if ( ( *it )->contains_vector( "CEFF" ) ) {
+            } else if (( *it )->contains_vector( "CEFF" )) {
                 c0 = atm_profile_2d->get( 0.0, "CEFF", z_ground );
             } else {
                 error(
@@ -477,34 +478,34 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     }
 
     // wind speed
-    if ( atm_profile_2d->contains_vector( 0, "WS" ) ) {
+    if (atm_profile_2d->contains_vector( 0, "WS" )) {
         atm_profile_2d->convert_property_units( "WS",
                                                 NCPAPROP_EPADE_PE_UNITS_U );
         atm_profile_2d->copy_vector_property( "WS", "_WS_" );
-    } else if ( atm_profile_2d->contains_vector( 0, "U" )
-                && atm_profile_2d->contains_vector( 0, "V" ) ) {
+    } else if (atm_profile_2d->contains_vector( 0, "U" )
+               && atm_profile_2d->contains_vector( 0, "V" )) {
         atm_profile_2d->calculate_wind_speed( "_WS_", "U", "V" );
     }
 
     // wind direction
-    if ( atm_profile_2d->contains_vector( 0, "WD" ) ) {
+    if (atm_profile_2d->contains_vector( 0, "WD" )) {
         atm_profile_2d->convert_property_units(
             "WD", NCPA::UNITS_DIRECTION_DEGREES_CLOCKWISE_FROM_NORTH );
         atm_profile_2d->copy_vector_property( "WD", "_WD_" );
-    } else if ( atm_profile_2d->contains_vector( 0, "U" )
-                && atm_profile_2d->contains_vector( 0, "V" ) ) {
+    } else if (atm_profile_2d->contains_vector( 0, "U" )
+               && atm_profile_2d->contains_vector( 0, "V" )) {
         atm_profile_2d->calculate_wind_direction( "_WD_", "U", "V" );
     }
 
     // attenuation
-    if ( attnfile.size() > 0 ) {
+    if (attnfile.size() > 0) {
         atm_profile_2d->read_attenuation_from_file(
             "_ALPHA_", param->getString( "attnfile" ) );
     } else {
-        if ( !( atm_profile_2d->contains_vector( 0.0, "T" )
-                && atm_profile_2d->contains_vector( 0.0, "P" )
-                && atm_profile_2d->contains_vector( 0.0, "RHO" ) ) ) {
-            if ( warn_on_error ) {
+        if (!( atm_profile_2d->contains_vector( 0.0, "T" )
+               && atm_profile_2d->contains_vector( 0.0, "P" )
+               && atm_profile_2d->contains_vector( 0.0, "RHO" ) )) {
+            if (warn_on_error) {
                 warn( "At least one of T, P, or RHO is absent, switching "
                       "to lossless propagation" );
                 lossless = true;
@@ -520,7 +521,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     dz             = param->getFloat( "dz_m" );
     double lambda0 = c0 / freq;
 
-    if ( dz <= 0.0 ) {
+    if (dz <= 0.0) {
         dz = lambda0 / 20.0;
         double nearestpow10
             = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
@@ -530,8 +531,8 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
         info( oss.str() );
         oss.str( "" );
     }
-    if ( dz > ( lambda0 / 10.0 ) ) {
-        if ( warn_on_error ) {
+    if (dz > ( lambda0 / 10.0 )) {
+        if (warn_on_error) {
             oss << "Altitude resolution of " << dz
                 << " meters is too course, setting to " << lambda0 / 10.0
                 << " meters.";
@@ -545,8 +546,8 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     }
 
     // calculate ground impedence
-    if ( param->wasFound( "ground_impedence_real" )
-         || param->wasFound( "ground_impedence_imag" ) ) {
+    if (param->wasFound( "ground_impedence_real" )
+        || param->wasFound( "ground_impedence_imag" )) {
         user_ground_impedence.real(
             param->getFloat( "ground_impedence_real" ) );
         user_ground_impedence.imag(
@@ -558,7 +559,7 @@ NCPA::EPadeSolver::EPadeSolver( NCPA::ParameterSet *param ) {
     use_turbulence    = param->wasFound( "turbulence" );
     turbulence_size   = (size_t)( param->getInteger( "n_turbulence" ) );
     random_turbulence = !( param->wasFound( "turbulence_file" ) );
-    if ( !random_turbulence )
+    if (!random_turbulence)
         turbulence_file = param->getString( "turbulence_file" );
     Lt                 = param->getFloat( "turbulence_scale_m" );
     temperature_factor = param->getFloat( "turbulence_t_factor" );
@@ -579,7 +580,7 @@ NCPA::EPadeSolver::~EPadeSolver() {
 }
 
 int NCPA::EPadeSolver::solve() {
-    if ( use_topo ) {
+    if (use_topo) {
         return solve_with_topography();
     } else {
         return solve_without_topography();
@@ -595,7 +596,8 @@ int NCPA::EPadeSolver::solve( std::complex<double> *transf ) {
     }
 }
 
-int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) {
+int NCPA::EPadeSolver::solve_without_topography(
+    std::complex<double> *transf ) {
     size_t i;
     std::complex<double> I( 0.0, 1.0 );
     PetscErrorCode ierr;
@@ -624,22 +626,22 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     std::complex<double> ground_impedence_factor( 0.0, 0.0 );
 
     // truncate multiprop file if needed
-    if ( write2d ) {
+    if (write2d) {
         std::ofstream ofs( tag_filename( NCPAPROP_EPADE_PE_FILENAME_2D ),
                            std::ofstream::out | std::ofstream::trunc );
         ofs.close();
     }
 
     // truncate 1-D if necessary
-    if ( broadband ) {
+    if (broadband) {
         std::ofstream ofs( tag_filename( NCPAPROP_EPADE_PE_FILENAME_1D ),
                            std::ofstream::out | std::ofstream::trunc );
         ofs.close();
     }
 
     atm_profile_2d->get_minimum_altitude_limits( minlimit, z_min );
-    if ( z_ground < z_min ) {
-        if ( warn_on_error ) {
+    if (z_ground < z_min) {
+        if (warn_on_error) {
             oss << "Supplied ground height " << z_ground
                 << " meters is outside of atmospheric "
                    "specification, setting to "
@@ -660,35 +662,35 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     z        = NCPA::zeros<double>( NZ );
     z_abs    = NCPA::zeros<double>( NZ );
     indices  = NCPA::zeros<PetscInt>( NZ );
-    for ( i = 0; i < NZ; i++ ) {
+    for (i = 0; i < NZ; i++) {
         z[ i ]       = ( (double)i ) * dz;
         z_abs[ i ]   = z[ i ] + z_ground;
         indices[ i ] = i;
     }
     size_t zr_i = NCPA::find_closest_index<double>( z, NZ, zr );
 
-    if ( use_turbulence ) {
-        if ( !random_turbulence ) {
+    if (use_turbulence) {
+        if (!random_turbulence) {
             oss << "Reading " << 2 * turbulence_size << " values from "
                 << turbulence_file;
             info( oss );
 
             std::ifstream rand_in( turbulence_file );
-            if ( !rand_in.good() ) {
+            if (!rand_in.good()) {
                 oss << "Error opening " << turbulence_file;
                 error( oss );
             }
             rand1.reserve( turbulence_size );
-            for ( i = 0; i < turbulence_size; i++ ) {
+            for (i = 0; i < turbulence_size; i++) {
                 rand_in >> rand1[ i ];
-                if ( !rand_in.good() ) {
+                if (!rand_in.good()) {
                     oss << "Error reading turbulence numbers from "
                         << turbulence_file;
                     error( oss );
                 }
             }
             rand2.reserve( turbulence_size );
-            for ( i = 0; i < turbulence_size; i++ ) {
+            for (i = 0; i < turbulence_size; i++) {
                 rand_in >> rand2[ i ];
             }
             rand_in.close();
@@ -701,16 +703,17 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     double dr;
 
     // set up for source atmosphere
-    double k0 = 0.0; //, c0 = 0.0; --> c0 is the reference ceff as default to calculate dz in the frequency loop
-    double prev_dz = dz; // Store previous dz for potential reuse
+    double k0 = 0.0;  //, c0 = 0.0; --> c0 is the reference ceff as default to
+                      //calculate dz in the frequency loop
+    double prev_dz          = dz;  // Store previous dz for potential reuse
     double *c               = NCPA::zeros<double>( NZ );
     double *a_t             = NCPA::zeros<double>( NZ );
     std::complex<double> *k = NCPA::zeros<std::complex<double>>( NZ );
     std::complex<double> *n = NCPA::zeros<std::complex<double>>( NZ );
 
     std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
-    if ( starter == "self" ) {
-        if ( pointsource ) {
+    if (starter == "self") {
+        if (pointsource) {
             oss << "Generating point source at " << zs << "m";
             info( oss );
             make_point_source( NZ, z, zs, 0.0, source );
@@ -722,7 +725,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
         }
 
         // output source file for checking
-        if ( _write_source_function ) {
+        if (_write_source_function) {
             oss << "Writing source function to "
                 << tag_filename( NCPAPROP_EPADE_PE_FILENAME_SOURCE );
             info( oss );
@@ -734,126 +737,133 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     // write broadband header for testing
     // if ( broadband ) {
     //     write_broadband_header(
-    //         tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ), azi, NAz, f,
-    //         NF, 1.0e8 );
+    //         tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ), azi, NAz,
+    //         f, NF, 1.0e8 );
     // }
 
     // freq and calc_az hold the current values of azimuth and frequency,
     // respectively these are used in the output routines, so make sure they
     // get set correctly whenever you change frequencies and azimuths
 
-    for ( size_t azind = 0; azind < NAz; azind++ ) {
+    for (size_t azind = 0; azind < NAz; azind++) {
         calc_az = azi[ azind ];
-        
+
         profile_index = -1;
         calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
         // atm_profile_2d->calculate_wind_component( "_WC_", "_WS_", "_WD_",
         // 	calc_az );
         // atm_profile_2d->calculate_effective_sound_speed( "_CEFF_", "_C0_",
         // "_WC_" );
-        
-        for ( size_t freqind = 1; freqind < NF; freqind++ ) {
+
+        for (size_t freqind = 1; freqind < NF; freqind++) {
             freq = f[ freqind ];
-            oss << "Infrasound PE code at f = " << freq << " Hz, azi = " << calc_az << " deg";
+            oss << "Infrasound PE code at f = " << freq
+                << " Hz, azi = " << calc_az << " deg";
             info( oss );
 
-            // If the broadband mode is enabled, we need to adjust dz based on the frequency
-            // We use the same auto dz as before and re-initialize arrays if it changes
-            if ( broadband ) {
+            // If the broadband mode is enabled, we need to adjust dz based on
+            // the frequency We use the same auto dz as before and
+            // re-initialize arrays if it changes
+            if (broadband) {
                 // Calculate frequency-dependent dz
                 double lambda0 = c0 / freq;
-                dz = lambda0 / 20.0;  // Default resolution 
+                dz             = lambda0 / 20.0;  // Default resolution
 
                 // Round dz to a reasonable value
-                double nearestpow10 = std::pow( 10.0, (double)std::floor( (double)std::log10( dz ) ) );
+                double nearestpow10 = std::pow(
+                    10.0, (double)std::floor( (double)std::log10( dz ) ) );
                 double factor = std::floor( dz / nearestpow10 );
-                dz = nearestpow10 * factor; 
+                dz            = nearestpow10 * factor;
             }
 
-            if ( broadband && dz != prev_dz ) {
-                prev_dz = dz; 
-                // Clean up previous arrays that depend on NZ since they need to change size
-                if ( z != nullptr ) delete[] z;
-                if ( z_abs != nullptr ) delete[] z_abs;
-                if ( indices != nullptr ) delete[] indices;
+            if (broadband && dz != prev_dz) {
+                prev_dz = dz;
+                // Clean up previous arrays that depend on NZ since they need
+                // to change size
+                if (z != nullptr) delete[] z;
+                if (z_abs != nullptr) delete[] z_abs;
+                if (indices != nullptr) delete[] indices;
                 // if ( contents != nullptr ) delete[] contents;
-                if ( c != nullptr ) delete[] c;
-                if ( a_t != nullptr ) delete[] a_t;
-                if ( k != nullptr ) delete[] k;
-                if ( n != nullptr ) delete[] n;
-                if ( source != nullptr ) delete[] source;
-                
+                if (c != nullptr) delete[] c;
+                if (a_t != nullptr) delete[] a_t;
+                if (k != nullptr) delete[] k;
+                if (n != nullptr) delete[] n;
+                if (source != nullptr) delete[] source;
+
                 // Recalculate NZ and create new z-grid
                 NZ = ( (int)std::floor( ( z_max - z_ground ) / dz ) ) + 1;
-                oss << "Setting dz to " << dz << " m for frequency " << freq << " Hz";
+                oss << "Setting dz to " << dz << " m for frequency " << freq
+                    << " Hz";
                 info( oss );
-                z = NCPA::zeros<double>( NZ );
-                z_abs = NCPA::zeros<double>( NZ );
+                z       = NCPA::zeros<double>( NZ );
+                z_abs   = NCPA::zeros<double>( NZ );
                 indices = NCPA::zeros<PetscInt>( NZ );
                 // contents = NCPA::zeros<PetscScalar>( NZ );
-                
-                for ( i = 0; i < NZ; i++ ) {
+
+                for (i = 0; i < NZ; i++) {
                     z[ i ]       = ( (double)i ) * dz;
                     z_abs[ i ]   = z[ i ] + z_ground;
                     indices[ i ] = i;
                 }
-                
+
                 // Recalculate receiver index
                 zr_i = NCPA::find_closest_index<double>( z, NZ, zr );
                 info( oss );
 
                 // Recreate atmosphere parameter arrays
-                c = NCPA::zeros<double>( NZ );
-                a_t = NCPA::zeros<double>( NZ );
-                k = NCPA::zeros<std::complex<double>>( NZ );
-                n = NCPA::zeros<std::complex<double>>( NZ );
+                c      = NCPA::zeros<double>( NZ );
+                a_t    = NCPA::zeros<double>( NZ );
+                k      = NCPA::zeros<std::complex<double>>( NZ );
+                n      = NCPA::zeros<std::complex<double>>( NZ );
                 source = NCPA::zeros<std::complex<double>>( NZ );
 
-                if ( starter == "self" ) {
-                    if ( pointsource ) {
-                        if ( !broadband ) {
+                if (starter == "self") {
+                    if (pointsource) {
+                        if (!broadband) {
                             oss << "Generating point source at " << zs << "m";
                             info( oss );
                         }
-                        make_point_source( NZ, z, zs + z_ground, z_ground, source );
+                        make_point_source( NZ, z, zs + z_ground, z_ground,
+                                           source );
                     } else {
                         oss << "Reading line source from " << linesourcefile;
                         info( oss );
-                        read_line_source_from_file( NZ, z, z_ground, linesourcefile,
-                                                    source );
+                        read_line_source_from_file( NZ, z, z_ground,
+                                                    linesourcefile, source );
                     }
 
                     // output source file for checking
-                    if ( _write_source_function ) {
+                    if (_write_source_function) {
                         oss << "Writing source function to "
-                            << tag_filename( NCPAPROP_EPADE_PE_FILENAME_SOURCE );
+                            << tag_filename(
+                                   NCPAPROP_EPADE_PE_FILENAME_SOURCE );
                         info( oss );
-                        write_source( tag_filename( NCPAPROP_EPADE_PE_FILENAME_SOURCE ),
-                                    source, z, NZ );
+                        write_source(
+                            tag_filename( NCPAPROP_EPADE_PE_FILENAME_SOURCE ),
+                            source, z, NZ );
                     }
                 }
-
             }
-            h = dz;
+            h  = dz;
             h2 = h * h;
 
-            if ( ( !lossless ) && ( attnfile.length() == 0 ) ) {
+            if (( !lossless ) && ( attnfile.length() == 0 )) {
                 atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P",
                                                        "RHO", freq );
             }
 
-            if ( NR_requested == 0 ) {
-                dr = c0 / freq; // default resolution
+            if (NR_requested == 0) {
+                dr = c0 / freq;  // default resolution
                 NR = (int)ceil( r_max / dr );
             } else {
                 NR = NR_requested;
             }
-            // Increase NR by 1 to account for the boundary 
+            // Increase NR by 1 to account for the boundary
             // The receiver will be at idx NR - 2
-            NR = NR + 1; 
-            dr = r_max / (NR - 1);
+            NR = NR + 1;
+            dr = r_max / ( NR - 1 );
 
-            if ( !broadband ) {
+            if (!broadband) {
                 oss << "Setting dr to " << dr << " meters.";
                 info( oss );
             }
@@ -861,7 +871,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             r     = NCPA::zeros<double>( NR );
             zgi_r = NCPA::zeros<int>( NR );
 
-            for ( i = 0; i < NR; i++ ) {
+            for (i = 0; i < NR; i++) {
                 r[ i ] = ( (double)( i + 1 ) ) * dr;
             }
             // assert(std::abs(r[NR - 2] - r_max) < 1e-6);
@@ -874,11 +884,11 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 = atm_profile_2d->get_first_derivative( 0.0, "RHO", z_ground )
                 / ( 2.0 * rho0 );
             // lambBC = 0.0;
-            if ( user_ground_impedence_found ) {
+            if (user_ground_impedence_found) {
                 ground_impedence_factor
                     = I * 2.0 * PI * freq * rho0 / user_ground_impedence
                     + lambBC;
-                if ( !broadband ) {
+                if (!broadband) {
                     oss << "Using user ground impedence of "
                         << user_ground_impedence;
                     info( oss );
@@ -886,7 +896,8 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             } else {
                 ground_impedence_factor.real( lambBC );
                 ground_impedence_factor.imag( 0.0 );
-                if ( !broadband ) info( "Using default rigid ground with Lamb BC" );
+                if (!broadband)
+                    info( "Using default rigid ground with Lamb BC" );
             }
 
             calculate_atmosphere_parameters(
@@ -894,7 +905,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 freq, use_topo, k0, c0, c, a_t, k, n );
 
             // calculate turbulence
-            if ( use_turbulence ) {
+            if (use_turbulence) {
                 mu_r    = NCPA::zeros<double>( NZ );
                 mu_rpdr = NCPA::zeros<double>( NZ );
                 setup_turbulence( rand1, rand2 );
@@ -909,7 +920,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             ierr = MatDestroy( &q );
             CHKERRQ( ierr );
 
-            if ( starter == "self" ) {
+            if (starter == "self") {
                 Mat q_starter;
                 build_operator_matrix_without_topography(
                     NZ, z, k0, h2, ground_impedence_factor, n, npade + 1, 0,
@@ -923,17 +934,17 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
 
                 ierr = MatDestroy( &q_starter );
                 CHKERRQ( ierr );
-            } else if ( starter == "gaussian" ) {
+            } else if (starter == "gaussian") {
                 qpowers_starter = qpowers;
                 get_starter_gaussian( NZ, z, zs, k0, ground_index, &psi_o );
-            } else if ( starter == "user" ) {
+            } else if (starter == "user") {
                 get_starter_user( user_starter_file, NZ, z, &psi_o );
             } else {
                 oss << "Unrecognized starter type: " << starter;
                 error( oss );
             }
 
-            if ( write_starter ) {
+            if (write_starter) {
                 oss << "Outputting starter to "
                     << NCPAPROP_EPADE_PE_FILENAME_STARTER;
                 info( oss );
@@ -942,14 +953,14 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                     tag_filename( NCPAPROP_EPADE_PE_FILENAME_STARTER ) );
             }
 
-            if ( !broadband ) info( "Finding ePade coefficients..." );
+            if (!broadband) info( "Finding ePade coefficients..." );
             std::vector<std::complex<double>> P, Q;
             std::vector<PetscScalar> taylor
                 = taylor_exp_id_sqrt_1pQ_m1( 2 * npade, k0 * dr );
             calculate_pade_coefficients( &taylor, npade, npade + 1, &P, &Q );
             generate_polymatrices( qpowers_starter, npade, NZ, P, Q, &B, &C );
 
-            if ( !broadband ) info( "Marching out field..." );
+            if (!broadband) info( "Marching out field..." );
             ierr = VecDuplicate( psi_o, &Bpsi_o );
             CHKERRQ( ierr );
             contents = NCPA::zeros<PetscScalar>( NZ );
@@ -960,11 +971,11 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             CHKERRQ( ierr );
             ierr = KSPSetFromOptions( ksp );
             CHKERRQ( ierr );
-            for ( size_t ir = 0; ir < ( NR - 1 ); ir++ ) {
+            for (size_t ir = 0; ir < ( NR - 1 ); ir++) {
                 double rr = r[ ir ];
                 // check for atmosphere change
-                if ( ( (int)( atm_profile_2d->get_profile_index( rr ) ) )
-                     != profile_index ) {
+                if (( (int)( atm_profile_2d->get_profile_index( rr ) ) )
+                    != profile_index) {
                     profile_index = atm_profile_2d->get_profile_index( rr );
                     calculate_atmosphere_parameters(
                         atm_profile_2d, NZ, z, rr, z_ground, lossless,
@@ -985,9 +996,10 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                     ierr = MatZeroEntries( C );
                     CHKERRQ( ierr );
                     generate_polymatrices( qpowers, npade, NZ, P, Q, &B, &C );
-                    if ( !broadband ) {
-                        oss << "Switching to atmosphere index " << profile_index
-                            << " at range = " << rr / 1000.0 << " km";
+                    if (!broadband) {
+                        oss << "Switching to atmosphere index "
+                            << profile_index << " at range = " << rr / 1000.0
+                            << " km";
                         info( oss );
                     }
                 }
@@ -997,8 +1009,8 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 CHKERRQ( ierr );
 
                 // apply turbulence
-                if ( use_turbulence ) {
-                    if ( ir == 0 ) {
+                if (use_turbulence) {
+                    if (ir == 0) {
                         // calculate first step
                         calculate_turbulence( rr, NZ, z, k0, 0, mu_r );
                     } else {
@@ -1010,7 +1022,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                     // the if() because we need to keep these modifications
                     // to psi_o, as opposed to the scaling by the Hankel
                     // function below
-                    for ( i = 0; i < NZ; i++ ) {
+                    for (i = 0; i < NZ; i++) {
                         contents[ i ] *= std::exp(
                             I * k0 * dr * 0.5 * ( mu_r[ i ] + mu_rpdr[ i ] ) );
                     }
@@ -1028,13 +1040,13 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 hank = sqrt( 2.0 / ( PI * k0 * rr ) )
                      * exp( I * ( k0 * rr - PI / 4.0 ) );
 
-                for ( i = 0; i < NZ; i++ ) {
+                for (i = 0; i < NZ; i++) {
                     tl[ i ][ ir ] = contents[ i ] * hank;
                 }
-                
+
                 zgi_r[ ir ] = zr_i;  // constant receiver height
 
-                if ( fmod( rr, 1.0e5 ) < dr && !broadband ) {
+                if (fmod( rr, 1.0e5 ) < dr && !broadband) {
                     oss << " -> Range " << rr / 1000.0 << " km";
                     info( oss );
                 }
@@ -1046,36 +1058,37 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                 ierr = KSPSolve( ksp, Bpsi_o, psi_o );
                 CHKERRQ( ierr );
             }
-            if ( !broadband ) {
+            if (!broadband) {
                 oss << "Stopped at range " << r[ NR - 1 ] / 1000.0 << " km";
                 info( oss );
             }
-            if ( broadband && transf != nullptr ) {
-                    // first remove the density scaling as it is not needed for waveforms
-                    double rho_zrcv = atm_profile_2d->get( r[ NR - 2 ], "RHO",  zr );
-                    // double rho_factor = sqrt(rho_zrcv/rho_zsrc);
-                    double rho_factor = sqrt(rho_zrcv);
-                if ( zr_i == 0 || std::abs(zr - z[zr_i]) < 1e-6 ) {
+            if (broadband && transf != nullptr) {
+                // first remove the density scaling as it is not needed for
+                // waveforms
+                double rho_zrcv
+                    = atm_profile_2d->get( r[ NR - 2 ], "RHO", zr );
+                // double rho_factor = sqrt(rho_zrcv/rho_zsrc);
+                double rho_factor = sqrt( rho_zrcv );
+                if (zr_i == 0 || std::abs( zr - z[ zr_i ] ) < 1e-6) {
                     transf[ freqind ] = tl[ zr_i ][ NR - 2 ] * rho_factor;
                 } else {
-                    // we need to interpolate to get the value at the receiver height
+                    // we need to interpolate to get the value at the receiver
+                    // height
                     // @todo should optimize by local interpolation
-                    std::vector<std::complex<double>> temp_rcol(NZ);
-                    for (size_t i = 0; i < NZ; ++i) temp_rcol[i] = tl[i][NR - 2];
-    
-                    std::complex<double> cR;
-    
-                    interpolate_complex(
-                        NZ, z, temp_rcol.data(),
-                        1, &zr, &cR                
-                    );
-                    transf[freqind] = cR * rho_factor;
-                }
+                    std::vector<std::complex<double>> temp_rcol( NZ );
+                    for (size_t i = 0; i < NZ; ++i)
+                        temp_rcol[ i ] = tl[ i ][ NR - 2 ];
 
+                    std::complex<double> cR;
+
+                    interpolate_complex( NZ, z, temp_rcol.data(), 1, &zr,
+                                         &cR );
+                    transf[ freqind ] = cR * rho_factor;
+                }
             }
 
-            if ( multiprop ) {
-                if ( write1d ) {
+            if (multiprop) {
+                if (write1d) {
                     oss << "Writing 1-D output to "
                         << tag_filename(
                                NCPAPROP_EPADE_PE_FILENAME_MULTIPROP );
@@ -1085,14 +1098,14 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
                         true );
                 }
             } else {
-                if ( write1d && !broadband ) {
+                if (write1d && !broadband) {
                     oss << "Writing 1-D output to "
                         << tag_filename( NCPAPROP_EPADE_PE_FILENAME_1D );
                     info( oss );
                     output1DTL( tag_filename( NCPAPROP_EPADE_PE_FILENAME_1D ),
                                 broadband );
                 }
-                if ( write2d ) {
+                if (write2d) {
                     oss << "Writing 2-D output to "
                         << tag_filename( NCPAPROP_EPADE_PE_FILENAME_2D );
                     info( oss );
@@ -1108,7 +1121,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             //         calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
             // }
 
-            if ( write_atmosphere ) {
+            if (write_atmosphere) {
                 oss << "Writing source atmosphere to "
                     << tag_filename( "atm_profile.pe" );
                 info( oss );
@@ -1128,7 +1141,7 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
             info( "" );
 
             // clean up
-            if ( use_turbulence ) {
+            if (use_turbulence) {
                 delete[] mu_r;
                 delete[] mu_rpdr;
                 cleanup_turbulence();
@@ -1136,31 +1149,38 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
 
             delete_matrix_polynomial( npade + 1, &qpowers );
 
-            if ( starter == "self" ) {
+            if (starter == "self") {
                 delete_matrix_polynomial( npade + 1, &qpowers_starter );
                 // delete [] qpowers_starter;
             }
-            if ( attnfile.length() == 0 ) {
+            if (attnfile.length() == 0) {
                 atm_profile_2d->remove_property( "_ALPHA_" );
             }
-            ierr = MatDestroy(&B);      CHKERRQ(ierr);
-            ierr = MatDestroy(&C);      CHKERRQ(ierr);
-            ierr = VecDestroy(&psi_o);  CHKERRQ(ierr);
-            ierr = VecDestroy(&Bpsi_o); CHKERRQ(ierr);
-            ierr = KSPDestroy(&ksp);    CHKERRQ(ierr);
+            ierr = MatDestroy( &B );
+            CHKERRQ( ierr );
+            ierr = MatDestroy( &C );
+            CHKERRQ( ierr );
+            ierr = VecDestroy( &psi_o );
+            CHKERRQ( ierr );
+            ierr = VecDestroy( &Bpsi_o );
+            CHKERRQ( ierr );
+            ierr = KSPDestroy( &ksp );
+            CHKERRQ( ierr );
 
-            delete[] contents; contents = nullptr;
+            delete[] contents;
+            contents = nullptr;
 
             // if ( broadband ) {
             //     delete[] tl_row; tl_row = nullptr;
             // } else {
-                // delete[] zgi_r;
-                // NCPA::free_cmatrix(tl, NZ, NR - 1);
-                // }
+            // delete[] zgi_r;
+            // NCPA::free_cmatrix(tl, NZ, NR - 1);
+            // }
             delete[] zgi_r;
-            NCPA::free_cmatrix(tl, NZ, NR - 1);
-                
-            delete[] r; r = nullptr;
+            NCPA::free_cmatrix( tl, NZ, NR - 1 );
+
+            delete[] r;
+            r = nullptr;
         }
 
         atm_profile_2d->remove_property( "_CEFF_" );
@@ -1187,8 +1207,8 @@ int NCPA::EPadeSolver::solve_without_topography( std::complex<double> *transf ) 
     // delete[] z;
     // delete[] z_abs;
 
-    if ( broadband ){
-        if ( source != nullptr ) delete[] source;
+    if (broadband) {
+        if (source != nullptr) delete[] source;
     }
     return 1;
 }
@@ -1205,11 +1225,11 @@ int NCPA::EPadeSolver::get_starter_user( std::string filename, int NZ,
 
     std::getline( in, line );
 
-    while ( in.good() ) {
+    while (in.good()) {
         // lines will either be comments (# ), field descriptions (#% ), or
         // field contents
         line = NCPA::deblank( line );
-        if ( line[ 0 ] != '#' ) {
+        if (line[ 0 ] != '#') {
             filelines.push_back( line );
         }
 
@@ -1222,9 +1242,9 @@ int NCPA::EPadeSolver::get_starter_user( std::string filename, int NZ,
     double *this_z               = NCPA::zeros<double>( nlines );
     std::complex<double> *this_c = NCPA::zeros<std::complex<double>>( nlines );
 
-    for ( i = 0; i < nlines; i++ ) {
+    for (i = 0; i < nlines; i++) {
         fields = NCPA::split( NCPA::deblank( filelines[ i ] ), " ," );
-        if ( fields.size() != 3 ) {
+        if (fields.size() != 3) {
             oss << "EPadeSolver - Error parsing starter line:" << std::endl
                 << line << std::endl
                 << "Must be formatted as:" << std::endl
@@ -1236,7 +1256,7 @@ int NCPA::EPadeSolver::get_starter_user( std::string filename, int NZ,
             this_z[ i ] = std::stod( fields[ 0 ] ) * 1000.0;
             this_c[ i ].real( std::stod( fields[ 1 ] ) );
             this_c[ i ].imag( std::stod( fields[ 2 ] ) );
-        } catch ( std::invalid_argument& e ) {
+        } catch (std::invalid_argument& e) {
             oss << "EPadeSolver - Error parsing starter line:" << std::endl
                 << line << std::endl
                 << "All fields must be numeric" << std::endl;
@@ -1275,7 +1295,7 @@ void NCPA::EPadeSolver::interpolate_complex( size_t NZ_orig, double *z_orig,
                                              std::complex<double> *c_new ) {
     double *r_orig = NCPA::zeros<double>( NZ_orig );
     double *i_orig = NCPA::zeros<double>( NZ_orig );
-    for ( size_t i = 0; i < NZ_orig; i++ ) {
+    for (size_t i = 0; i < NZ_orig; i++) {
         r_orig[ i ] = c_orig[ i ].real();
         i_orig[ i ] = c_orig[ i ].imag();
     }
@@ -1308,8 +1328,8 @@ void NCPA::EPadeSolver::interpolate_complex( size_t NZ_orig, double *z_orig,
 #endif
     gsl_spline_init( spline_i_, z_orig, i_orig, NZ_orig );
 
-    for ( size_t i = 0; i < NZ_new; i++ ) {
-        if ( z_new[ i ] < z_orig[ 0 ] || z_new[ i ] > z_orig[ NZ_orig - 1 ] ) {
+    for (size_t i = 0; i < NZ_new; i++) {
+        if (z_new[ i ] < z_orig[ 0 ] || z_new[ i ] > z_orig[ NZ_orig - 1 ]) {
             c_new[ i ] = 0.0;
         } else {
             c_new[ i ]
@@ -1428,17 +1448,17 @@ int NCPA::EPadeSolver::build_operator_matrix_without_topography(
 
     ierr = MatGetOwnershipRange( *q, &Istart, &Iend );
     CHKERRQ( ierr );
-    if ( Istart == 0 ) FirstBlock = PETSC_TRUE;
-    if ( Iend == NZvec ) LastBlock = PETSC_TRUE;
+    if (Istart == 0) FirstBlock = PETSC_TRUE;
+    if (Iend == NZvec) LastBlock = PETSC_TRUE;
     value[ 0 ] = 1.0 / h2 / k02;
     value[ 2 ] = 1.0 / h2 / k02;
-    for ( i = ( FirstBlock ? Istart + 1 : Istart );
-          i < ( LastBlock ? Iend - 1 : Iend ); i++ ) {
-        if ( i < boundary_index ) {
+    for (i = ( FirstBlock ? Istart + 1 : Istart );
+         i < ( LastBlock ? Iend - 1 : Iend ); i++) {
+        if (i < boundary_index) {
             value[ 0 ] = 0.0;
             value[ 1 ] = 0.0;
             value[ 2 ] = 0.0;
-        } else if ( i == boundary_index ) {
+        } else if (i == boundary_index) {
             value[ 0 ] = 0.0;
             value[ 1 ] = bnd_cnd / k02 + ( n[ i ] * n[ i ] - 1 );
             value[ 2 ] = 1.0 / h2 / k02;
@@ -1453,7 +1473,7 @@ int NCPA::EPadeSolver::build_operator_matrix_without_topography(
         ierr     = MatSetValues( *q, 1, &i, 3, col, value, INSERT_VALUES );
         CHKERRQ( ierr );
     }
-    if ( LastBlock ) {
+    if (LastBlock) {
         i          = NZvec - 1;
         col[ 0 ]   = NZvec - 2;
         col[ 1 ]   = NZvec - 1;
@@ -1462,11 +1482,11 @@ int NCPA::EPadeSolver::build_operator_matrix_without_topography(
         ierr       = MatSetValues( *q, 1, &i, 2, col, value, INSERT_VALUES );
         CHKERRQ( ierr );
     }
-    if ( FirstBlock ) {
+    if (FirstBlock) {
         i        = 0;
         col[ 0 ] = 0;
         col[ 1 ] = 1;
-        if ( i < boundary_index ) {
+        if (i < boundary_index) {
             value[ 0 ] = 0.0;
             value[ 1 ] = 0.0;
         } else {
@@ -1490,8 +1510,8 @@ double NCPA::EPadeSolver::check_ground_height_coincidence_with_grid(
     double *z, size_t NZ, double tolerance, double z_ground ) {
     int closest_source_grid_point
         = (int)( NCPA::find_closest_index( z, NZ, z_ground ) );
-    if ( std::fabs( z_ground - z[ closest_source_grid_point ] ) < tolerance ) {
-        if ( z_ground <= z[ closest_source_grid_point ] ) {
+    if (std::fabs( z_ground - z[ closest_source_grid_point ] ) < tolerance) {
+        if (z_ground <= z[ closest_source_grid_point ]) {
             // ground is below grid point, move further down
             return z[ closest_source_grid_point ] - tolerance;
         } else {
@@ -1530,21 +1550,21 @@ int NCPA::EPadeSolver::solve_with_topography() {
     std::complex<double> ground_impedence_factor( 0.0, 0.0 );
 
     // truncate multiprop file if needed
-    if ( write2d ) {
+    if (write2d) {
         std::ofstream ofs( tag_filename( NCPAPROP_EPADE_PE_FILENAME_2D ),
                            std::ofstream::out | std::ofstream::trunc );
         ofs.close();
     }
 
     // truncate 1-D if necessary
-    if ( broadband ) {
+    if (broadband) {
         std::ofstream ofs( tag_filename( NCPAPROP_EPADE_PE_FILENAME_1D ),
                            std::ofstream::out | std::ofstream::trunc );
         ofs.close();
     }
 
     // truncate topography if necessary
-    if ( write_topo ) {
+    if (write_topo) {
         std::ofstream ofs(
             tag_filename( NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY ),
             std::ofstream::out | std::ofstream::trunc );
@@ -1561,7 +1581,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
     z         = NCPA::zeros<double>( NZ );
     z_abs     = NCPA::zeros<double>( NZ );
     indices   = NCPA::zeros<PetscInt>( NZ );
-    for ( i = 0; i < NZ; i++ ) {
+    for (i = 0; i < NZ; i++) {
         z[ i ]       = ( (double)i ) * dz + z_bottom;
         z_abs[ i ]   = z[ i ];
         indices[ i ] = i;
@@ -1575,42 +1595,42 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
     // define ground_index, which is J in @notes
     ground_index = (int)( NCPA::find_closest_index( z, NZ, z_ground ) );
-    if ( z[ ground_index ] < z_ground ) {
+    if (z[ ground_index ] < z_ground) {
         ground_index++;
     }
 
     // adjust source height if it falls within 5% of a ground point
     int closest_source_grid_point
         = (int)( NCPA::find_closest_index( z, NZ, zs_abs ) );
-    if ( fabs( zs_abs - z[ closest_source_grid_point ] ) < grid_tolerance ) {
+    if (fabs( zs_abs - z[ closest_source_grid_point ] ) < grid_tolerance) {
         zs_abs = z[ closest_source_grid_point ] + grid_tolerance;
         oss << "Adjusting source height to " << zs_abs - z_ground
             << " m to avoid grid point singularity";
         warn( oss );
     }
 
-    if ( use_turbulence ) {
-        if ( !random_turbulence ) {
+    if (use_turbulence) {
+        if (!random_turbulence) {
             oss << "Reading " << 2 * turbulence_size << " values from "
                 << turbulence_file;
             info( oss );
 
             std::ifstream rand_in( turbulence_file );
-            if ( !rand_in.good() ) {
+            if (!rand_in.good()) {
                 oss << "Error opening " << turbulence_file;
                 error( oss );
             }
             rand1.reserve( turbulence_size );
-            for ( i = 0; i < turbulence_size; i++ ) {
+            for (i = 0; i < turbulence_size; i++) {
                 rand_in >> rand1[ i ];
-                if ( !rand_in.good() ) {
+                if (!rand_in.good()) {
                     oss << "Error reading turbulence numbers from "
                         << turbulence_file;
                     error( oss );
                 }
             }
             rand2.reserve( turbulence_size );
-            for ( i = 0; i < turbulence_size; i++ ) {
+            for (i = 0; i < turbulence_size; i++) {
                 rand_in >> rand2[ i ];
             }
             rand_in.close();
@@ -1630,8 +1650,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
     std::complex<double> *n = NCPA::zeros<std::complex<double>>( NZ );
 
     std::complex<double> *source = NCPA::zeros<std::complex<double>>( NZ );
-    if ( starter == "self" ) {
-        if ( pointsource ) {
+    if (starter == "self") {
+        if (pointsource) {
             oss << "Generating point source at " << zs << "m";
             info( oss );
             make_point_source( NZ, z, zs + z_ground, z_ground, source );
@@ -1643,7 +1663,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
         }
 
         // output source file for checking
-        if ( _write_source_function ) {
+        if (_write_source_function) {
             oss << "Writing source function to "
                 << tag_filename( NCPAPROP_EPADE_PE_FILENAME_SOURCE );
             info( oss );
@@ -1655,14 +1675,14 @@ int NCPA::EPadeSolver::solve_with_topography() {
     // write broadband header for testing
     // if ( broadband ) {
     //     write_broadband_header(
-    //         tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ), azi, NAz, f,
-    //         NF, 1.0e8 );
+    //         tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ), azi, NAz,
+    //         f, NF, 1.0e8 );
     // }
 
     // freq and calc_az hold the current values of azimuth and frequency,
     // respectively these are used in the output routines, so make sure they
     // get set correctly whenever you change frequencies and azimuths
-    for ( size_t azind = 0; azind < NAz; azind++ ) {
+    for (size_t azind = 0; azind < NAz; azind++) {
         calc_az = azi[ azind ];
         oss << "Infrasound PE code at f = " << freq << " Hz, azi = " << calc_az
             << " deg";
@@ -1671,18 +1691,18 @@ int NCPA::EPadeSolver::solve_with_topography() {
         // profile_index = -1;
         calculate_effective_sound_speed( atm_profile_2d, calc_az, "_CEFF_" );
 
-        for ( size_t freqind = 1; freqind < NF; freqind++ ) {
+        for (size_t freqind = 1; freqind < NF; freqind++) {
             freq = f[ freqind ];
 
             // calculate attenuation as a function of frequency if not
             // externally supplied
-            if ( ( !lossless ) && ( attnfile.length() == 0 ) ) {
+            if (( !lossless ) && ( attnfile.length() == 0 )) {
                 atm_profile_2d->calculate_attenuation( "_ALPHA_", "T", "P",
                                                        "RHO", freq );
             }
 
             // Set up range vector
-            if ( NR_requested == 0 ) {
+            if (NR_requested == 0) {
                 dr = 340.0 / freq;
                 NR = (int)ceil( r_max / dr );
             } else {
@@ -1691,7 +1711,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
             }
             r     = NCPA::zeros<double>( NR );
             zgi_r = NCPA::zeros<int>( NR );
-            for ( i = 0; i < NR; i++ ) {
+            for (i = 0; i < NR; i++) {
                 r[ i ] = ( (double)( i + 1 ) ) * dr;
             }
 
@@ -1709,7 +1729,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
                 = atm_profile_2d->get_first_derivative( 0.0, "RHO", z_ground )
                 / ( 2.0 * rho0 );
             // lambBC = 0.0;
-            if ( user_ground_impedence_found ) {
+            if (user_ground_impedence_found) {
                 ground_impedence_factor
                     = I * 2.0 * PI * freq * rho0 / user_ground_impedence
                     + lambBC;
@@ -1727,14 +1747,14 @@ int NCPA::EPadeSolver::solve_with_topography() {
                 freq, use_topo, k0, c0, c, a_t, k, n );
 
             // calculate turbulence
-            if ( use_turbulence ) {
+            if (use_turbulence) {
                 mu_r    = NCPA::zeros<double>( NZ );
                 mu_rpdr = NCPA::zeros<double>( NZ );
                 setup_turbulence( rand1, rand2 );
             }
 
             // build appropriate starter
-            if ( starter == "self" ) {
+            if (starter == "self") {
                 // for now build the non-topographic starter
                 // revisit when time and funding permit
                 size_t NZ_starter = NZ - ground_index;
@@ -1750,7 +1770,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
                 double k0_starter, c0_starter;
                 size_t ii;
-                for ( ii = 0; ii < NZ_starter; ii++ ) {
+                for (ii = 0; ii < NZ_starter; ii++) {
                     z_starter[ ii ]      = z[ ii + ground_index ];
                     source_starter[ ii ] = source[ ii + ground_index ];
                 }
@@ -1824,7 +1844,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
                 ierr = MatDestroy( &q );
                 CHKERRQ( ierr );
-            } else if ( starter == "gaussian" ) {
+            } else if (starter == "gaussian") {
                 // qpowers_starter = qpowers;
                 build_operator_matrix_with_topography(
                     atm_profile_2d, NZ, z, 0.0, k, k0, h2, z_ground,
@@ -1835,7 +1855,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
                 CHKERRQ( ierr );
                 get_starter_gaussian( NZ, z, zs + z_ground, k0, ground_index,
                                       &psi_o );
-            } else if ( starter == "user" ) {
+            } else if (starter == "user") {
                 build_operator_matrix_with_topography(
                     atm_profile_2d, NZ, z, 0.0, k, k0, h2, z_ground,
                     ground_impedence_factor, n, ground_index, PETSC_NULLPTR,
@@ -1849,7 +1869,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
                 error( oss );
             }
 
-            if ( write_starter ) {
+            if (write_starter) {
                 oss << "Outputting starter to "
                     << NCPAPROP_EPADE_PE_FILENAME_STARTER;
                 info( oss );
@@ -1876,7 +1896,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
             CHKERRQ( ierr );
             ierr = KSPSetFromOptions( ksp );
             CHKERRQ( ierr );
-            for ( size_t ir = 0; ir < ( NR - 1 ); ir++ ) {
+            for (size_t ir = 0; ir < ( NR - 1 ); ir++) {
                 double rr = r[ ir ];
                 z_ground  = check_ground_height_coincidence_with_grid(
                     z, NZ, grid_tolerance,
@@ -1911,14 +1931,14 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
                 // apply turbulence
                 ierr = VecGetValues( psi_o, NZ, indices, contents );
-                if ( use_turbulence ) {
+                if (use_turbulence) {
                     // update ground index
                     ground_index
                         = (int)( NCPA::find_closest_index( z, NZ, z_ground ) );
-                    if ( z[ ground_index ] < z_ground ) {
+                    if (z[ ground_index ] < z_ground) {
                         ground_index++;
                     }
-                    if ( ir == 0 ) {
+                    if (ir == 0) {
                         // calculate first step
                         calculate_turbulence( rr, NZ, z, k0, ground_index,
                                               mu_r );
@@ -1932,7 +1952,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
                     // the if() because we need to keep these modifications
                     // to psi_o, as opposed to the scaling by the Hankel
                     // function below
-                    for ( i = 0; i < NZ; i++ ) {
+                    for (i = 0; i < NZ; i++) {
                         contents[ i ] *= std::exp(
                             I * k0 * dr * 0.5 * ( mu_r[ i ] + mu_rpdr[ i ] ) );
                     }
@@ -1949,12 +1969,12 @@ int NCPA::EPadeSolver::solve_with_topography() {
 
                 hank = sqrt( 2.0 / ( PI * k0 * rr ) )
                      * exp( I * ( k0 * rr - PI / 4.0 ) );
-                for ( i = 0; i < NZ; i++ ) {
+                for (i = 0; i < NZ; i++) {
                     tl[ i ][ ir ] = contents[ i ] * hank;
                 }
 
                 // make sure the receiver height is above ground
-                if ( ir == 0 ) {
+                if (ir == 0) {
                     // for the first step, use the ground height at the source
                     // because the starter, which is 0 below ground, hasn't had
                     // time to evolve
@@ -1964,11 +1984,11 @@ int NCPA::EPadeSolver::solve_with_topography() {
                 }
                 double z0g  = z_ground + zr;
                 zgi_r[ ir ] = (int)( NCPA::find_closest_index( z, NZ, z0g ) );
-                while ( z[ zgi_r[ ir ] ] <= z_ground ) {
+                while (z[ zgi_r[ ir ] ] <= z_ground) {
                     zgi_r[ ir ]++;
                 }
 
-                if ( fmod( rr, 1.0e5 ) < dr ) {
+                if (fmod( rr, 1.0e5 ) < dr) {
                     oss << " -> Range " << rr / 1000.0 << " km";
                     info( oss );
                 }
@@ -1986,8 +2006,8 @@ int NCPA::EPadeSolver::solve_with_topography() {
             info( oss );
 
 
-            if ( multiprop ) {
-                if ( write1d ) {
+            if (multiprop) {
+                if (write1d) {
                     oss << "Writing 1-D output to "
                         << tag_filename(
                                NCPAPROP_EPADE_PE_FILENAME_MULTIPROP );
@@ -1997,14 +2017,14 @@ int NCPA::EPadeSolver::solve_with_topography() {
                         true );
                 }
             } else {
-                if ( write1d ) {
+                if (write1d) {
                     oss << "Writing 1-D output to "
                         << tag_filename( NCPAPROP_EPADE_PE_FILENAME_1D );
                     info( oss );
                     output1DTL( tag_filename( NCPAPROP_EPADE_PE_FILENAME_1D ),
                                 broadband );
                 }
-                if ( write2d ) {
+                if (write2d) {
                     oss << "Writing 2-D output to "
                         << tag_filename( NCPAPROP_EPADE_PE_FILENAME_2D );
                     info( oss );
@@ -2014,13 +2034,13 @@ int NCPA::EPadeSolver::solve_with_topography() {
             }
 
             // write broadband body for testing
-            if ( broadband ) {
+            if (broadband) {
                 write_broadband_results(
                     tag_filename( NCPAPROP_EPADE_PE_FILENAME_BROADBAND ),
                     calc_az, freq, r, NR, z_abs, NZ, tl, 1.0e8 );
             }
 
-            if ( write_atmosphere ) {
+            if (write_atmosphere) {
                 oss << "Writing source atmosphere to "
                     << tag_filename( "atm_profile.pe" );
                 info( oss );
@@ -2037,7 +2057,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
                 atmout.close();
             }
 
-            if ( use_turbulence ) {
+            if (use_turbulence) {
                 delete[] mu_r;
                 delete[] mu_rpdr;
                 cleanup_turbulence();
@@ -2046,10 +2066,10 @@ int NCPA::EPadeSolver::solve_with_topography() {
             info( "" );
 
             delete_matrix_polynomial( npade + 1, &qpowers );
-            if ( starter == "self" ) {
+            if (starter == "self") {
                 delete_matrix_polynomial( npade + 1, &qpowers_starter );
             }
-            if ( attnfile.length() == 0 ) {
+            if (attnfile.length() == 0) {
                 atm_profile_2d->remove_property( "_ALPHA_" );
             }
             // delete[] r;
@@ -2060,7 +2080,7 @@ int NCPA::EPadeSolver::solve_with_topography() {
             tl = nullptr;
         }
 
-        if ( write_topo ) {
+        if (write_topo) {
             oss << "Writing topography to "
                 << NCPAPROP_EPADE_PE_FILENAME_TOPOGRAPHY;
             info( oss );
@@ -2110,14 +2130,14 @@ int NCPA::EPadeSolver::create_matrix_polynomial( size_t nterms, const Mat *Q,
     PetscErrorCode ierr;
     PetscInt i;
 
-    if ( ( *qpowers ) != PETSC_NULLPTR ) {
+    if (( *qpowers ) != PETSC_NULLPTR) {
         delete_matrix_polynomial( nterms, qpowers );
     }
 
     *qpowers = new Mat[ nterms ];
     ierr     = MatConvert( *Q, MATSAME, MAT_INITIAL_MATRIX, *qpowers );
     CHKERRQ( ierr );
-    for ( i = 1; i < (PetscInt)nterms; i++ ) {
+    for (i = 1; i < (PetscInt)nterms; i++) {
         ierr = MatCreate( PETSC_COMM_SELF, ( *qpowers ) + i );
         CHKERRQ( ierr );
         ierr = MatSetFromOptions( ( *qpowers )[ i ] );
@@ -2135,8 +2155,8 @@ int NCPA::EPadeSolver::create_matrix_polynomial( size_t nterms, const Mat *Q,
 int NCPA::EPadeSolver::delete_matrix_polynomial( size_t nterms,
                                                  Mat **qpowers ) {
     PetscErrorCode ierr;
-    if ( ( *qpowers ) != PETSC_NULLPTR ) {
-        for ( size_t i = 0; i < nterms; i++ ) {
+    if (( *qpowers ) != PETSC_NULLPTR) {
+        for (size_t i = 0; i < nterms; i++) {
             ierr = MatDestroy( ( *qpowers ) + i );
             CHKERRQ( ierr );
         }
@@ -2161,7 +2181,7 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
     std::fill( n_vec, n_vec + NZvec, std::complex<double> {} );
 
     // z_vec is relative to ground
-    if ( absolute ) {
+    if (absolute) {
         fill_atm_vector_absolute( atm, r, NZvec, z_vec, "_CEFF_",
                                   c_underground, c_vec );
     } else {
@@ -2169,8 +2189,8 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
     }
     c0 = atm->get( r, "_CEFF_", z_g );
 
-    if ( !use_lossless ) {
-        if ( absolute ) {
+    if (!use_lossless) {
+        if (absolute) {
             fill_atm_vector_absolute( atm, r, NZvec, z_vec, "_ALPHA_", 0.0,
                                       a_vec );
         } else {
@@ -2179,9 +2199,9 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
         }
     }
     double *abslayer = NCPA::zeros<double>( NZvec );
-    if ( use_top_layer ) {
+    if (use_top_layer) {
         double tlt = top_layer_thickness_m;
-        if ( tlt < 0.0 ) {
+        if (tlt < 0.0) {
             tlt = NCPA::min<double>( c0 / freq, 5000.0 );
         }
         absorption_layer( tlt, z_vec, NZvec, abslayer );
@@ -2190,9 +2210,9 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
     k0 = 2.0 * PI * freq / c0;
 
     // Set up vectors
-    for ( int i = 0; i < NZvec; i++ ) {
+    for (int i = 0; i < NZvec; i++) {
         // double rho, drho, ddrho;
-        if ( absolute && ( z_vec[ i ] < z_g ) ) {
+        if (absolute && ( z_vec[ i ] < z_g )) {
             k_vec[ i ] = 0.0;  // k == 0 below the ground
         } else {
             double rho = atm->get( r, "RHO", z_vec[ i ] );
@@ -2205,17 +2225,22 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
             // double argument = std::pow( 2.0 * PI * freq / c_vec[ i ], 2.0 )
             //                 - 0.75 * std::pow( drho / rho, 2.0 )
             //                 + 0.5 * ddrho / rho;
-            if ( argument <= 0.0 ) {
+            if (argument <= 0.0) {
                 std::ostringstream oss;
-                if ( warn_on_error ) {
-                    oss << "Strong density gradient at r = " << r/1000.0 << ", z = " << z_vec[ i ]
-                        << " is causing wavenumber calculation to go complex. "
-                           " Double-check your density profile!";
+                if (warn_on_error) {
+                    oss << "Strong density gradient at r = " << r / 1000.0
+                        << ", z = " << z_vec[ i ]
+                        << " is causing wavenumber calculation to go complex "
+                           "(square root argument is "
+                        << argument << "). Double-check your density profile!";
                     warn( oss );
                 } else {
-                    oss << "Strong density gradient at r = " << r << ", z = " << z_vec[ i ]
-                        << " is causing wavenumber calculation to go complex. "
-                           " If this is OK, run again using --warn_on_error "
+                    oss << "Strong density gradient at r = " << r
+                        << ", z = " << z_vec[ i ]
+                        << " is causing wavenumber calculation to go complex "
+                           "(square root argument is "
+                        << argument
+                        << "). If this is OK, run again using --warn_on_error "
                            "flag.";
                     error( oss );
                 }
@@ -2231,7 +2256,7 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
 void NCPA::EPadeSolver::fill_atm_vector_relative(
     NCPA::Atmosphere2D *atm, double range, int NZvec, double *zvec,
     std::string key, double groundheight, double *vec ) {
-    for ( int i = 0; i < NZvec; i++ ) {
+    for (int i = 0; i < NZvec; i++) {
         vec[ i ] = atm->get( range, key, zvec[ i ] + groundheight );
     }
 }
@@ -2241,8 +2266,8 @@ void NCPA::EPadeSolver::fill_atm_vector_absolute(
     std::string key, double fill_value, double *vec ) {
     double zmin = atm->get_interpolated_ground_elevation( range );
 
-    for ( int i = 0; i < NZvec; i++ ) {
-        if ( zvec[ i ] < zmin ) {
+    for (int i = 0; i < NZvec; i++) {
+        if (zvec[ i ] < zmin) {
             vec[ i ] = fill_value;
         } else {
             vec[ i ] = atm->get( range, key, zvec[ i ] );
@@ -2267,7 +2292,7 @@ int NCPA::EPadeSolver::generate_polymatrix(
     ierr = MatGetOwnershipRange( *B, &Istart, &Iend );
     CHKERRQ( ierr );
     value = T[ 0 ];
-    for ( i = Istart; i < Iend; i++ ) {
+    for (i = Istart; i < Iend; i++) {
         ierr = MatSetValues( *B, 1, &i, 1, &i, &value, INSERT_VALUES );
         CHKERRQ( ierr );
     }
@@ -2276,7 +2301,7 @@ int NCPA::EPadeSolver::generate_polymatrix(
     ierr = MatAssemblyEnd( *B, MAT_FINAL_ASSEMBLY );
     CHKERRQ( ierr );
     PetscInt nterms = NCPA::min( T.size(), (size_t)qpowers_size );
-    for ( i = 1; i < (PetscInt)nterms; i++ ) {
+    for (i = 1; i < (PetscInt)nterms; i++) {
         ierr = MatAXPY( *B, T[ i ], qpowers[ i - 1 ],
                         DIFFERENT_NONZERO_PATTERN );
         CHKERRQ( ierr );
@@ -2301,7 +2326,7 @@ int NCPA::EPadeSolver::sum_scaled_matrix_polynomial_terms(
     ierr = MatGetOwnershipRange( *B, &Istart, &Iend );
     CHKERRQ( ierr );
     value = T[ 0 ];
-    for ( i = Istart; i < Iend; i++ ) {
+    for (i = Istart; i < Iend; i++) {
         ierr = MatSetValues( *B, 1, &i, 1, &i, &value, INSERT_VALUES );
         CHKERRQ( ierr );
     }
@@ -2310,7 +2335,7 @@ int NCPA::EPadeSolver::sum_scaled_matrix_polynomial_terms(
     ierr = MatAssemblyEnd( *B, MAT_FINAL_ASSEMBLY );
     CHKERRQ( ierr );
     PetscInt nterms = NCPA::min( T.size(), (size_t)qpowers_size );
-    for ( i = 1; i < (PetscInt)nterms; i++ ) {
+    for (i = 1; i < (PetscInt)nterms; i++) {
         ierr = MatAXPY( *B, T[ i ], qpowers[ i - 1 ],
                         DIFFERENT_NONZERO_PATTERN );
         CHKERRQ( ierr );
@@ -2343,13 +2368,13 @@ int NCPA::EPadeSolver::generate_polymatrices(
     // not guaranteed.
     // @todo generalize this fot the case where P[0] != 1
     value = 1.0;
-    for ( i = Istart; i < Iend; i++ ) {
+    for (i = Istart; i < Iend; i++) {
         ierr = MatSetValues( *B, 1, &i, 1, &i, &value, INSERT_VALUES );
         CHKERRQ( ierr );
     }
     ierr = MatGetOwnershipRange( *C, &Istart, &Iend );
     CHKERRQ( ierr );
-    for ( i = Istart; i < Iend; i++ ) {
+    for (i = Istart; i < Iend; i++) {
         ierr = MatSetValues( *C, 1, &i, 1, &i, &value, INSERT_VALUES );
         CHKERRQ( ierr );
     }
@@ -2363,12 +2388,12 @@ int NCPA::EPadeSolver::generate_polymatrices(
     ierr = MatAssemblyEnd( *C, MAT_FINAL_ASSEMBLY );
     CHKERRQ( ierr );
 
-    for ( i = 1; i < (PetscInt)( Q.size() ); i++ ) {
+    for (i = 1; i < (PetscInt)( Q.size() ); i++) {
         ierr = MatAXPY( *C, Q[ i ], qpowers[ i - 1 ],
                         DIFFERENT_NONZERO_PATTERN );
         CHKERRQ( ierr );
     }
-    for ( i = 1; i < (PetscInt)( P.size() ); i++ ) {
+    for (i = 1; i < (PetscInt)( P.size() ); i++) {
         ierr = MatAXPY( *B, P[ i ], qpowers[ i - 1 ],
                         DIFFERENT_NONZERO_PATTERN );
         CHKERRQ( ierr );
@@ -2394,7 +2419,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
     double J_s = ( z_s - zvec[ 0 ] ) / h;
     int Ji     = (int)( NCPA::find_closest_index(
         zvec, NZvec, z_s ) );  // first index above ground
-    if ( zvec[ Ji ] < z_s ) {
+    if (zvec[ Ji ] < z_s) {
         Ji++;
     }
     double dJ = (double)Ji;
@@ -2417,7 +2442,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
     Gamma = 0.5 * atm->get_first_derivative( r, "RHO", z_s ) / rho_a;
     rho_b = RHO_B;
     Anom  = ( 1.0 / rho_a ) * ( 1.0 / ( dJ - J_s ) );
-    if ( starter ) {
+    if (starter) {
         Bnom = 0;  // for starter, rho_b = inf
     } else {
         Bnom = ( 1.0 / rho_b ) * ( 1.0 / ( J_s - dJ + 1.0 ) );
@@ -2434,7 +2459,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
 
     // Calculate matrix ratio representation of sqrt(1+Q)
     rowDiff = NCPA::zeros<PetscScalar>( NZvec );
-    if ( last_q != PETSC_NULLPTR ) {
+    if (last_q != PETSC_NULLPTR) {
         PetscScalar I( 0.0, 1.0 ), *rowAbove, *rowBelow;
         PetscScalar M
             = I * k0
@@ -2460,7 +2485,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
         CHKERRQ( ierr );
         nonzeros[ Ji ] = num_nonzeros;
 
-        for ( i = 0; i < NZvec; i++ ) {
+        for (i = 0; i < NZvec; i++) {
             rowDiff[ i ] = rowAbove[ i ] - rowBelow[ i ];
         }
 
@@ -2489,20 +2514,20 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
     CHKERRQ( ierr );
 
     // Does this instance contain the first row?
-    if ( Istart == 0 ) {
+    if (Istart == 0) {
         FirstBlock = PETSC_TRUE;
     }
 
     // Does this instance contain the last row?
-    if ( Iend == (PetscInt)NZ ) {
+    if (Iend == (PetscInt)NZ) {
         LastBlock = PETSC_TRUE;
     }
 
     // iterate over block.  If this instance contains the first row, leave that
     // one for later, same for if this instance contains the last row.
     PetscScalar *Drow = NCPA::zeros<PetscScalar>( NZvec );
-    for ( i = ( FirstBlock ? Istart + 1 : Istart );
-          i < ( LastBlock ? Iend - 1 : Iend ); i++ ) {
+    for (i = ( FirstBlock ? Istart + 1 : Istart );
+         i < ( LastBlock ? Iend - 1 : Iend ); i++) {
         // set column numbers.  Since the matrix Q is tridiagonal (because
         // input matrix D is tridiagonal and K is diagonal), column indices are
         // i-1, i, i+1
@@ -2512,11 +2537,11 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
 
         // Set values.  This will be the same unless we're at the indices
         // immediately below or above the ground surface
-        if ( i == ( Ji - 1 ) ) {
-            if ( last_q != PETSC_NULLPTR ) {
+        if (i == ( Ji - 1 )) {
+            if (last_q != PETSC_NULLPTR) {
                 // this is the alpha, beta, gamma row
                 std::memcpy( col, indices, NZvec * sizeof( PetscInt ) );
-                for ( j = 0; j < NZvec; j++ ) {
+                for (j = 0; j < NZvec; j++) {
                     Drow[ j ] = -rowDiff[ j ] / ( h2 * ( J_s - dJ + 1.0 ) );
                 }
 
@@ -2529,11 +2554,11 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
                 Drow[ 2 ] = gamma;
             }
 
-        } else if ( i == Ji ) {
+        } else if (i == Ji) {
             // this is the a, b, c row
-            if ( last_q != PETSC_NULLPTR ) {
+            if (last_q != PETSC_NULLPTR) {
                 std::memcpy( col, indices, NZvec * sizeof( PetscInt ) );
-                for ( j = 0; j < NZvec; j++ ) {
+                for (j = 0; j < NZvec; j++) {
                     Drow[ j ] = -rowDiff[ j ] / ( h2 * ( dJ - J_s ) );
                 }
 
@@ -2551,8 +2576,8 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
             Drow[ 2 ] = 1.0;
         }
 
-        for ( j = 0; j < nonzeros[ i ]; j++ ) {
-            if ( col[ j ] == i ) {
+        for (j = 0; j < nonzeros[ i ]; j++) {
+            if (col[ j ] == i) {
                 Drow[ j ]
                     = ( ( Drow[ j ] / h2 ) + k[ i ] * k[ i ] - k02 ) / k02;
             } else {
@@ -2563,7 +2588,7 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
                              INSERT_VALUES );
         CHKERRQ( ierr );
     }
-    if ( LastBlock ) {
+    if (LastBlock) {
         i          = NZ - 1;
         col[ 0 ]   = NZ - 2;
         col[ 1 ]   = NZ - 1;
@@ -2573,14 +2598,14 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
         ierr       = MatSetValues( *q, 1, &i, 2, col, value, INSERT_VALUES );
         CHKERRQ( ierr );
     }
-    if ( FirstBlock ) {
+    if (FirstBlock) {
         i        = 0;
         col[ 0 ] = 0;
         col[ 1 ] = 1;
-        if ( i == ( Ji - 1 ) ) {
-            if ( last_q != PETSC_NULLPTR ) {
+        if (i == ( Ji - 1 )) {
+            if (last_q != PETSC_NULLPTR) {
                 std::memcpy( col, indices, NZvec * sizeof( PetscInt ) );
-                for ( j = 0; j < NZvec; j++ ) {
+                for (j = 0; j < NZvec; j++) {
                     Drow[ j ] = -rowDiff[ j ] / ( h2 * ( J_s - dJ + 1.0 ) );
                 }
                 // std::memcpy( Drow, rowBelow, NZvec*sizeof(PetscScalar) );
@@ -2591,10 +2616,10 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
                 Drow[ 0 ] = beta;
                 Drow[ 1 ] = gamma;
             }
-        } else if ( i == Ji ) {
-            if ( last_q != PETSC_NULLPTR ) {
+        } else if (i == Ji) {
+            if (last_q != PETSC_NULLPTR) {
                 std::memcpy( col, indices, NZvec * sizeof( PetscInt ) );
-                for ( j = 0; j < NZvec; j++ ) {
+                for (j = 0; j < NZvec; j++) {
                     Drow[ j ] = -rowDiff[ j ] / ( h2 * ( dJ - J_s ) );
                 }
                 // std::memcpy( Drow, rowBelow, NZvec*sizeof(PetscScalar) );
@@ -2609,8 +2634,8 @@ int NCPA::EPadeSolver::build_operator_matrix_with_topography(
             Drow[ 0 ] = -2.0;
             Drow[ 1 ] = 1.0;
         }
-        for ( j = 0; j < nonzeros[ i ]; j++ ) {
-            if ( col[ j ] == i ) {
+        for (j = 0; j < nonzeros[ i ]; j++) {
+            if (col[ j ] == i) {
                 Drow[ j ]
                     = ( ( Drow[ j ] / h2 ) + k[ i ] * k[ i ] - k02 ) / k02;
             } else {
@@ -2838,7 +2863,7 @@ void NCPA::EPadeSolver::absorption_layer( double lambda, double *z, int NZ,
         NCPAPROP_EPADE_PE_ABSORBING_LAYER_MAX_THICKNESS_METERS,
         lambda * NCPAPROP_EPADE_PE_ABSORBING_LAYER_WAVELENGTH_MULTIPLIER );
     double z_t = z[ NZ - 1 ] - thickness;
-    for ( int i = 0; i < NZ; i++ ) {
+    for (int i = 0; i < NZ; i++) {
         layer[ i ]
             = absorption_layer_mu * std::exp( ( z[ i ] - z_t ) / thickness );
     }
@@ -2860,7 +2885,7 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z, double zs,
     CHKERRQ( ierr );
     ierr = VecSet( *psi, 0.0 );
 
-    for ( PetscInt i = 0; i < (PetscInt)NZ; i++ ) {
+    for (PetscInt i = 0; i < (PetscInt)NZ; i++) {
         // if (z[i] >= zg) {
         tempval = -( k0 * k0 / fac / fac ) * ( z[ i ] - zs ) * ( z[ i ] - zs );
         tempval = sqrt( k0 / fac ) * exp( tempval );
@@ -2881,7 +2906,7 @@ void NCPA::EPadeSolver::make_point_source( size_t NZ, double *z, double zs,
     //	std::memset( source, 0, NZ * sizeof(std::complex<double>) );
     std::fill( source, source + NZ, std::complex<double> {} );
     size_t nzsrc = NCPA::find_closest_index<double>( z, NZ, zs );
-    while ( z[ nzsrc ] < z_ground ) {
+    while (z[ nzsrc ] < z_ground) {
         nzsrc++;
     }
     source[ nzsrc ].real( 1.0 );
@@ -2903,26 +2928,26 @@ void NCPA::EPadeSolver::read_line_source_from_file(
 
     // first, parse the header for units information
     NCPA::units_t file_z_units = NCPAPROP_EPADE_PE_UNITS_Z;
-    for ( cit = headerlines.cbegin(); cit != headerlines.cend(); ++cit ) {
+    for (cit = headerlines.cbegin(); cit != headerlines.cend(); ++cit) {
         std::string thisline = *cit;
-        if ( thisline.find( "#%" ) == 0 ) {
+        if (thisline.find( "#%" ) == 0) {
             thisline.erase( 0, 2 );
             thisline = NCPA::deblank( thisline );
             std::vector<std::string> fields
                 = NCPA::split( thisline, delimiters );
-            if ( fields.size() < 2 ) {
+            if (fields.size() < 2) {
                 oss << "Line source file descriptive header line " << thisline
                     << " has no delimiter characters (" << delimiters
                     << "), ignoring";
                 warn( oss );
             } else {
                 units_t tempunits = NCPA::Units::fromString( fields[ 1 ] );
-                if ( tempunits == UNITS_NONE ) {
+                if (tempunits == UNITS_NONE) {
                     oss << "Unrecognized units " << fields[ 1 ]
                         << ", ignoring";
                     warn( oss );
                 } else {
-                    switch ( ( fields[ 0 ] )[ 0 ] ) {
+                    switch (( fields[ 0 ] )[ 0 ]) {
                         case 'z':
                         case 'Z':
                             file_z_units = tempunits;
@@ -2946,10 +2971,10 @@ void NCPA::EPadeSolver::read_line_source_from_file(
     double *z_orig = NCPA::zeros<double>( nvals ),
            *r_orig = NCPA::zeros<double>( nvals ),
            *i_orig = NCPA::zeros<double>( nvals );
-    for ( size_t ii = 0; ii < nvals; ii++ ) {
+    for (size_t ii = 0; ii < nvals; ii++) {
         z_orig[ ii ] = std::stod( contents[ 0 ][ ii ] );
         r_orig[ ii ] = std::stod( contents[ 1 ][ ii ] );
-        if ( complex_in ) {
+        if (complex_in) {
             i_orig[ ii ] = std::stod( contents[ 2 ][ ii ] );
         }
     }
@@ -3016,7 +3041,7 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
     CHKERRQ( ierr );
 
     // get starter
-    if ( !broadband) ( "Finding ePade starter coefficients..." );
+    if (!broadband) info( "Finding ePade starter coefficients..." );
     double r_ref = 2 * PI / k0;
     std::vector<PetscScalar> P, Q;
     std::vector<PetscScalar> taylor1
@@ -3080,8 +3105,8 @@ int NCPA::EPadeSolver::calculate_pade_coefficients(
     std::vector<PetscScalar> *denominator_coefficients ) {
     std::ostringstream oss;
     // sanity checks
-    if ( n_denominator < n_numerator ) {
-        if ( warn_on_error ) {
+    if (n_denominator < n_numerator) {
+        if (warn_on_error) {
             oss << "Denominator count " << n_denominator
                 << " must be >= numerator count " << n_numerator
                 << " for Pade "
@@ -3100,7 +3125,7 @@ int NCPA::EPadeSolver::calculate_pade_coefficients(
     int m        = n_denominator - 1;  // denominator order
     int N        = n + m;
     int n_taylor = c->size();
-    if ( n_taylor < ( N + 1 ) ) {
+    if (n_taylor < ( N + 1 )) {
         oss << "Count of Taylor series must be at least " << ( N + 1 )
             << " for numerator count " << n_numerator
             << " and denominator count " << n_denominator;
@@ -3128,12 +3153,12 @@ int NCPA::EPadeSolver::calculate_pade_coefficients(
     ierr = MatGetOwnershipRange( A, &Istart, &Iend );
     CHKERRQ( ierr );
     tempsc = -1.0;
-    for ( ii = Istart; ii < min( n, Iend ); ii++ ) {
+    for (ii = Istart; ii < min( n, Iend ); ii++) {
         ierr = MatSetValues( A, 1, &ii, 1, &ii, &tempsc, INSERT_VALUES );
         CHKERRQ( ierr );
     }
-    for ( ii = Istart; ii < Iend; ii++ ) {
-        for ( jj = n; jj <= min( Iend - 1, ii + n ); jj++ ) {
+    for (ii = Istart; ii < Iend; ii++) {
+        for (jj = n; jj <= min( Iend - 1, ii + n ); jj++) {
             tempsc = c->at( ii - jj + n );
             ierr   = MatSetValues( A, 1, &ii, 1, &jj, &tempsc, INSERT_VALUES );
             CHKERRQ( ierr );
@@ -3159,7 +3184,7 @@ int NCPA::EPadeSolver::calculate_pade_coefficients(
     CHKERRQ( ierr );
 
     indices = NCPA::zeros<PetscInt>( N );
-    for ( ii = 0; ii < N; ii++ ) {
+    for (ii = 0; ii < N; ii++) {
         tempsc = -c->at( ii + 1 );
         ierr   = VecSetValues( y, 1, &ii, &tempsc, INSERT_VALUES );
         CHKERRQ( ierr );
@@ -3190,12 +3215,12 @@ int NCPA::EPadeSolver::calculate_pade_coefficients(
 
     numerator_coefficients->clear();
     numerator_coefficients->push_back( c->at( 0 ) );
-    for ( ii = 0; ii < n; ii++ ) {
+    for (ii = 0; ii < n; ii++) {
         numerator_coefficients->push_back( contents[ ii ] );
     }
     denominator_coefficients->clear();
     denominator_coefficients->push_back( 1.0 );
-    for ( ii = n; ii < N; ii++ ) {
+    for (ii = n; ii < N; ii++) {
         denominator_coefficients->push_back( contents[ ii ] );
     }
     delete[] contents;
@@ -3225,7 +3250,7 @@ std::vector<PetscScalar> NCPA::EPadeSolver::taylor_sqrt_1pQ_exp_id_sqrt_1pQ_m1(
 
     // Now modify
     std::vector<PetscScalar> d( N, 1.0 );
-    for ( int m = 1; m < N; m++ ) {
+    for (int m = 1; m < N; m++) {
         d[ m ] = ( j * delta * c[ m - 1 ]
                    - ( ( (double)( 1 + 2 * ( m - 1 ) ) ) * d[ m - 1 ] ) )
                / ( 2.0 * m );
@@ -3244,7 +3269,7 @@ std::vector<PetscScalar> NCPA::EPadeSolver::taylor_exp_id_sqrt_1pQ_m1(
     // std::memset( c, 0, N*sizeof(PetscScalar) );
     // c[ 0 ] = 1.0;
     c[ 1 ] = j * 0.5 * delta;
-    for ( int idx = 2; idx < N; idx++ ) {
+    for (int idx = 2; idx < N; idx++) {
         double dm = (double)( idx - 1 );
         c[ idx ]
             = -( ( 2.0 * dm - 1.0 ) / ( 2.0 * dm + 2.0 ) ) * c[ idx - 1 ]
@@ -3259,7 +3284,7 @@ std::vector<PetscScalar> NCPA::EPadeSolver::taylor_exp_id_sqrt_1pQ_m1(
 std::vector<PetscScalar> NCPA::EPadeSolver::taylor_1pQ_n025( int N ) {
     std::vector<PetscScalar> c( N, 1.0 );
     c[ 1 ] = -0.25;
-    for ( int idx = 2; idx < N; idx++ ) {
+    for (int idx = 2; idx < N; idx++) {
         double dn = double( idx );
         c[ idx ]  = -( ( 4 * dn ) - 3 ) * c[ idx - 1 ] / ( 4 * dn );
     }
@@ -3272,7 +3297,7 @@ std::vector<PetscScalar> NCPA::EPadeSolver::taylor_1pQ_n025( int N ) {
 std::vector<PetscScalar> NCPA::EPadeSolver::taylor_1pQ_025( int N ) {
     std::vector<PetscScalar> c( N, 1.0 );
     c[ 1 ] = 0.25;
-    for ( int idx = 1; idx < N; idx++ ) {
+    for (int idx = 1; idx < N; idx++) {
         double dn = double( idx );
         c[ idx ] = c[ idx - 1 ] * ( 1.0 / dn ) * -( ( 4.0 * dn - 5.0 ) / 4.0 );
     }
@@ -3285,11 +3310,11 @@ std::vector<PetscScalar> NCPA::EPadeSolver::taylor_1pQpid_n025(
     std::vector<PetscScalar> c( N, 0.0 );
     std::complex<double> J( 0.0, 1.0 );
     c[ 0 ] = std::pow( 1.0 + J * delta, -0.25 );
-    for ( int idx = 1; idx < N; idx++ ) {
+    for (int idx = 1; idx < N; idx++) {
         double dn = double( idx );
         c[ idx ]  = c[ idx - 1 ] * ( 1.0 / dn )
-                 * ( -( 4.0 * ( dn - 1.0 ) + 1.0 ) / 4 )
-                 * std::pow( 1.0 + J * delta, -1.0 );
+                  * ( -( 4.0 * ( dn - 1.0 ) + 1.0 ) / 4 )
+                  * std::pow( 1.0 + J * delta, -1.0 );
     }
 
     return c;
@@ -3297,13 +3322,13 @@ std::vector<PetscScalar> NCPA::EPadeSolver::taylor_1pQpid_n025(
 
 void NCPA::EPadeSolver::output1DTL( std::string filename, bool append ) {
     std::ofstream out_1d;
-    if ( append ) {
+    if (append) {
         out_1d.open( filename, std::ofstream::out | std::ofstream::app );
         out_1d << std::endl;
     } else {
         out_1d.open( filename, std::ofstream::out | std::ofstream::trunc );
     }
-    for ( size_t i = 0; i < ( NR - 1 ); i++ ) {
+    for (size_t i = 0; i < ( NR - 1 ); i++) {
         out_1d << r[ i ] / 1000.0 << " " << calc_az
                << " "
                //			   << z[ zgi_r[ i ] ] << " "
@@ -3316,8 +3341,8 @@ void NCPA::EPadeSolver::output1DTL( std::string filename, bool append ) {
 void NCPA::EPadeSolver::output2DTL( std::string filename ) {
     std::ofstream out_2d( filename,
                           std::ofstream::out | std::ofstream::trunc );
-    for ( size_t i = 0; i < ( NR - 1 ); i++ ) {
-        for ( size_t j = 0; j < NZ; j += NCPAPROP_EPADE_PE_2D_OUTPUT_Z_STEP ) {
+    for (size_t i = 0; i < ( NR - 1 ); i++) {
+        for (size_t j = 0; j < NZ; j += NCPAPROP_EPADE_PE_2D_OUTPUT_Z_STEP) {
             out_2d << r[ i ] / 1000.0 << " " << z[ j ] / 1000.0 << " "
                    << tl[ j ][ i ].real() << " " << tl[ j ][ i ].imag()
                    << std::endl;
@@ -3353,13 +3378,13 @@ void NCPA::EPadeSolver::write_broadband_header(
     // open the file, truncating it if it exists
     std::ofstream ofs( filename, std::ofstream::out | std::ofstream::trunc
                                      | std::ofstream::binary );
-    if ( !ofs.good() ) {
+    if (!ofs.good()) {
         throw std::runtime_error( "Error opening file to initialize:"
                                   + filename );
     }
 
     size_t buf_size = n_az;
-    if ( n_f > buf_size ) {
+    if (n_f > buf_size) {
         buf_size = n_f;
     }
     int64_t *buffer = NCPA::zeros<int64_t>( buf_size );
@@ -3372,13 +3397,13 @@ void NCPA::EPadeSolver::write_broadband_header(
     holder = precision_factor;
     ofs.write( (char *)( &holder ), sizeof( uint32_t ) );
 
-    for ( i = 0; i < n_az; i++ ) {
+    for (i = 0; i < n_az; i++) {
         buffer[ i ]
             = (int64_t)std::lround( az_vec[ i ] * (double)precision_factor );
     }
     ofs.write( (char *)buffer, n_az * sizeof( int64_t ) );
     std::memset( buffer, 0, buf_size * sizeof( int64_t ) );
-    for ( i = 0; i < n_f; i++ ) {
+    for (i = 0; i < n_f; i++) {
         buffer[ i ]
             = (int64_t)std::lround( f_vec[ i ] * (double)precision_factor );
     }
@@ -3423,7 +3448,7 @@ void NCPA::EPadeSolver::write_broadband_results(
 
     std::ofstream ofs( filename, std::ofstream::out | std::ofstream::app
                                      | std::ofstream::binary );
-    if ( !ofs.good() ) {
+    if (!ofs.good()) {
         throw std::runtime_error( "Error opening file to append: "
                                   + filename );
     }
@@ -3441,23 +3466,23 @@ void NCPA::EPadeSolver::write_broadband_results(
 
     // z and r sizes and vectors
     size_t buf_size = n_r;
-    if ( n_z > buf_size ) {
+    if (n_z > buf_size) {
         buf_size = n_z;
     }
     int64_t *buffer = NCPA::zeros<int64_t>( buf_size );
     size_t i, j;
-    for ( i = 0; i < n_z; i++ ) {
+    for (i = 0; i < n_z; i++) {
         buffer[ i ]
             = (int64_t)std::lround( z_vec[ i ] * (double)precision_factor );
     }
     ofs.write( (char *)buffer, n_z * sizeof( int64_t ) );
-    for ( i = 0; i < n_r; i++ ) {
+    for (i = 0; i < n_r; i++) {
         buffer[ i ]
             = (int64_t)std::lround( r_vec[ i ] * (double)precision_factor );
     }
     ofs.write( (char *)buffer, n_r * sizeof( int64_t ) );
-    for ( i = 0; i < n_z; i++ ) {
-        for ( j = 0; j < n_r; j++ ) {
+    for (i = 0; i < n_z; i++) {
+        for (j = 0; j < n_r; j++) {
             holder = (int64_t)std::lround( tloss_mat[ i ][ j ].real()
                                            * (double)precision_factor );
             ofs.write( (char *)( &holder ), sizeof( int64_t ) );
@@ -3480,22 +3505,22 @@ int NCPA::EPadeSolver::zero_below_ground( Mat *q, int NZ,
 
     std::vector<PetscInt> rows, cols;
 
-    for ( ii = 0; ii < ground_index; ii++ ) {
+    for (ii = 0; ii < ground_index; ii++) {
         ierr = MatGetRow( *q, ii, &nNonZero, &indices, PETSC_NULLPTR );
         CHKERRQ( ierr );
-        for ( jj = 0; jj < nNonZero; jj++ ) {
+        for (jj = 0; jj < nNonZero; jj++) {
             rows.push_back( ii );
             cols.push_back( indices[ jj ] );
         }
         ierr = MatRestoreRow( *q, ii, &nNonZero, &indices, PETSC_NULLPTR );
         CHKERRQ( ierr );
     }
-    if ( ground_index > 0 ) {
+    if (ground_index > 0) {
         rows.push_back( ground_index );
         cols.push_back( ground_index - 1 );
     }
 
-    for ( ii = 0; ii < (int)( rows.size() ); ii++ ) {
+    for (ii = 0; ii < (int)( rows.size() ); ii++) {
         jj   = rows[ ii ];
         kk   = cols[ ii ];
         ierr = MatSetValues( *q, 1, &jj, 1, &kk, &zero, INSERT_VALUES );
@@ -3513,12 +3538,12 @@ void NCPA::EPadeSolver::write_topography( std::string filename, double azimuth,
                                           double r_max, double dr ) {
     double r;
     std::ofstream outfile( filename, std::ofstream::out | std::ofstream::app );
-    if ( !outfile.good() ) {
+    if (!outfile.good()) {
         throw std::runtime_error( "Error opening file " + filename
                                   + " to write topography" );
     }
 
-    for ( r = 0.0; r <= r_max; r += dr ) {
+    for (r = 0.0; r <= r_max; r += dr) {
         outfile << azimuth << " " << r / 1000.0 << " "
                 << atm_profile_2d->get_interpolated_ground_elevation( r )
                 << std::endl;
@@ -3531,7 +3556,7 @@ void NCPA::EPadeSolver::write_source( const std::string& filename,
                                       const std::complex<double> *source,
                                       const double *z, size_t NZ ) const {
     std::ofstream out( filename, std::ios_base::out );
-    for ( size_t i = 0; i < NZ; i++ ) {
+    for (size_t i = 0; i < NZ; i++) {
         out << z[ i ] << " " << source[ i ].real() << " " << source[ i ].imag()
             << std::endl;
     }
@@ -3541,13 +3566,13 @@ void NCPA::EPadeSolver::write_source( const std::string& filename,
 void NCPA::EPadeSolver::calculate_effective_sound_speed(
     NCPA::Atmosphere2D *atm, double az, const std::string& new_key ) {
     // first: was it given explicitly using column "CEFF"?
-    if ( atm->contains_vector( 0.0, "CEFF" ) ) {
+    if (atm->contains_vector( 0.0, "CEFF" )) {
         atm->convert_property_units( "CEFF", NCPAPROP_EPADE_PE_UNITS_C );
         atm->copy_vector_property( "CEFF", new_key );
 
         // do we have the wind speed and direction?
-    } else if ( atm->contains_vector( 0.0, "_WS_" )
-                && atm->contains_vector( 0.0, "_WD_" ) ) {
+    } else if (atm->contains_vector( 0.0, "_WS_" )
+               && atm->contains_vector( 0.0, "_WD_" )) {
         atm->calculate_wind_component( "_WC_", "_WS_", "_WD_", az );
         atm->calculate_effective_sound_speed( "_CEFF_", "_C0_", "_WC_" );
         atm->remove_property( "_WC_" );
@@ -3577,10 +3602,10 @@ void NCPA::EPadeSolver::calculate_turbulence( double r, size_t nz, double *z,
     gsl_vector_set_zero( t_vec_mu );
     gsl_matrix_set_zero( t_mat1 );
 
-    for ( i = 0; i < nt; i++ ) {
+    for (i = 0; i < nt; i++) {
         // vec1->set( 0, i, turbulence->get_G( i ) );
         gsl_vector_set( t_vec1, i, turbulence->get_G( i ) );
-        for ( j = 0; j < nz; j++ ) {
+        for (j = 0; j < nz; j++) {
             double temp = r * turbulence->get_k( i ).real()
                         + turbulence->get_alpha( i )
                         + turbulence->get_k( i ).imag() * z[ j ];
@@ -3591,8 +3616,8 @@ void NCPA::EPadeSolver::calculate_turbulence( double r, size_t nz, double *z,
     }
 
     gsl_blas_dgemv( CblasNoTrans, 1.0, t_mat1, t_vec1, 0.0, t_vec_mu );
-    for ( j = 0; j < nz; j++ ) {
-        if ( j >= ground_index ) {
+    for (j = 0; j < nz; j++) {
+        if (j >= ground_index) {
             mu[ j ] = gsl_vector_get( t_vec_mu, j );
         } else {
             mu[ j ] = 0.0;
@@ -3602,7 +3627,7 @@ void NCPA::EPadeSolver::calculate_turbulence( double r, size_t nz, double *z,
 
 void NCPA::EPadeSolver::setup_turbulence( std::vector<double>& rand1,
                                           std::vector<double>& rand2 ) {
-    if ( random_turbulence ) {
+    if (random_turbulence) {
         rand1 = NCPA::random_numbers( turbulence_size );
         rand2 = NCPA::random_numbers( turbulence_size );
     }  // otherwise they're already precalculated
