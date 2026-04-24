@@ -103,6 +103,8 @@ namespace NCPA {
 		EPadeSolver( NCPA::ParameterSet *param );
 		virtual ~EPadeSolver();
 		virtual int solve();
+		virtual int solve( std::complex<double> *transf ); 
+
 		virtual void output1DTL( std::string filename, bool append = false );
 		virtual void output2DTL( std::string filename );
 
@@ -117,7 +119,9 @@ namespace NCPA {
 
 		// solve using the appropriate method
 		virtual int solve_with_topography();
-		virtual int solve_without_topography();
+		// virtual int solve_without_topography();
+		virtual int solve_without_topography( std::complex<double> *transf = nullptr );
+
 
 		// functions to perform the various intermediate calculations
 		// int epade( int order, double k0, double dr, std::vector<PetscScalar> *P, std::vector<PetscScalar> *Q,
@@ -244,6 +248,8 @@ namespace NCPA {
 		double top_layer_thickness_m;
 		std::complex<double> user_ground_impedence;
 		bool user_ground_impedence_found = false;
+		double receiver_range_km, f_min, f_max, f_step; // broadband parameters
+		double c0, max_cel;
 
 		std::string starter;
 		std::string attnfile;
@@ -251,6 +257,7 @@ namespace NCPA {
 		std::string topofile;
 		std::string user_tag = "";
 		std::string linesourcefile;
+		std::string source_type;
 
 		// turbulence parameters
 		NCPA::Turbulence *turbulence;

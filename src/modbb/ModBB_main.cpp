@@ -85,8 +85,10 @@ int main( int argc, char **argv ) {
       
       if (param->getString("method") == "modess") {
         solver = new ESSModeSolver( param, atm_profile );
+      } else if (param->getString("method") == "wmod") {
+        solver = new WModeSolver( param, atm_profile);
       } else {
-        solver = new WModeSolver( param, atm_profile );
+        throw std::out_of_range("Unrecognized method string: " + param->getString("method"));
       }
       solver->solve();
       delete solver;

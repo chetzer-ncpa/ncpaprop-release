@@ -1,1 +1,1 @@
-SOURCES=BroadbandPropagator.cpp ModalBroadbandPropagator.cpp
+SOURCES=BroadbandPropagator.cpp ModalBroadbandPropagator.cpp EPadeBroadbandPropagator.cpp

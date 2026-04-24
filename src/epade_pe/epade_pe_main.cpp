@@ -21,6 +21,8 @@
 //#include "epade_pe.h"
 #include "EPadeSolver.h"
 #include "epade_pe_parameters.h"
+#include "BroadbandPropagator.h"
+#include "EPadeBroadbandPropagator.h"
 
 using namespace std;
 using namespace NCPA;
@@ -82,20 +84,31 @@ int main( int argc, char **argv ) {
 		return 0;
 	}
 	
-	EPadeSolver *solver;
-	try {
-		solver = new EPadeSolver( param );
-		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-		solver->solve();
-		high_resolution_clock::time_point t2 = high_resolution_clock::now();
-		duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-		if (!param->wasFound("quiet")) {
-			cout << "Elapsed time: " << time_span.count() << " seconds." << endl;
+	std::cout << "Broadband mode? " << (param->wasFound("broadband") ? "yes" : "no") << std::endl;
+	if ( !param->wasFound("broadband") ) {
+		EPadeSolver *solver;
+		std::cout << "Starting ePade solver..." << std::endl;
+		try {
+			solver = new EPadeSolver( param );
+			high_resolution_clock::time_point t1 = high_resolution_clock::now();
+			solver->solve();
+			high_resolution_clock::time_point t2 = high_resolution_clock::now();
+			duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+			if (!param->wasFound("quiet")) {
+				cout << "Elapsed time: " << time_span.count() << " seconds." << endl;
+			}
+			delete solver;
+		} catch (std::runtime_error& e) {
+			std::cout << "ePape run failed with the following error:"
+					<< endl << e.what() << endl;
 		}
-		delete solver;
-	} catch (std::runtime_error& e) {
-		std::cout << "ePape run failed with the following error:"
-				  << endl << e.what() << endl;
+	} else {
+		std::cout << "Broadband propagation mode enabled." << std::endl;
+		EPadeBroadbandPropagator *propagator = new EPadeBroadbandPropagator( param );
+		std::cout << "Starting broadband propagation..." << std::endl;
+		propagator->calculate_waveform();
+		delete propagator;
+		std::cout << "Broadband propagation completed." << std::endl;
 	}
 
 	/*
