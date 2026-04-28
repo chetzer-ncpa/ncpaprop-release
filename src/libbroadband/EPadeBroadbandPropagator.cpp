@@ -8,10 +8,10 @@ namespace NCPA {
 		f_min = param->getFloat( "f_min" );
 		f_max = param->getFloat( "f_max" );
 		f_step = param->getFloat( "f_step" );
-        Nfreq = (size_t)( std::floor( ( f_max - f_min ) / f_step ) ) + 2;
+        Nfreq = (int)( std::floor( ( f_max - f_min ) / f_step ) ) + 2;
 		NFFT = 4 * Nfreq; 
 		f_vec  = NCPA::zeros<double>( Nfreq );
-        for ( size_t fi = 1; fi < Nfreq; fi++ ) {
+        for ( int fi = 1; fi < Nfreq; fi++ ) {
 			f_vec[ fi ] = f_min + ( (double)fi - 1) * f_step;
         }
 		f_center = f_vec[ Nfreq - 1] / 5; // @todo: Make this an optional parameter 
@@ -33,7 +33,7 @@ namespace NCPA {
 
 		// scale the transfer function by 1 / 4*1000*PI to agree with ModBB
 		const double _factor = 4000.0 * PI;
-		for (size_t i = 1; i < Nfreq; i++) {
+		for (int i = 1; i < Nfreq; i++) {
 			transfer_function[i] = transfer_function[i] / _factor;
 		}
 
@@ -49,7 +49,7 @@ namespace NCPA {
 		int smooth_space=(int)floor(0.1*Nfreq); // smoothly zero out on right; as in RW (July 2012)
 
 
-		for(size_t i=Nfreq-smooth_space;i<Nfreq;i++){
+		for(int i=Nfreq-smooth_space;i<Nfreq;i++){
 			transfer_function[i]=transfer_function[i]*half_hann(Nfreq-smooth_space,Nfreq-1,i); // changed df to 1 as df doesn't make sense here
 		}
 
@@ -70,7 +70,7 @@ namespace NCPA {
 		// output the transfer function to file 
 		std::cout << "--> Saving transfer function to file: 'transf.pe'" << std::endl;
 		FILE *f_transf = fopen("transf.pe","w");
-		for (size_t i = 0; i < Nfreq; i ++) {
+		for (int i = 0; i < Nfreq; i ++) {
 			fprintf(f_transf, "%5.6f %15.6e %15.6e\n", f_vec[i], real(transfer_function[i]), imag(transfer_function[i]));
 		}
 		fclose(f_transf);
@@ -80,7 +80,7 @@ namespace NCPA {
 		FILE *f_pulse = fopen("waveform.pe","w");
 		double factor = 2.0; // Same factor as in ModBB, but we also implicitly multiply with I to agree with ModBB convention
 		// Note implicit multiplication with I to agree with ModBB convention
-		for(size_t i=0; i<NFFT; i++){
+		for(int i=0; i<NFFT; i++){
 			fprintf(f_pulse,"%10.3f %12.6f %15.6e %15.6e\n", rr/1000.0, 1.0*i/fmx+t0, -factor*imag(pulse_vec[i]), factor*real(pulse_vec[i]));
 		}
 		fclose(f_pulse);

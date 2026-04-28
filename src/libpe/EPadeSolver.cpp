@@ -2223,7 +2223,7 @@ void NCPA::EPadeSolver::calculate_atmosphere_parameters(
         absorption_layer( tlt, z_vec, NZvec, abslayer );
         if (write_top_layer) {
             std::ofstream ofs("absorbing_layer.pe", std::ios::out | std::ios::trunc );
-            for (size_t i = 0; i < NZvec; ++i) {
+            for (int i = 0; i < NZvec; ++i) {
                 ofs << z_vec[i] << " " << abslayer[i] << std::endl;
             }
             ofs.close();
