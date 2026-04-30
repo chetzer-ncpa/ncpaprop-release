@@ -587,7 +587,8 @@ int NCPA::EPadeSolver::solve() {
     }
 }
 
-int NCPA::EPadeSolver::solve( std::complex<double> *transf ) {
+// int NCPA::EPadeSolver::solve( std::complex<double> *transf ) {
+int NCPA::EPadeSolver::solve(  std::vector<std::complex<double>> &transf ) {
     // Overloaded solve method for broadband mode
     if (use_topo) {
         return solve_with_topography();
@@ -596,8 +597,14 @@ int NCPA::EPadeSolver::solve( std::complex<double> *transf ) {
     }
 }
 
+int NCPA::EPadeSolver::solve_without_topography() {
+    std::vector<std::complex<double>> v;
+    return this->solve_without_topography( v );
+}
+
 int NCPA::EPadeSolver::solve_without_topography(
-    std::complex<double> *transf ) {
+    // std::complex<double> *transf ) {
+    std::vector<std::complex<double>> &transf ) {
     size_t i;
     std::complex<double> I( 0.0, 1.0 );
     PetscErrorCode ierr;
@@ -1062,7 +1069,7 @@ int NCPA::EPadeSolver::solve_without_topography(
                 oss << "Stopped at range " << r[ NR - 1 ] / 1000.0 << " km";
                 info( oss );
             }
-            if (broadband && transf != nullptr) {
+            if (broadband && !transf.empty()) {
                 // first remove the density scaling as it is not needed for
                 // waveforms
                 double rho_zrcv
@@ -3109,7 +3116,6 @@ int NCPA::EPadeSolver::get_starter_self( size_t NZ, double *z,
                          * pow( sqrt( 2.0 / ( PI * k0 * r_ref ) )
                                     * exp( I * ( k0 * r_ref - PI / 4.0 ) ),
                                 -1.0 );
-    std::cout << "hank_inv = " << hank_inv << std::endl;
 
     // Original Matlab: psi = AA * ( C \ (B * ksi) ) / hank
     // compute product of B and ksi

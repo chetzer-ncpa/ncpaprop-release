@@ -4,6 +4,7 @@
 #include "parameterset.h"
 #include "BroadbandPropagator.h"
 #include <complex>
+#include <vector>
 
 namespace NCPA {
 
@@ -11,12 +12,13 @@ namespace NCPA {
 
 	public:
 		ModalBroadbandPropagator( ParameterSet *param );
-		~ModalBroadbandPropagator();
+		virtual ~ModalBroadbandPropagator();
 
 		int calculate_waveform();
 
 	protected:
-		int *mode_count;
+		// int *mode_count;
+		std::vector<int> mode_count;
 		double rho_zsrc, rho_zrcv;
 		double **re_k, **im_k, **mode_S, **mode_R;
 		// std::complex< double > *modal_sum;

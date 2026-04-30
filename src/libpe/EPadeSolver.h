@@ -103,7 +103,8 @@ namespace NCPA {
 		EPadeSolver( NCPA::ParameterSet *param );
 		virtual ~EPadeSolver();
 		virtual int solve();
-		virtual int solve( std::complex<double> *transf ); 
+		// virtual int solve( std::complex<double> *transf ); 
+		virtual int solve( std::vector<std::complex<double>>& transf );
 
 		virtual void output1DTL( std::string filename, bool append = false );
 		virtual void output2DTL( std::string filename );
@@ -119,8 +120,9 @@ namespace NCPA {
 
 		// solve using the appropriate method
 		virtual int solve_with_topography();
-		// virtual int solve_without_topography();
-		virtual int solve_without_topography( std::complex<double> *transf = nullptr );
+		virtual int solve_without_topography();
+		// virtual int solve_without_topography( std::complex<double> *transf = nullptr );
+		virtual int solve_without_topography( std::vector<std::complex<double>>& transf );
 
 
 		// functions to perform the various intermediate calculations

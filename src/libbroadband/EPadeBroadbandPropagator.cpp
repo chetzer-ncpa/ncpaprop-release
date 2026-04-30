@@ -10,14 +10,15 @@ namespace NCPA {
 		f_step = param->getFloat( "f_step" );
         Nfreq = (int)( std::floor( ( f_max - f_min ) / f_step ) ) + 2;
 		NFFT = 4 * Nfreq; 
-		f_vec  = NCPA::zeros<double>( Nfreq );
+		// f_vec  = NCPA::zeros<double>( Nfreq );
+		f_vec.resize( Nfreq );
         for ( int fi = 1; fi < Nfreq; fi++ ) {
 			f_vec[ fi ] = f_min + ( (double)fi - 1) * f_step;
         }
 		f_center = f_vec[ Nfreq - 1] / 5; // @todo: Make this an optional parameter 
-		transfer_function = NCPA::zeros<std::complex<double>>( Nfreq );
+		// transfer_function = NCPA::zeros<std::complex<double>>( Nfreq );
+		transfer_function.resize( Nfreq );
 		
-
 		// Other parameters
 		source_type = param->getString( "source" );
 		std::cout << "Source type: " << source_type << std::endl; 
@@ -54,16 +55,21 @@ namespace NCPA {
 		}
 
 		// Create the arrays needed for pulse propagation 
-  		std::complex<double> *dft_vec, *pulse_vec, *arg_vec;
-		dft_vec   = new std::complex<double> [Nfreq];
-		pulse_vec = new std::complex<double> [NFFT];
-		arg_vec   = new std::complex<double> [NFFT]; 
+  		// std::complex<double> *dft_vec, *pulse_vec, *arg_vec;
+		// dft_vec   = new std::complex<double> [Nfreq];
+		// pulse_vec = new std::complex<double> [NFFT];
+		// arg_vec   = new std::complex<double> [NFFT];
+		std::vector<std::complex<double>> dft_vec( Nfreq );
+		std::vector<std::complex<double>> pulse_vec( NFFT );
+		std::vector<std::complex<double>> arg_vec( NFFT );
+
 
 		double fmx = ((double)NFFT)*f_step; // max frequency
 		
+		std::cout << "Starting get_source_spectrum()" << std::endl;
   		get_source_spectrum( dft_vec, pulse_vec, arg_vec );
 
-
+		std::cout << "Starting fft_pulse_prop()" << std::endl;
 		fft_pulse_prop( t0, rr, dft_vec, pulse_vec );
 
 		 // @todo: Remove this after testing 
@@ -87,9 +93,9 @@ namespace NCPA {
 
 
 
-		delete[] arg_vec; 
-		delete[] pulse_vec;
-		delete[] dft_vec; 
+		// delete[] arg_vec; 
+		// delete[] pulse_vec;
+		// delete[] dft_vec; 
 
 		return 0;
 	}
