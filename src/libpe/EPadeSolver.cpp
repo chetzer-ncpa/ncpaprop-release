@@ -28,11 +28,7 @@
 #else
 #  define GSL_SPLINE_TYPE gsl_interp_cspline
 #endif
-#ifndef PI
-#  define PI 3.14159
-#endif
 
-#define RHO_B 5000.0
 
 // default constructor
 NCPA::EPadeSolver::EPadeSolver() {
@@ -2276,6 +2272,7 @@ int NCPA::EPadeSolver::solve_flat_ground(
                 qpowers_starter = qpowers;
                 build_starter_gaussian( NZ, z, zs, k0, ground_index, &psi_o );
             } else if (starter == "user") {
+                qpowers_starter = qpowers;
                 build_starter_user( user_starter_file, NZ, z, &psi_o );
             } else {
                 oss << "Unrecognized starter type: " << starter;

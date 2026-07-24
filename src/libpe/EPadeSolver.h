@@ -90,6 +90,13 @@
 #  define NCPAPROP_EPADE_PE_UNITS_C NCPA::Units::fromString( "m/s" )
 #endif
 
+#ifndef PI
+#  define PI 3.14159
+#endif
+
+#ifndef RHO_B
+#  define RHO_B 5000.0
+#endif
 
 namespace NCPA {
     class EPadeSolver : public AtmosphericTransferFunctionSolver {
@@ -107,10 +114,15 @@ namespace NCPA {
         protected:
             void set_default_values();
 
+            // output methods
             void outputVec( Vec& v, double *z, int n,
                             std::string filename ) const;
             void outputSparseMat( Mat& m, size_t nrows,
                                   const std::string& filename ) const;
+            void write_topography( std::string filename, double az,
+                                   double r_max, double dr );
+            std::string tag_filename( std::string basename );
+
 
             // solve using the appropriate method
             virtual int solve_with_topography();
@@ -118,26 +130,18 @@ namespace NCPA {
             virtual int solve_flat_ground(
                 std::vector<std::complex<double>>& transf );
 
-
             // functions to perform the various intermediate calculations
             int calculate_pade_coefficients(
                 std::vector<PetscScalar> *c, int n_numerator,
                 int n_denominator,
                 std::vector<PetscScalar> *numerator_coefficients,
                 std::vector<PetscScalar> *denominator_coefficients );
-            int scale_and_sum_matrix_polynomials( Mat *qpowers, size_t npade, size_t NZ,
-                                       std::vector<std::complex<double>>& P,
-                                       std::vector<std::complex<double>>& Q,
-                                       Mat *B, Mat *C );
-            // int sum_scaled_matrix_polynomial_terms(
-            //     Mat *qpowers, int qpowers_size, int NZ,
-            //     std::vector<std::complex<double>>& T, Mat *B );
-            // int generate_polymatrix( Mat *qpowers, size_t Qpowers_size,
-            //                          size_t NZ,
-            //                          std::vector<std::complex<double>>& T,
-            //                          Mat *B );
+            int scale_and_sum_matrix_polynomials(
+                Mat *qpowers, size_t npade, size_t NZ,
+                std::vector<std::complex<double>>& P,
+                std::vector<std::complex<double>>& Q, Mat *B, Mat *C );
             int build_matrix_polynomial( size_t nterms, const Mat *Q,
-                                          Mat **qpowers );
+                                         Mat **qpowers );
             int delete_matrix_polynomial( size_t nterms, Mat **qpowers );
             int build_orographic_operator(
                 NCPA::Atmosphere2D *atm, int NZvec, double *zvec, double r,
@@ -151,7 +155,7 @@ namespace NCPA {
                 size_t nqp, int boundary_index, Mat *q );
             int zero_below_ground( Mat *q, int NZ, PetscInt ground_index );
 
-            // functions for recurrence relations of various Taylor series
+            // methods for recurrence relations of various Taylor series
             std::vector<PetscScalar> taylor_exp_id_sqrt_1pQ_m1( int N,
                                                                 double delta );
             std::vector<PetscScalar> taylor_sqrt_1pQ_exp_id_sqrt_1pQ_m1(
@@ -160,19 +164,23 @@ namespace NCPA {
             std::vector<PetscScalar> taylor_1pQ_025( int N );
             std::vector<PetscScalar> taylor_1pQpid_n025( int N, double delta );
 
-            // approximation functions
+            // approximation methods
             int approximate_sqrt_1pQ( int NZvec, const Mat *Q, PetscInt Ji,
                                       Vec *vecBelow, Vec *vecAbove,
                                       PetscInt *nonzeros );
 
-            // functions to calculate the various starter fields
+            // methods to calculate the various starter fields
             int build_starter_gaussian( size_t NZ, double *z, double zs,
-                                      double k0, int ground_index, Vec *psi );
+                                        double k0, int ground_index,
+                                        Vec *psi );
             int build_starter_self( size_t NZ, double *z,
-                                  std::complex<double> *source, double k0,
-                                  Mat *qpowers, size_t npade, Vec *psi );
+                                    std::complex<double> *source, double k0,
+                                    Mat *qpowers, size_t npade, Vec *psi );
             int build_starter_user( std::string filename, int NZ, double *z,
-                                  Vec *psi );
+                                    Vec *psi );
+
+            // interpolate complex vectors by interpolating real and
+            // imaginary parts separately
             void interpolate_complex( size_t NZ_orig, double *z_orig,
                                       double *r_orig, double *i_orig,
                                       size_t NZ_new, double *z_new,
@@ -181,9 +189,11 @@ namespace NCPA {
                                       std::complex<double> *c_orig,
                                       size_t NZ_new, double *z_new,
                                       std::complex<double> *c_new );
+
+            // source calculations
             void build_point_source( size_t NZ, double *z, double zs,
-                                    double z_ground,
-                                    std::complex<double> *source );
+                                     double z_ground,
+                                     std::complex<double> *source );
             void read_line_source_from_file( size_t NZ, double *z,
                                              double z_ground,
                                              const std::string& filename,
@@ -192,7 +202,7 @@ namespace NCPA {
                                const std::complex<double> *source,
                                const double *z, size_t NZ ) const;
 
-            // functions to calculate atmospheric parameters
+            // calculate atmospheric parameters
             void absorption_layer( double lambda, double *z, int NZ,
                                    double *layer );
             void fill_atm_vector_relative( NCPA::Atmosphere2D *atm,
@@ -213,22 +223,12 @@ namespace NCPA {
                                                   double azimuth,
                                                   const std::string& new_key );
 
+            // safety methods
             double check_ground_height_coincidence_with_grid(
                 double *z, size_t NZ, double tolerance, double z_ground );
 
             void set_1d_output( bool tf );
-            // void write_broadband_header( std::string filename, double *az_vec,
-            //                              size_t n_az, double *f_vec,
-            //                              size_t n_f,
-            //                              unsigned int precision_factor );
-            // void write_broadband_results( std::string filename, double this_az,
-            //                               double this_f, double *r_vec,
-            //                               size_t n_r, double *z_vec,
-            //                               size_t n_z,
-            //                               std::complex<double> **tloss_mat,
-            //                               unsigned int precision_factor );
-            void write_topography( std::string filename, double az,
-                                   double r_max, double dr );
+
 
             // turbulence
             void calculate_turbulence( double r, size_t nz, double *z,
@@ -238,7 +238,7 @@ namespace NCPA {
                                    std::vector<double>& rand2 );
             void cleanup_turbulence();
 
-            std::string tag_filename( std::string basename );
+            // logging
             void info( const std::string& output,
                        std::ostream& os = std::cout );
             void info( std::ostringstream& oss, std::ostream& os = std::cout );
@@ -248,6 +248,7 @@ namespace NCPA {
             void error( const std::string& output );
             void error( std::ostringstream& oss );
 
+            // private members
             double *z = nullptr, *z_abs = nullptr, *r = nullptr, *f = nullptr,
                    calc_az;
             std::complex<double> **tl;
