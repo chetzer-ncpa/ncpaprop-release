@@ -945,6 +945,7 @@ int NCPA::EPadeSolver::solve_without_topography(
                 qpowers_starter = qpowers;
                 get_starter_gaussian( NZ, z, zs, k0, ground_index, &psi_o );
             } else if (starter == "user") {
+                qpowers_starter = qpowers;
                 get_starter_user( user_starter_file, NZ, z, &psi_o );
             } else {
                 oss << "Unrecognized starter type: " << starter;
