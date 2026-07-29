@@ -166,6 +166,9 @@ namespace NCPA {
 
 		// functions to calculate the various starter fields
 		int get_starter_gaussian( size_t NZ, double *z, double zs, double k0, int ground_index, Vec *psi );
+		int get_starter_gaussian_wide1( size_t NZ, double *z, double zs, double k0, int ground_index, Vec *psi );
+		int get_starter_gaussian_wide2( size_t NZ, double *z, double zs, double k0, int ground_index, Vec *psi );
+		int get_starter_gaussian_wide3( size_t NZ, double *z, double zs, double k0, int ground_index, Vec *psi );
 		int get_starter_self( size_t NZ, double *z,
 			std::complex<double> *source, double k0, Mat *qpowers,
 			size_t npade, Vec *psi );
