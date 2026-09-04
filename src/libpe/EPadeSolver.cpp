@@ -944,6 +944,15 @@ int NCPA::EPadeSolver::solve_without_topography(
             } else if (starter == "gaussian") {
                 qpowers_starter = qpowers;
                 get_starter_gaussian( NZ, z, zs, k0, ground_index, &psi_o );
+            } else if (starter == "gaussian_wide1") {
+                qpowers_starter = qpowers;
+                get_starter_gaussian_wide1( NZ, z, zs, k0, ground_index, &psi_o );
+            } else if (starter == "gaussian_wide2") {
+                qpowers_starter = qpowers;
+                get_starter_gaussian_wide2( NZ, z, zs, k0, ground_index, &psi_o );
+            } else if (starter == "gaussian_wide3") {
+                qpowers_starter = qpowers;
+                get_starter_gaussian_wide3( NZ, z, zs, k0, ground_index, &psi_o );
             } else if (starter == "user") {
                 qpowers_starter = qpowers;
                 get_starter_user( user_starter_file, NZ, z, &psi_o );
@@ -2392,7 +2401,6 @@ int NCPA::EPadeSolver::generate_polymatrices(
     CHKERRQ( ierr );
     ierr = MatSetFromOptions( *C );
     CHKERRQ( ierr );
-
     ierr = MatGetOwnershipRange( *B, &Istart, &Iend );
     CHKERRQ( ierr );
     // by definition Q[0] is 1.  It so happens that P[0] is also 1, but this is
@@ -2409,7 +2417,6 @@ int NCPA::EPadeSolver::generate_polymatrices(
         ierr = MatSetValues( *C, 1, &i, 1, &i, &value, INSERT_VALUES );
         CHKERRQ( ierr );
     }
-
     ierr = MatAssemblyBegin( *B, MAT_FINAL_ASSEMBLY );
     CHKERRQ( ierr );
     ierr = MatAssemblyEnd( *B, MAT_FINAL_ASSEMBLY );
@@ -2418,7 +2425,6 @@ int NCPA::EPadeSolver::generate_polymatrices(
     CHKERRQ( ierr );
     ierr = MatAssemblyEnd( *C, MAT_FINAL_ASSEMBLY );
     CHKERRQ( ierr );
-
     for (i = 1; i < (PetscInt)( Q.size() ); i++) {
         ierr = MatAXPY( *C, Q[ i ], qpowers[ i - 1 ],
                         DIFFERENT_NONZERO_PATTERN );
@@ -2917,8 +2923,7 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z, double zs,
                                              double k0, int ground_index,
                                              Vec *psi ) {
     double fac = 2.0;
-    // double kfac = k0 / fac;
-    PetscScalar tempval;
+    PetscScalar tempval,tempval2,cup(0.0,k0);
     PetscErrorCode ierr;
 
     ierr = VecCreate( PETSC_COMM_SELF, psi );
@@ -2929,10 +2934,123 @@ int NCPA::EPadeSolver::get_starter_gaussian( size_t NZ, double *z, double zs,
     CHKERRQ( ierr );
     ierr = VecSet( *psi, 0.0 );
 
+	cup=std::sqrt(cup);
+//	Reference to a unit charge at 1 km.
+	cup=1000.0*cup;
     for (PetscInt i = 0; i < (PetscInt)NZ; i++) {
         // if (z[i] >= zg) {
-        tempval = -( k0 * k0 / fac / fac ) * ( z[ i ] - zs ) * ( z[ i ] - zs );
-        tempval = sqrt( k0 / fac ) * exp( tempval );
+        tempval = -( k0 * k0 / fac ) * ( z[ i ] - zs ) * ( z[ i ] - zs );
+        tempval2 = -( k0 * k0 / fac ) * ( z[ i ] + zs ) * ( z[ i ] + zs );
+        tempval = cup * ( exp( tempval ) + exp( tempval2 ) );
+        ierr    = VecSetValues( *psi, 1, &i, &tempval, INSERT_VALUES );
+        CHKERRQ( ierr );
+        //}
+    }
+    ierr = VecAssemblyBegin( *psi );
+    CHKERRQ( ierr );
+    ierr = VecAssemblyEnd( *psi );
+    CHKERRQ( ierr );
+    return 1;
+}
+
+int NCPA::EPadeSolver::get_starter_gaussian_wide1( size_t NZ, double *z, double zs,
+                                             double k0, int ground_index,
+                                             Vec *psi ) {
+    double fac = 3.0;
+    PetscScalar tempval,tempval2,cup(0.0,k0);
+    PetscErrorCode ierr;
+
+    ierr = VecCreate( PETSC_COMM_SELF, psi );
+    CHKERRQ( ierr );
+    ierr = VecSetSizes( *psi, PETSC_DECIDE, NZ );
+    CHKERRQ( ierr );
+    ierr = VecSetFromOptions( *psi );
+    CHKERRQ( ierr );
+    ierr = VecSet( *psi, 0.0 );
+
+	cup=std::sqrt(cup);
+//	Reference to a unit charge at 1 km.
+	cup=1000.0*cup;
+    for (PetscInt i = 0; i < (PetscInt)NZ; i++) {
+        // if (z[i] >= zg) {
+        tempval = -( k0 * k0 / fac  ) * ( z[ i ] - zs ) * ( z[ i ] - zs );
+        tempval2 = -( k0 * k0 / fac ) * ( z[ i ] + zs ) * ( z[ i ] + zs );
+        tempval = cup * ( 1.3717 - 0.3701 * k0 * k0 * ( z[ i ] - zs )*( z[ i ] - zs ) ) * exp( tempval ) ;
+        tempval =  tempval+ cup * ( 1.3717 - 0.3701 * k0 * k0 * ( z[ i ] + zs )*( z[ i ] + zs ) ) * exp( tempval2 ) ;
+        ierr    = VecSetValues( *psi, 1, &i, &tempval, INSERT_VALUES );
+        CHKERRQ( ierr );
+        //}
+    }
+    ierr = VecAssemblyBegin( *psi );
+    CHKERRQ( ierr );
+    ierr = VecAssemblyEnd( *psi );
+    CHKERRQ( ierr );
+    return 1;
+}
+
+int NCPA::EPadeSolver::get_starter_gaussian_wide2( size_t NZ, double *z, double zs,
+                                             double k0, int ground_index,
+                                             Vec *psi ) {
+    double fac = 3.0;
+    PetscScalar tempval,tempval2,prefac1,prefac2,cup(0.0,k0);
+    PetscErrorCode ierr;
+
+    ierr = VecCreate( PETSC_COMM_SELF, psi );
+    CHKERRQ( ierr );
+    ierr = VecSetSizes( *psi, PETSC_DECIDE, NZ );
+    CHKERRQ( ierr );
+    ierr = VecSetFromOptions( *psi );
+    CHKERRQ( ierr );
+    ierr = VecSet( *psi, 0.0 );
+
+	cup=std::sqrt(cup);
+//	Reference to a unit charge at 1 km.
+	cup=1000.0*cup;
+    for (PetscInt i = 0; i < (PetscInt)NZ; i++) {
+        // if (z[i] >= zg) {
+        tempval = -( k0 * k0 / fac  ) * ( z[ i ] - zs ) * ( z[ i ] - zs );
+        tempval2 = -( k0 * k0 / fac ) * ( z[ i ] + zs ) * ( z[ i ] + zs );
+        prefac1 = 1.9705-1.1685*k0*k0*(z[i]-zs)*(z[i]-zs)+0.0887*k0*k0*k0*k0*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs);
+        prefac2 = 1.9705-1.1685*k0*k0*(z[i]+zs)*(z[i]+zs)+0.0887*k0*k0*k0*k0*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs);
+        tempval = cup * prefac1 * exp( tempval ) ;
+        tempval =  tempval+ cup * prefac2 * exp( tempval2 ) ;
+        ierr    = VecSetValues( *psi, 1, &i, &tempval, INSERT_VALUES );
+        CHKERRQ( ierr );
+        //}
+    }
+    ierr = VecAssemblyBegin( *psi );
+    CHKERRQ( ierr );
+    ierr = VecAssemblyEnd( *psi );
+    CHKERRQ( ierr );
+    return 1;
+}
+
+int NCPA::EPadeSolver::get_starter_gaussian_wide3( size_t NZ, double *z, double zs,
+                                             double k0, int ground_index,
+                                             Vec *psi ) {
+    double fac = 3.0;
+    PetscScalar tempval,tempval2,prefac1,prefac2,cup(0.0,k0);
+    PetscErrorCode ierr;
+
+    ierr = VecCreate( PETSC_COMM_SELF, psi );
+    CHKERRQ( ierr );
+    ierr = VecSetSizes( *psi, PETSC_DECIDE, NZ );
+    CHKERRQ( ierr );
+    ierr = VecSetFromOptions( *psi );
+    CHKERRQ( ierr );
+    ierr = VecSet( *psi, 0.0 );
+
+	cup=std::sqrt(cup);
+//	Reference to a unit charge at 1 km.
+	cup=1000.0*cup;
+    for (PetscInt i = 0; i < (PetscInt)NZ; i++) {
+        // if (z[i] >= zg) {
+        tempval = -( k0 * k0 / fac  ) * ( z[ i ] - zs ) * ( z[ i ] - zs );
+        tempval2 = -( k0 * k0 / fac ) * ( z[ i ] + zs ) * ( z[ i ] + zs );
+        prefac1 = 9.6982-20.3785*k0*k0*(z[i]-zs)*(z[i]-zs)+6.0191*k0*k0*k0*k0*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)-0.4846*k0*k0*k0*k0*k0*k0*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)+0.0105*k0*k0*k0*k0*k0*k0*k0*k0*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs)*(z[i]-zs);
+        prefac2 = 9.6982-20.3785*k0*k0*(z[i]+zs)*(z[i]+zs)+6.0191*k0*k0*k0*k0*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)-0.4846*k0*k0*k0*k0*k0*k0*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)+0.0105*k0*k0*k0*k0*k0*k0*k0*k0*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs)*(z[i]+zs);
+        tempval = cup * prefac1 * exp( tempval ) ;
+        tempval =  tempval+ cup * prefac2 * exp( tempval2 ) ;
         ierr    = VecSetValues( *psi, 1, &i, &tempval, INSERT_VALUES );
         CHKERRQ( ierr );
         //}
